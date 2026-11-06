@@ -411,18 +411,22 @@
 
         /* ======================================================
            TARİH YARDIMCI FONKSİYONLARI
-           Not: Burada "yıl=365 gün, ay=30 gün" gibi sabit sayılarla
-           ÇARPMA YAPILMIYOR. Her ekleme gerçek takvim üzerinden
-           yapılıyor (JavaScript'in Date nesnesi artık yılları ve
-           farklı ay uzunluklarını otomatik doğru hesaplar).
+
+           ÖNEMLİ (kullanıcı onayıyla düzeltildi): İnfaz hukukunda süre
+           çevrimi KANUNEN SABİTTİR: 1 yıl = 365 gün, 1 ay = 30 gün.
+           Gerçek takvimdeki artık yıllar (29 Şubat) bu sabit çevrime
+           fazladan gün EKLEMEMELİDİR - aksi halde hükümlü kanunda
+           yazandan fazla gün yatırmış olur. Bu yüzden ceza süresi
+           HER ZAMAN sabit gün sayısına çevrilir (365*yıl + 30*ay + gün),
+           sonra bu SABİT gün sayısı başlangıç tarihine eklenir.
            ====================================================== */
 
-        // Bir tarihe gerçek takvimle Yıl-Ay-Gün ekler (artık yıl güvenli)
-        function addYAG(baseDate, y, a, g) {
+        // Bir tarihe, SABİT bir gün sayısı ekler (takvim üzerinde ilerler,
+        // ama eklenen gün sayısı her zaman sabittir - artık yıl fazladan
+        // gün KAZANDIRMAZ, sadece hangi gerçek tarihe denk geldiğini gösterir)
+        function addDays(baseDate, days) {
             const d = new Date(baseDate.getTime());
-            d.setFullYear(d.getFullYear() + y);
-            d.setMonth(d.getMonth() + a);
-            d.setDate(d.getDate() + g);
+            d.setDate(d.getDate() + days);
             return d;
         }
 
@@ -451,22 +455,12 @@
             return oran.toFixed(3);
         }
 
-        // İki tarih arasındaki GERÇEK takvim farkını Yıl-Ay-Gün olarak verir
-        // (sabit "365 gün = 1 yıl" bölmesi YERİNE; artık yıl içeren aralıklarda
-        // bile doğru sonuç verir - yaş hesaplama mantığıyla aynıdır)
-        function calendarDiffYAG(d1, d2) {
-            let y = d2.getFullYear() - d1.getFullYear();
-            let a = d2.getMonth() - d1.getMonth();
-            let g = d2.getDate() - d1.getDate();
-            if (g < 0) {
-                a--;
-                const oncekiAyinSonGunu = new Date(d2.getFullYear(), d2.getMonth(), 0).getDate();
-                g += oncekiAyinSonGunu;
-            }
-            if (a < 0) {
-                y--;
-                a += 12;
-            }
+        // Toplam SABİT gün sayısını Yıl-Ay-Gün'e çevirir (1 yıl=365, 1 ay=30 gün sabit)
+        function gunSayisindanYAG(toplamGun) {
+            const y = Math.floor(toplamGun / 365);
+            const kalan = toplamGun % 365;
+            const a = Math.floor(kalan / 30);
+            const g = kalan % 30;
             return { y, a, g };
         }
 
@@ -730,7 +724,7 @@
 
                 if (sureTip === 'muebbet') {
                     mCount++;
-                    nextDate = addYAG(cumulative, 30, 0, 0); // Kanuni baz: 30 yıl
+                    nextDate = addDays(cumulative, 30 * 365); // Kanuni baz: 30 yıl = 30*365 gün (sabit çevrim)
                     // Örgütlü suç (m.107/4): müebbette 30 yılın TAMAMI yatar (oran 4/4).
                     // Örgütlü değilse mevcut onaylanmış oran (3/4) aynen kalır.
                     baseOran = orgutlu ? 1.0 : 0.75;
@@ -738,7 +732,7 @@
                     suresizText = "Müebbet Hapis";
                 } else if (sureTip === 'agirlastirilmis_muebbet') {
                     amCount++;
-                    nextDate = addYAG(cumulative, 36, 0, 0); // Kanuni baz: 36 yıl
+                    nextDate = addDays(cumulative, 36 * 365); // Kanuni baz: 36 yıl = 36*365 gün (sabit çevrim)
                     baseOran = 1.0; // 4/4 (örgütlü olsun olmasın mevcut onaylanmış kural)
                     isSuresiz = true;
                     suresizText = "Ağırlaştırılmış Müebbet Hapis";
@@ -747,7 +741,9 @@
                     const y = parseInt(row.querySelector('.penalty-yil').value) || 0;
                     const a = parseInt(row.querySelector('.penalty-ay').value) || 0;
                     const g = parseInt(row.querySelector('.penalty-gun').value) || 0;
-                    nextDate = addYAG(cumulative, y, a, g);
+                    // Kanuni sabit çevrim: 1 yıl = 365 gün, 1 ay = 30 gün (artık yıl gün KAZANDIRMAZ)
+                    const rowGunSabit = (y * 365) + (a * 30) + g;
+                    nextDate = addDays(cumulative, rowGunSabit);
                     sureMetinYAG = yagMetinVertical(y, a, g);
 
                     baseOran = (sucTip === 'oldurme' || sucTip === 'cinsel' || sucTip === 'uyusturucu') ? (2 / 3) : 0.5;
@@ -756,7 +752,7 @@
                     if (orgutlu) baseOran = Math.max(baseOran, 2 / 3);
                 }
 
-                // Bu cezanın GERÇEK TAKVİMDEKİ gün karşılığı (artık yıl dahil, otomatik doğru)
+                // Bu cezanın SABİT kanuni gün karşılığı (365 gün/yıl, 30 gün/ay - artık yıl etkisi YOK)
                 const rowDays = diffDaysCalendar(cumulative, nextDate);
 
                 // Mükerrerlik oran yükseltmesi (sadece süreli cezalarda uygulanır)
@@ -789,8 +785,8 @@
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
             });
 
-            // Toplam ceza süresi - GERÇEK takvim farkıyla Y-A-G gösterimi (artık yıl güvenli)
-            const toplamYAG = calendarDiffYAG(D0, cumulative);
+            // Toplam ceza süresi - SABİT kanuni çevrimle (365 gün/yıl, 30 gün/ay) Y-A-G gösterimi
+            const toplamYAG = gunSayisindanYAG(totalRawDays);
             const cezaMetin = `${toplamYAG.y} Yıl ${toplamYAG.a} Ay ${toplamYAG.g} Gün`;
 
             document.getElementById('grandTotalCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
@@ -834,8 +830,7 @@
                     maddeRef = COMBINATION_CAP_MADDE.mukerrer_e;
                 }
 
-                const sttCapDate = addYAG(D0, ceilingYil, 0, 0);
-                const sttCapDays = diffDaysCalendar(D0, sttCapDate);
+                const sttCapDays = ceilingYil * 365; // Kanuni sabit çevrim
 
                 if (Math.ceil(totalYatarGun) > sttCapDays) {
                     effectiveYatarGun = sttCapDays;
@@ -845,8 +840,7 @@
                 // BTT (hakederek tahliye) tavanı: kanunda sadece 'e' kategorisi (birden fazla süreli ceza) için, kullanıcı onaylı pratik bilgiye göre uygulanır.
                 if (combinationCategory === 'e') {
                     const bttCeilingYil = hasMukerrer ? BTT_CAP_E_YIL.mukerrer : BTT_CAP_E_YIL.normal;
-                    const bttCapDate = addYAG(D0, bttCeilingYil, 0, 0);
-                    const bttCapDays = diffDaysCalendar(D0, bttCapDate);
+                    const bttCapDays = bttCeilingYil * 365; // Kanuni sabit çevrim
 
                     if (totalRawDays > bttCapDays) {
                         effectiveRawDays = bttCapDays;
