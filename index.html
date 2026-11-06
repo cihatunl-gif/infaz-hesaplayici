@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İNFAZCI - İnfaz ve Müddetname Hesaplama Sistemi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f4f6f8',
+                            100: '#e5e9ee',
+                            500: '#1e293b',
+                            600: '#0f172a',
+                            gold: '#d97706',
+                            goldHover: '#b45309',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #090d16; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .print-card { border: 1px solid #111 !important; box-shadow: none !important; background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col min-h-screen selection:bg-amber-500 selection:text-slate-950">
+
+    <!-- Header Navbar -->
+    <header class="no-print bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-br from-amber-500 to-amber-700 p-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-slate-950 font-extrabold">
+                    <i class="fa-solid fa-scale-balanced text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold tracking-wider text-white flex items-center gap-2">
+                        İNFAZCI <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">PRO v8</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Gelişmiş İnfaz Süreleri ve Müddetname Hesaplama Otomasyonu</p>
+                </div>
+            </div>
+
+            <!-- Header Quick Actions -->
+            <div class="flex items-center space-x-2">
+                <button onclick="resetAll()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-rotate-left"></i> Sıfırla
+                </button>
+                <button onclick="triggerJSONImport()" class="px-3 py-1.5 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-file-import"></i> Yükle
+                </button>
+                <input type="file" id="jsonInput" onchange="importJSON(event)" class="hidden" accept=".json">
+                <button onclick="window.print()" class="px-4 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Müddetname Raporu
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Input Controls (7 Columns - Alt Alta Sıralı) -->
+        <div class="lg:col-span-7 space-y-6 no-print">
+
+            <!-- Hükümlü Bilgileri -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-user-gear text-amber-500"></i> Hükümlü & Referans Kayıtları
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Hükümlü Adı Soyadı</label>
+                        <input type="text" id="hukumluAd" value="Ali Veli KONYA" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Kimlik / Sicil No</label>
+                        <input type="text" id="hukumluTc" value="11111111111" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">İlam / Dosya Ref No</label>
+                        <input type="text" id="dosyaRef" value="INF-2024/7821" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-amber-500"></i> Cezalar, Süresiz Hapis & Suç Maddesi (5275 s.K. m.99)
+                    </h2>
+                    <button onclick="addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Ceza Ekle
+                    </button>
+                </div>
+
+                <!-- Dynamic Penalty Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="text-slate-400 border-b border-slate-800 bg-slate-950">
+                                <th class="p-2">Ceza Süresi / Süresiz Hapis & Suç Maddesi</th>
+                                <th class="p-2">Suç Tarihi & Mükerrirlik Durumu</th>
+                                <th class="p-2 w-28 text-right">Gün / Oran</th>
+                                <th class="p-2 w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="penaltyTableBody">
+                            <!-- Dynamic Row Inserted via init -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 flex flex-col gap-1.5 text-xs font-semibold bg-slate-950 p-2.5 rounded border border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400">Birleştirilmiş Net Toplam Ceza (Ham):</span>
+                        <span id="grandTotalCeza" class="text-amber-400 font-mono text-sm">0 Yıl 0 Ay 0 Gün (0 Gün)</span>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-slate-800 pt-1.5">
+                        <span class="text-slate-400">Toplam Yatar Süre (Oranlı, Mahsup Hariç):</span>
+                        <span id="grandTotalYatar" class="text-sky-400 font-mono text-sm">0 Gün</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mahsup Bilgileri ve İnfaz Başlangıç Tarihi Birleştirilmiş Kutu -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl space-y-4">
+                <!-- İnfaz Başlangıç Tarihi -->
+                <div class="text-xs border-b border-slate-800 pb-3">
+                    <label class="block text-slate-400 mb-1 font-bold">İnfaz Başlangıç Tarihi (Cezaevine Giriş Tarihi)</label>
+                    <input type="date" id="infazBaslangic" class="w-full sm:w-1/2 bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-400">
+                </div>
+
+                <!-- Mahsup Aralıkları Tablosu (Boş Başlangıç) -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-amber-500"></i> Mahsup Aralıkları (Gözaltı / Tutukluluk / Denetimli Serbestlik)
+                        </h2>
+                        <button onclick="addMahsupRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Mahsup Ekle
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="text-slate-400 border-b border-slate-800 bg-slate-950">
+                                    <th class="p-2">Mahsup Türü</th>
+                                    <th class="p-2">Giriş / Başlangıç</th>
+                                    <th class="p-2">Çıkış / Bitiş</th>
+                                    <th class="p-2 w-20 text-right">Gün</th>
+                                    <th class="p-2 w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="mahsupTableBody">
+                                <!-- Boş Başlangıç -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 flex justify-between items-center text-xs font-semibold bg-slate-950 p-2.5 rounded border border-slate-800">
+                        <span class="text-slate-400">Toplam Mahsup Düşülecek Süre:</span>
+                        <span id="grandTotalMahsup" class="text-emerald-400 font-mono text-sm">0 Gün</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hesapla Butonu -->
+            <div class="pt-2">
+                <button onclick="calculateAll()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 uppercase tracking-wide">
+                    <i class="fa-solid fa-calculator text-base"></i> Hesapla ve Müddetname Oluştur
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Right Results Panel & Live Output (5 Columns) - Resmi Müddetname Raporu Şablonu -->
+        <div class="lg:col-span-5 space-y-5">
+
+            <!-- Resmi Müddetname Formu (Fotoğraftaki Şablona Tam Uyumlu) -->
+            <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs font-sans print-card relative space-y-4">
+
+                <!-- Başlık -->
+                <div class="text-center border-b-2 border-slate-900 pb-2">
+                    <h2 class="text-sm font-extrabold tracking-wide uppercase text-slate-900">MÜDDETNAME</h2>
+                    <h3 class="text-[11px] font-bold text-slate-700 uppercase">(Hükümlüler İçin)</h3>
+                </div>
+
+                <!-- 1. Bölüm: Başsavcılık Bilgileri -->
+                <table class="w-full border-collapse border border-slate-400 text-[11px]">
+                    <tbody>
+                        <tr class="border-b border-slate-300">
+                            <td class="py-1 px-2 font-bold bg-slate-100 w-1/2 border-r border-slate-300">Cumhuriyet Başsavcılığı</td>
+                            <td class="py-1 px-2">: <span id="repBassavcilik">-</span></td>
+                        </tr>
+                        <tr class="border-b border-slate-300">
+                            <td class="py-1 px-2 font-bold bg-slate-100 border-r border-slate-300">Cumhuriyet Başsavcılığı Dosya No</td>
+                            <td class="py-1 px-2">: <span id="repDosyaNo">-</span></td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-2 font-bold bg-slate-100 border-r border-slate-300">Cezaevi Hükümlü Defter Numarasi</td>
+                            <td class="py-1 px-2">: <span id="repDefterNo">-</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 2. Bölüm: Hükümlü Kimlik Bilgileri -->
+                <div>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">HÜKÜMLÜ KİMLİK BİLGİLERİ</h4>
+                    <table class="w-full border-collapse border border-slate-400 text-[11px]">
+                        <tbody>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">T.C. Kimlik No</td>
+                                <td class="py-1 px-2" id="repTc">-</td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">Adı ve Soyadı</td>
+                                <td class="py-1 px-2 font-semibold" id="repAd">-</td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Baba Adı</td>
+                                <td class="py-1 px-2" id="repBabaAd"></td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Ana Adı</td>
+                                <td class="py-1 px-2" id="repAnaAd"></td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Doğum Tarihi</td>
+                                <td class="py-1 px-2" id="repDogumTarihi"></td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Doğum Yeri</td>
+                                <td class="py-1 px-2" id="repDogumYeri"></td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Nüfusa Kayıtlı Olduğu İl ve İlçe</td>
+                                <td class="py-1 px-2" id="repNufusKayit"></td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">İkametgah Adresi</td>
+                                <td class="py-1 px-2" id="repIkamet"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3. Bölüm: Ceza Bilgileri -->
+                <div>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">CEZA BİLGİLERİ</h4>
+                    <table class="w-full border-collapse border border-slate-400 text-[11px]">
+                        <tbody>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HÜKMÜ VEREN MAHKEME</td>
+                                <td class="py-1 px-2" id="repMahkeme">-</td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MAHKEME ESAS NO</td>
+                                <td class="py-1 px-2" id="repEsasNo">-</td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KARAR NO</td>
+                                <td class="py-1 px-2" id="repKararNo">-</td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">CEZASI (TOPLAM)</td>
+                                <td class="py-1 px-2 font-bold text-slate-900" id="repCeza">-</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="p-0">
+                                    <table class="w-full border-collapse text-[10px]">
+                                        <thead>
+                                            <tr class="bg-slate-100 border-t border-b border-slate-400">
+                                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Ceza Süresi / Suç Maddesi</th>
+                                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
+                                                <th class="p-1.5 text-left font-bold">İnfaz Oranı</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="repCezaRows">
+                                            <!-- Dinamik olarak doldurulur -->
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4. Bölüm: Giriş ve Tahliye Tarihleri -->
+                <div>
+                    <table class="w-full border-collapse border border-slate-400 text-[11px]">
+                        <tbody>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">CEZAEVİNE GİRİŞ TARİHİ</td>
+                                <td class="py-1.5 px-2 font-semibold text-sky-800" id="repBaslangic">-</td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HAKEDEREK TAHLİYE TARİHİ (BTT)</td>
+                                <td class="py-1.5 px-2 font-bold text-red-700 font-mono text-sm" id="repBtt">-</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KOŞULLU SALIVERİLME TARİHİ (STT)</td>
+                                <td class="py-1.5 px-2 font-bold text-emerald-700 font-mono text-sm" id="repStt">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- İmza Bölümü -->
+                <div class="pt-8 flex justify-between items-end">
+                    <div class="text-[9px] text-slate-500">
+                        <p id="repTarihAlani">.../.../....</p>
+                    </div>
+                    <div class="text-center w-40">
+                        <p class="text-[10px] font-bold text-slate-800">Cumhuriyet Savcısı - Sicil</p>
+                        <div class="h-8"></div>
+                        <p class="text-[10px] font-bold text-slate-800">İmza</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Download Actions -->
+            <div class="no-print flex gap-2">
+                <button onclick="exportJSON()" class="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> JSON Dışa Aktar
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- JavaScript Execution Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('infazBaslangic').value = today;
+
+            // Açılışta 1 adet ceza satırı ekle
+            addPenaltyRow('sureli', 1, 0, 0, 'yaralama', today, 'yok');
+            calculateAll();
+        });
+
+        /* ======================================================
+           TARİH YARDIMCI FONKSİYONLARI
+           Not: Burada "yıl=365 gün, ay=30 gün" gibi sabit sayılarla
+           ÇARPMA YAPILMIYOR. Her ekleme gerçek takvim üzerinden
+           yapılıyor (JavaScript'in Date nesnesi artık yılları ve
+           farklı ay uzunluklarını otomatik doğru hesaplar).
+           ====================================================== */
+
+        // Bir tarihe gerçek takvimle Yıl-Ay-Gün ekler (artık yıl güvenli)
+        function addYAG(baseDate, y, a, g) {
+            const d = new Date(baseDate.getTime());
+            d.setFullYear(d.getFullYear() + y);
+            d.setMonth(d.getMonth() + a);
+            d.setDate(d.getDate() + g);
+            return d;
+        }
+
+        // İki tarih arasındaki gerçek gün sayısını hesaplar (saat farklarından bağımsız, UTC gece yarısı baz alınır)
+        function diffDaysCalendar(d1, d2) {
+            const u1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+            const u2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+            return Math.round((u2 - u1) / 86400000);
+        }
+
+        // Oranı okunabilir metne çevirir
+        function oranToText(oran) {
+            if (Math.abs(oran - 0.5) < 0.001) return "1/2 (%50)";
+            if (Math.abs(oran - (2 / 3)) < 0.001) return "2/3 (%66,6)";
+            if (Math.abs(oran - 0.75) < 0.001) return "3/4 (%75)";
+            if (Math.abs(oran - 1.0) < 0.001) return "4/4 (%100)";
+            return oran.toFixed(3);
+        }
+
+        // Ceza Süresi Tipine Göre Alanları Değiştirme Fonksiyonu
+        function toggleSuresiTip(selectEl) {
+            const tr = selectEl.closest('tr');
+            const yilInput = tr.querySelector('.penalty-yil');
+            const ayInput = tr.querySelector('.penalty-ay');
+            const gunInput = tr.querySelector('.penalty-gun');
+            const mukerrirSelect = tr.querySelector('.penalty-mukerrir');
+
+            const isSuresiz = (selectEl.value === 'muebbet' || selectEl.value === 'agirlastirilmis_muebbet');
+
+            [yilInput, ayInput, gunInput].forEach(el => {
+                el.value = 0;
+                el.disabled = isSuresiz;
+                el.classList.toggle('opacity-40', isSuresiz);
+            });
+
+            // Müebbet / Ağırlaştırılmış müebbette oran kanunen sabittir (3/4 ve 4/4),
+            // mükerrerlik bu oranları değiştirmez; bu yüzden seçimi de kilitliyoruz.
+            if (mukerrirSelect) {
+                mukerrirSelect.disabled = isSuresiz;
+                mukerrirSelect.classList.toggle('opacity-40', isSuresiz);
+                if (isSuresiz) mukerrirSelect.value = 'yok';
+            }
+        }
+
+        // Add Penalty Row
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucTip = 'yaralama', sucTarihi = '', mukerrir = 'yok') {
+            const tbody = document.getElementById('penaltyTableBody');
+            const today = new Date().toISOString().split('T')[0];
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-800/50 hover:bg-slate-800/30";
+            tr.innerHTML = `
+                <td class="p-2 space-y-1.5">
+                    <div class="flex items-center gap-1 mb-1">
+                        <select class="penalty-sure-tip w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-amber-400 font-bold" onchange="toggleSuresiTip(this)">
+                            <option value="sureli" ${sureTip === 'sureli' ? 'selected' : ''}>Süreli Hapis Cezası</option>
+                            <option value="muebbet" ${sureTip === 'muebbet' ? 'selected' : ''}>Süresiz: Müebbet Hapis</option>
+                            <option value="agirlastirilmis_muebbet" ${sureTip === 'agirlastirilmis_muebbet' ? 'selected' : ''}>Süresiz: Ağırlaştırılmış Müebbet</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <input type="number" min="0" value="${yil}" placeholder="Yıl" class="penalty-yil w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <span class="text-slate-500">Yıl</span>
+                        <input type="number" min="0" max="11" value="${ay}" placeholder="Ay" class="penalty-ay w-12 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <span class="text-slate-500">Ay</span>
+                        <input type="number" min="0" max="29" value="${gun}" placeholder="Gün" class="penalty-gun w-12 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <span class="text-slate-500">Gün</span>
+                    </div>
+                    <div>
+                        <select class="penalty-suc w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-slate-200 font-medium">
+                            <option value="yaralama" ${sucTip === 'yaralama' ? 'selected' : ''}>Yaralama (tck 86/1-2)</option>
+                            <option value="oldurme" ${sucTip === 'oldurme' ? 'selected' : ''}>Öldürme (tck 82/1)</option>
+                            <option value="cinsel" ${sucTip === 'cinsel' ? 'selected' : ''}>Cinsel Suçlar (tck 102 vb.)</option>
+                            <option value="uyusturucu" ${sucTip === 'uyusturucu' ? 'selected' : ''}>Uyuşturucu Ticareti (tck 188)</option>
+                            <option value="diger" ${sucTip === 'diger' ? 'selected' : ''}>Diğer Adli Suçlar (tck 141 vb.)</option>
+                        </select>
+                    </div>
+                </td>
+                <td class="p-2 space-y-1.5">
+                    <div class="flex items-center gap-1">
+                        <span class="text-[10px] text-slate-400 w-16">Suç Tarihi:</span>
+                        <input type="date" value="${sucTarihi || today}" class="penalty-suc-tarihi w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-sky-400 font-semibold">
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-[10px] text-slate-400 w-16">Mükerrir mi?</span>
+                        <select class="penalty-mukerrir w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-amber-400 font-semibold">
+                            <option value="yok" ${mukerrir === 'yok' ? 'selected' : ''}>Tekerrür Yok</option>
+                            <option value="1" ${mukerrir === '1' ? 'selected' : ''}>1. Tekerrür</option>
+                            <option value="2" ${mukerrir === '2' ? 'selected' : ''}>2. Tekerrür</option>
+                        </select>
+                    </div>
+                </td>
+                <td class="p-2 text-right font-mono font-bold text-slate-300">
+                    <div class="row-total">0</div>
+                    <div class="row-oran text-[9px] text-slate-500 font-normal normal-case mt-0.5 leading-tight"></div>
+                </td>
+                <td class="p-2 text-center">
+                    <button onclick="removePenaltyRow(this)" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            toggleSuresiTip(tr.querySelector('.penalty-sure-tip'));
+        }
+
+        function removePenaltyRow(btn) {
+            const rows = document.querySelectorAll('#penaltyTableBody tr');
+            if (rows.length > 1) {
+                btn.closest('tr').remove();
+                calculateAll();
+            } else {
+                alert("En az bir ceza satırı kalmalıdır.");
+            }
+        }
+
+        // Add Mahsup Rows (Boş Başlangıç)
+        function addMahsupRow(tur = 'tutukluluk', start = '', end = '') {
+            const tbody = document.getElementById('mahsupTableBody');
+            const tr = document.createElement('tr');
+            tr.className = "border-b border-slate-800/50 hover:bg-slate-800/30";
+            tr.innerHTML = `
+                <td class="p-2 w-36">
+                    <select class="mahsup-tur w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-sky-300 font-medium">
+                        <option value="gozalti" ${tur === 'gozalti' ? 'selected' : ''}>Gözaltı</option>
+                        <option value="tutukluluk" ${tur === 'tutukluluk' ? 'selected' : ''}>Tutukluluk</option>
+                        <option value="acik_cik" ${tur === 'acik_cik' ? 'selected' : ''}>Açık Çık</option>
+                        <option value="ds" ${tur === 'ds' ? 'selected' : ''}>Denetimli Serbestlik (STT öncesi)</option>
+                    </select>
+                </td>
+                <td class="p-2"><input type="date" value="${start}" class="mahsup-start w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none"></td>
+                <td class="p-2"><input type="date" value="${end}" class="mahsup-end w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none"></td>
+                <td class="p-2 text-right font-mono font-bold text-emerald-400 mahsup-row-total">0</td>
+                <td class="p-2 text-center"><button onclick="removeMahsupRow(this)" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function removeMahsupRow(btn) {
+            btn.closest('tr').remove();
+            calculateAll();
+        }
+
+        // Date Helper
+        function formatDate(dateObj) {
+            if (!dateObj || isNaN(dateObj.getTime())) return "--.--.----";
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const year = dateObj.getFullYear();
+            return `${day}.${month}.${year}`;
+        }
+
+        // Suç Türü Metin Karşılığı Helper
+        function getSucrefText(val) {
+            switch (val) {
+                case 'yaralama': return 'Yaralama (TCK 86)';
+                case 'oldurme': return 'Öldürme (TCK 82)';
+                case 'cinsel': return 'Cinsel Suçlar (TCK 102)';
+                case 'uyusturucu': return 'Uyuşturucu Ticareti (TCK 188)';
+                default: return 'Diğer Adli Suçlar';
+            }
+        }
+
+        /* ======================================================
+           HESAPLAMA MOTORU (v8)
+
+           Kurallar (kullanıcı onayıyla):
+           1) Her cezanın kendi infaz oranı kendi gün sayısına uygulanır,
+              sonra hepsi toplanır (tek bir "en yüksek oran"ı tüm
+              toplama uygulamak YERİNE).
+           2) Mükerrerlik oranı YÜKSELTİR:
+                - Taban 1/2 ise  -> 1. mükerrerlik  -> 2/3
+                - Taban 2/3 ise  -> 1. mükerrerlik  -> 3/4
+                - 2. mükerrerlik -> (taban ne olursa olsun) 3/4
+              Müebbet/Ağırlaştırılmış müebbette oran kanunen sabit
+              olduğu için mükerrerlik bunları etkilemez.
+           3) Denetimli serbestlik (STT öncesi ayrılan süre) bir
+              MAHSUP kalemidir, cezadan düşülür.
+           4) Açık cezaevine ayrılma / DS'ye ayrılma tarihleri bu
+              sürümde HENÜZ yok (birlikte ekleyeceğiz).
+           5) Her ceza satırı resmi raporda ayrı ayrı gösterilir.
+
+           Artık yıl / farklı ay uzunlukları: Sabit "365 gün = 1 yıl,
+           30 gün = 1 ay" ÇARPIMI YERİNE, her ceza süresi infaz
+           başlangıcından (veya kendinden önceki cezanın bittiği
+           yerden) itibaren GERÇEK TAKVİMLE eklenir, sonra aradaki
+           gerçek gün sayısı ölçülür. Böylece artık yıllar otomatik
+           ve doğru hesaba girer.
+           ====================================================== */
+        function calculateAll() {
+            const baslangicStr = document.getElementById('infazBaslangic').value;
+            const D0 = baslangicStr ? new Date(baslangicStr) : new Date();
+
+            let cumulative = new Date(D0.getTime());
+            let totalRawDays = 0;
+            let totalYatarGun = 0;
+            const rowReportData = [];
+
+            const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
+
+            penaltyRows.forEach((row) => {
+                const sureTip = row.querySelector('.penalty-sure-tip').value;
+                const sucTip = row.querySelector('.penalty-suc').value;
+                const mukerrir = row.querySelector('.penalty-mukerrir').value;
+                const sTarih = row.querySelector('.penalty-suc-tarihi').value;
+
+                let nextDate;
+                let baseOran = 0.5;
+                let isSuresiz = false;
+                let suresizText = "";
+                let sureMetinYAG = "";
+
+                if (sureTip === 'muebbet') {
+                    nextDate = addYAG(cumulative, 30, 0, 0); // Kanuni baz: 30 yıl
+                    baseOran = 0.75; // 3/4
+                    isSuresiz = true;
+                    suresizText = "Müebbet Hapis";
+                } else if (sureTip === 'agirlastirilmis_muebbet') {
+                    nextDate = addYAG(cumulative, 36, 0, 0); // Kanuni baz: 36 yıl
+                    baseOran = 1.0; // 4/4
+                    isSuresiz = true;
+                    suresizText = "Ağırlaştırılmış Müebbet Hapis";
+                } else {
+                    const y = parseInt(row.querySelector('.penalty-yil').value) || 0;
+                    const a = parseInt(row.querySelector('.penalty-ay').value) || 0;
+                    const g = parseInt(row.querySelector('.penalty-gun').value) || 0;
+                    nextDate = addYAG(cumulative, y, a, g);
+                    sureMetinYAG = `${y} Yıl ${a} Ay ${g} Gün`;
+
+                    baseOran = (sucTip === 'oldurme' || sucTip === 'cinsel' || sucTip === 'uyusturucu') ? (2 / 3) : 0.5;
+                }
+
+                // Bu cezanın GERÇEK TAKVİMDEKİ gün karşılığı (artık yıl dahil, otomatik doğru)
+                const rowDays = diffDaysCalendar(cumulative, nextDate);
+
+                // Mükerrerlik oran yükseltmesi (sadece süreli cezalarda uygulanır)
+                let rowOran = baseOran;
+                if (!isSuresiz) {
+                    if (mukerrir === '1') {
+                        if (Math.abs(baseOran - 0.5) < 0.001) rowOran = 2 / 3;
+                        else if (Math.abs(baseOran - (2 / 3)) < 0.001) rowOran = 0.75;
+                    } else if (mukerrir === '2') {
+                        rowOran = 0.75;
+                    }
+                }
+
+                const rowYatarGun = rowDays * rowOran;
+
+                totalRawDays += rowDays;
+                totalYatarGun += rowYatarGun;
+
+                row.querySelector('.row-total').innerText = `${rowDays} Gün`;
+                const oranLabel = row.querySelector('.row-oran');
+                if (oranLabel) oranLabel.innerText = `Oran: ${oranToText(rowOran)} • Yatar: ${Math.ceil(rowYatarGun)}g`;
+
+                rowReportData.push({
+                    metin: isSuresiz ? suresizText : sureMetinYAG,
+                    sucMetni: getSucrefText(sucTip),
+                    tarih: sTarih ? formatDate(new Date(sTarih)) : "-",
+                    oranMetni: oranToText(rowOran)
+                });
+
+                cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
+            });
+
+            // Toplam ceza süresi - sadece okunabilir etiket amaçlı yaklaşık Y-A-G gösterimi
+            const resYil = Math.floor(totalRawDays / 365);
+            const remDays = totalRawDays % 365;
+            const resAy = Math.floor(remDays / 30);
+            const resGun = remDays % 30;
+            const cezaMetin = `${resYil} Yıl ${resAy} Ay ${resGun} Gün`;
+
+            document.getElementById('grandTotalCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
+            document.getElementById('grandTotalYatar').innerText = `${Math.ceil(totalYatarGun)} Gün`;
+
+            // 2. Mahsup Hesabı (Gözaltı / Tutukluluk / Açık Çık / Denetimli Serbestlik)
+            let grandTotalMahsupDays = 0;
+            const mahsupRows = document.querySelectorAll('#mahsupTableBody tr');
+
+            mahsupRows.forEach(row => {
+                const sVal = row.querySelector('.mahsup-start').value;
+                const eVal = row.querySelector('.mahsup-end').value;
+
+                if (sVal && eVal) {
+                    const sDate = new Date(sVal);
+                    const eDate = new Date(eVal);
+                    const diffDays = Math.max(0, diffDaysCalendar(sDate, eDate) + 1);
+                    row.querySelector('.mahsup-row-total').innerText = diffDays;
+                    grandTotalMahsupDays += diffDays;
+                } else {
+                    row.querySelector('.mahsup-row-total').innerText = 0;
+                }
+            });
+
+            document.getElementById('grandTotalMahsup').innerText = `${grandTotalMahsupDays} Gün`;
+
+            // Nihai gün sayıları
+            const bttDays = Math.max(0, totalRawDays - grandTotalMahsupDays);
+            const sttDays = Math.max(0, Math.ceil(totalYatarGun) - grandTotalMahsupDays);
+
+            // BTT / STT - infaz başlangıcına gerçek gün sayısı eklenerek bulunur
+            // (JS'in gün ekleme işlemi her zaman doğru takvim/artık yıl geçişi yapar)
+            const bttDate = new Date(D0.getTime());
+            bttDate.setDate(bttDate.getDate() + bttDays);
+            const sttDate = new Date(D0.getTime());
+            sttDate.setDate(sttDate.getDate() + sttDays);
+
+            // Resmi rapor alanları
+            document.getElementById('repAd').innerText = document.getElementById('hukumluAd').value || "-";
+            document.getElementById('repTc').innerText = document.getElementById('hukumluTc').value || "-";
+            document.getElementById('repDosyaNo').innerText = document.getElementById('dosyaRef').value || "-";
+            document.getElementById('repCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
+
+            // Her ceza satırını raporda ayrı ayrı göster
+            const repRowsBody = document.getElementById('repCezaRows');
+            if (repRowsBody) {
+                repRowsBody.innerHTML = rowReportData.map(r => `
+                    <tr class="border-b border-slate-300">
+                        <td class="p-1.5 border-r border-slate-300">${r.metin} — ${r.sucMetni}</td>
+                        <td class="p-1.5 border-r border-slate-300 text-sky-800">${r.tarih}</td>
+                        <td class="p-1.5 font-semibold text-amber-700">${r.oranMetni}</td>
+                    </tr>
+                `).join('');
+            }
+
+            document.getElementById('repBaslangic').innerText = formatDate(D0);
+            document.getElementById('repBtt').innerText = formatDate(bttDate);
+            document.getElementById('repStt').innerText = formatDate(sttDate);
+
+            const bugunFormatted = formatDate(new Date());
+            document.getElementById('repTarihAlani').innerText = bugunFormatted;
+        }
+
+        // Reset All Data
+        function resetAll() {
+            document.getElementById('hukumluAd').value = 'Ali Veli KONYA';
+            document.getElementById('hukumluTc').value = '11111111111';
+            document.getElementById('dosyaRef').value = 'INF-2024/7821';
+            document.getElementById('penaltyTableBody').innerHTML = '';
+            document.getElementById('mahsupTableBody').innerHTML = '';
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('infazBaslangic').value = today;
+            addPenaltyRow('sureli', 0, 0, 0, 'yaralama', today, 'yok');
+            calculateAll();
+        }
+
+        /* ======================================================
+           JSON DIŞA / İÇE AKTARMA
+           (Önceki sürümde "Yükle" sadece ad/TC/dosya no'yu geri
+           yüklüyor, eklenen ceza ve mahsup satırlarını KAYBEDİYORDU.
+           Şimdi tüm veri eksiksiz kaydedilip geri yükleniyor.)
+           ====================================================== */
+        function exportJSON() {
+            const penalties = [];
+            document.querySelectorAll('#penaltyTableBody tr').forEach(row => {
+                penalties.push({
+                    sureTip: row.querySelector('.penalty-sure-tip').value,
+                    yil: parseInt(row.querySelector('.penalty-yil').value) || 0,
+                    ay: parseInt(row.querySelector('.penalty-ay').value) || 0,
+                    gun: parseInt(row.querySelector('.penalty-gun').value) || 0,
+                    sucTip: row.querySelector('.penalty-suc').value,
+                    sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
+                    mukerrir: row.querySelector('.penalty-mukerrir').value
+                });
+            });
+
+            const mahsups = [];
+            document.querySelectorAll('#mahsupTableBody tr').forEach(row => {
+                mahsups.push({
+                    tur: row.querySelector('.mahsup-tur').value,
+                    start: row.querySelector('.mahsup-start').value,
+                    end: row.querySelector('.mahsup-end').value
+                });
+            });
+
+            const data = {
+                hukumluAd: document.getElementById('hukumluAd').value,
+                hukumluTc: document.getElementById('hukumluTc').value,
+                dosyaRef: document.getElementById('dosyaRef').value,
+                infazBaslangic: document.getElementById('infazBaslangic').value,
+                penalties: penalties,
+                mahsups: mahsups,
+                timestamp: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `MUDDETNAME_${(data.hukumluAd || 'kayit').replace(/\s+/g, '_')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerJSONImport() {
+            document.getElementById('jsonInput').click();
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    if (data.hukumluAd !== undefined) document.getElementById('hukumluAd').value = data.hukumluAd;
+                    if (data.hukumluTc !== undefined) document.getElementById('hukumluTc').value = data.hukumluTc;
+                    if (data.dosyaRef !== undefined) document.getElementById('dosyaRef').value = data.dosyaRef;
+                    if (data.infazBaslangic) document.getElementById('infazBaslangic').value = data.infazBaslangic;
+
+                    if (Array.isArray(data.penalties) && data.penalties.length > 0) {
+                        document.getElementById('penaltyTableBody').innerHTML = '';
+                        data.penalties.forEach(p => {
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucTip, p.sucTarihi, p.mukerrir);
+                        });
+                    }
+
+                    if (Array.isArray(data.mahsups)) {
+                        document.getElementById('mahsupTableBody').innerHTML = '';
+                        data.mahsups.forEach(m => {
+                            addMahsupRow(m.tur, m.start, m.end);
+                        });
+                    }
+
+                    calculateAll();
+                } catch (err) {
+                    alert('Geçersiz JSON Verisi!');
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
