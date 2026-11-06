@@ -451,6 +451,25 @@
             return oran.toFixed(3);
         }
 
+        // İki tarih arasındaki GERÇEK takvim farkını Yıl-Ay-Gün olarak verir
+        // (sabit "365 gün = 1 yıl" bölmesi YERİNE; artık yıl içeren aralıklarda
+        // bile doğru sonuç verir - yaş hesaplama mantığıyla aynıdır)
+        function calendarDiffYAG(d1, d2) {
+            let y = d2.getFullYear() - d1.getFullYear();
+            let a = d2.getMonth() - d1.getMonth();
+            let g = d2.getDate() - d1.getDate();
+            if (g < 0) {
+                a--;
+                const oncekiAyinSonGunu = new Date(d2.getFullYear(), d2.getMonth(), 0).getDate();
+                g += oncekiAyinSonGunu;
+            }
+            if (a < 0) {
+                y--;
+                a += 12;
+            }
+            return { y, a, g };
+        }
+
         // Ceza süresini "0" olan birimleri göstermeden, alt alta (satır satır) yazar
         function yagMetinVertical(y, a, g) {
             const parts = [];
@@ -770,12 +789,9 @@
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
             });
 
-            // Toplam ceza süresi - sadece okunabilir etiket amaçlı yaklaşık Y-A-G gösterimi
-            const resYil = Math.floor(totalRawDays / 365);
-            const remDays = totalRawDays % 365;
-            const resAy = Math.floor(remDays / 30);
-            const resGun = remDays % 30;
-            const cezaMetin = `${resYil} Yıl ${resAy} Ay ${resGun} Gün`;
+            // Toplam ceza süresi - GERÇEK takvim farkıyla Y-A-G gösterimi (artık yıl güvenli)
+            const toplamYAG = calendarDiffYAG(D0, cumulative);
+            const cezaMetin = `${toplamYAG.y} Yıl ${toplamYAG.a} Ay ${toplamYAG.g} Gün`;
 
             document.getElementById('grandTotalCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
             document.getElementById('grandTotalYatar').innerText = `${Math.ceil(totalYatarGun)} Gün`;
