@@ -773,7 +773,7 @@
 
                 row.querySelector('.row-total').innerText = `${rowDays} Gün`;
                 const oranLabel = row.querySelector('.row-oran');
-                if (oranLabel) oranLabel.innerText = `Oran: ${oranToText(rowOran)} • Yatar: ${Math.ceil(rowYatarGun)}g`;
+                if (oranLabel) oranLabel.innerText = `Oran: ${oranToText(rowOran)} • Yatar: ${Math.floor(rowYatarGun)}g`;
 
                 rowReportData.push({
                     metin: isSuresiz ? suresizText : sureMetinYAG,
@@ -790,7 +790,8 @@
             const cezaMetin = `${toplamYAG.y} Yıl ${toplamYAG.a} Ay ${toplamYAG.g} Gün`;
 
             document.getElementById('grandTotalCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
-            document.getElementById('grandTotalYatar').innerText = `${Math.ceil(totalYatarGun)} Gün`;
+            // Not: küsüratlı gün, kanunda açık hüküm olmadığı için HÜKÜMLÜ LEHİNE aşağı yuvarlanır (Math.floor)
+            document.getElementById('grandTotalYatar').innerText = `${Math.floor(totalYatarGun)} Gün`;
 
             // 2. Mahsup Hesabı (Gözaltı / Tutukluluk / Açık Çık / Denetimli Serbestlik)
             let grandTotalMahsupDays = 0;
@@ -832,7 +833,7 @@
 
                 const sttCapDays = ceilingYil * 365; // Kanuni sabit çevrim
 
-                if (Math.ceil(totalYatarGun) > sttCapDays) {
+                if (Math.floor(totalYatarGun) > sttCapDays) {
                     effectiveYatarGun = sttCapDays;
                     capWarningText += `Hükümlünün koşullu salıverilme için infaz kurumunda geçirmesi gereken süre, hesaplanan tutar bu sınırı aştığından, 5275 sayılı Kanun ${maddeRef} maddesi gereğince en fazla ${ceilingYil} yıl olarak hesaplanmıştır. `;
                 }
@@ -851,7 +852,8 @@
 
             // Nihai gün sayıları
             const bttDays = Math.max(0, effectiveRawDays - grandTotalMahsupDays);
-            const sttDays = Math.max(0, Math.ceil(effectiveYatarGun) - grandTotalMahsupDays);
+            // Küsüratlı yatar gün, kanunda açık hüküm olmadığı için HÜKÜMLÜ LEHİNE aşağı yuvarlanır (Math.floor)
+            const sttDays = Math.max(0, Math.floor(effectiveYatarGun) - grandTotalMahsupDays);
 
             // BTT / STT - infaz başlangıcına gerçek gün sayısı eklenerek bulunur
             // (JS'in gün ekleme işlemi her zaman doğru takvim/artık yıl geçişi yapar)
