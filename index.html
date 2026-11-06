@@ -58,7 +58,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-extrabold tracking-wider text-white flex items-center gap-2">
-                        İNFAZCI <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">PRO v8</span>
+                        İNFAZCI <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">PRO v9</span>
                     </h1>
                     <p class="text-xs text-slate-400">Gelişmiş İnfaz Süreleri ve Müddetname Hesaplama Otomasyonu</p>
                 </div>
@@ -186,6 +186,20 @@
                         <span id="grandTotalMahsup" class="text-emerald-400 font-mono text-sm">0 Gün</span>
                     </div>
                 </div>
+            </div>
+
+            <!-- Kanuni Üst Sınır Uyarısı (STT/BTT 28/32/42/48 yıl vb. - m.107/3, m.107/4, m.108/1-c) -->
+            <div id="capWarningBanner" class="hidden bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs rounded-xl p-3 flex items-start gap-2">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                <span></span>
+            </div>
+
+            <!-- Açıklama (Manuel Not) -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
+                </h2>
+                <textarea id="aciklamaManuel" rows="2" placeholder="İleride eklenecek ek açıklamalar buraya yazılabilir..." class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
             </div>
 
             <!-- Hesapla Butonu -->
@@ -329,6 +343,36 @@
                     </table>
                 </div>
 
+                <!-- 5. Bölüm: Mahsup Bilgileri -->
+                <div>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">MAHSUP BİLGİLERİ</h4>
+                    <table class="w-full border-collapse border border-slate-400 text-[10px]">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-400">
+                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Mahsup Türü</th>
+                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Başlangıç</th>
+                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Bitiş</th>
+                                <th class="p-1.5 text-left font-bold">Gün</th>
+                            </tr>
+                        </thead>
+                        <tbody id="repMahsupRows">
+                            <!-- Dinamik olarak doldurulur -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="border-t border-slate-400 bg-slate-50">
+                                <td colspan="3" class="p-1.5 text-right font-bold border-r border-slate-300">TOPLAM MAHSUP</td>
+                                <td class="p-1.5 font-bold text-emerald-700" id="repMahsupToplam">0 Gün</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- 6. Bölüm: Açıklama -->
+                <div>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">AÇIKLAMA</h4>
+                    <div class="border border-slate-400 p-2 text-[10.5px] whitespace-pre-line min-h-[2.5rem]" id="repAciklama">—</div>
+                </div>
+
                 <!-- İmza Bölümü -->
                 <div class="pt-8 flex justify-between items-end">
                     <div class="text-[9px] text-slate-500">
@@ -361,7 +405,7 @@
             document.getElementById('infazBaslangic').value = today;
 
             // Açılışta 1 adet ceza satırı ekle
-            addPenaltyRow('sureli', 1, 0, 0, 'yaralama', today, 'yok');
+            addPenaltyRow('sureli', 1, 0, 0, 'yaralama', today, 'yok', false);
             calculateAll();
         });
 
@@ -389,7 +433,7 @@
             return Math.round((u2 - u1) / 86400000);
         }
 
-        // Oranı okunabilir metne çevirir
+        // Oranı okunabilir metne çevirir (ekrandaki küçük etiket için - % dahil)
         function oranToText(oran) {
             if (Math.abs(oran - 0.5) < 0.001) return "1/2 (%50)";
             if (Math.abs(oran - (2 / 3)) < 0.001) return "2/3 (%66,6)";
@@ -397,6 +441,70 @@
             if (Math.abs(oran - 1.0) < 0.001) return "4/4 (%100)";
             return oran.toFixed(3);
         }
+
+        // Resmi müddetname raporunda kullanılan oran metni (% işareti YOK)
+        function oranToTextPlain(oran) {
+            if (Math.abs(oran - 0.5) < 0.001) return "1/2";
+            if (Math.abs(oran - (2 / 3)) < 0.001) return "2/3";
+            if (Math.abs(oran - 0.75) < 0.001) return "3/4";
+            if (Math.abs(oran - 1.0) < 0.001) return "4/4";
+            return oran.toFixed(3);
+        }
+
+        // Ceza süresini "0" olan birimleri göstermeden, alt alta (satır satır) yazar
+        function yagMetinVertical(y, a, g) {
+            const parts = [];
+            if (y > 0) parts.push(`${y} Yıl`);
+            if (a > 0) parts.push(`${a} Ay`);
+            if (g > 0) parts.push(`${g} Gün`);
+            if (parts.length === 0) return "0 Gün";
+            return parts.join('<br>');
+        }
+
+        /* ======================================================
+           KOMBİNASYON (İÇTİMA) ÜST SINIRLARI
+           5275 sayılı Kanun m.107/3, m.107/4 ve m.108/1-c
+
+           Birden fazla ceza birleştiğinde, koşullu salıverilme
+           (STT) için infaz kurumunda geçirilmesi gereken süre
+           kanunda sabit bir TAVANLA sınırlıdır. Bu tavan, hangi
+           ceza türlerinin birleştiğine göre değişir:
+             a) 2+ ağırlaştırılmış müebbet (veya AM+müebbet karışık)
+             b) 2+ müebbet
+             c) 1 ağırlaştırılmış müebbet + süreli
+             d) 1 müebbet + süreli
+             e) 2+ süreli hapis (müebbet/AM yok)  <-- kullanıcı onayı
+           Örgütlü suç (m.107/4) durumunda tavanlar daha yüksektir.
+           Mükerrerlik (m.108/1-c) SADECE 'e' kategorisinde farklı
+           bir tavana (28->32) karşılık gelir; diğer kategoriler
+           için kanunda mükerrerliğe özel bir kombinasyon tavanı
+           verilmemiştir.
+
+           NOT: BTT (hakederek tahliye) için kanunda AÇIK bir tavan
+           sadece verilmemiştir; 42/48 yıllık BTT tavanı SADECE 'e'
+           kategorisi için, kullanıcının onayladığı pratik bilgiye
+           dayanır ve sadece o kategoride uygulanır.
+           ====================================================== */
+        function getCombinationCategory(amCount, mCount, sCount) {
+            if (amCount >= 2 || (amCount >= 1 && mCount >= 1)) return 'a';
+            if (mCount >= 2) return 'b';
+            if (amCount >= 1 && sCount >= 1) return 'c';
+            if (mCount >= 1 && sCount >= 1) return 'd';
+            if (sCount >= 2) return 'e';
+            return null; // Tek ceza - kombinasyon tavanı uygulanmaz
+        }
+
+        const COMBINATION_CAP_YIL = {
+            normal:  { a: 36, b: 30, c: 36, d: 30, e: 28 },
+            orgutlu: { a: 40, b: 34, c: 40, d: 34, e: 32 }
+        };
+        const COMBINATION_CAP_MADDE = {
+            normal:  { a: "m.107/3-a", b: "m.107/3-b", c: "m.107/3-c", d: "m.107/3-d", e: "m.107/3-e" },
+            orgutlu: { a: "m.107/4-a", b: "m.107/4-b", c: "m.107/4-c", d: "m.107/4-d", e: "m.107/4-e" },
+            mukerrer_e: "m.108/1-c"
+        };
+        const COMBINATION_CAP_MUKERRER_E_YIL = 32;
+        const BTT_CAP_E_YIL = { normal: 42, mukerrer: 48 };
 
         // Ceza Süresi Tipine Göre Alanları Değiştirme Fonksiyonu
         function toggleSuresiTip(selectEl) {
@@ -424,7 +532,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucTip = 'yaralama', sucTarihi = '', mukerrir = 'yok') {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucTip = 'yaralama', sucTarihi = '', mukerrir = 'yok', orgutlu = false) {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -469,6 +577,10 @@
                             <option value="2" ${mukerrir === '2' ? 'selected' : ''}>2. Tekerrür</option>
                         </select>
                     </div>
+                    <label class="flex items-center gap-1.5 text-[10px] text-slate-400 pt-0.5">
+                        <input type="checkbox" class="penalty-orgutlu accent-amber-500" ${orgutlu ? 'checked' : ''}>
+                        Örgütlü Suç (5275 s.K. m.107/4)
+                    </label>
                 </td>
                 <td class="p-2 text-right font-mono font-bold text-slate-300">
                     <div class="row-total">0</div>
@@ -574,6 +686,10 @@
             let totalYatarGun = 0;
             const rowReportData = [];
 
+            // Kombinasyon (içtima) tavanı için sayaçlar
+            let amCount = 0, mCount = 0, sCount = 0;
+            let hasMukerrer = false, hasOrgutlu = false;
+
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
             penaltyRows.forEach((row) => {
@@ -581,6 +697,11 @@
                 const sucTip = row.querySelector('.penalty-suc').value;
                 const mukerrir = row.querySelector('.penalty-mukerrir').value;
                 const sTarih = row.querySelector('.penalty-suc-tarihi').value;
+                const orgutluEl = row.querySelector('.penalty-orgutlu');
+                const orgutlu = orgutluEl ? orgutluEl.checked : false;
+
+                if (mukerrir !== 'yok') hasMukerrer = true;
+                if (orgutlu) hasOrgutlu = true;
 
                 let nextDate;
                 let baseOran = 0.5;
@@ -589,23 +710,31 @@
                 let sureMetinYAG = "";
 
                 if (sureTip === 'muebbet') {
+                    mCount++;
                     nextDate = addYAG(cumulative, 30, 0, 0); // Kanuni baz: 30 yıl
-                    baseOran = 0.75; // 3/4
+                    // Örgütlü suç (m.107/4): müebbette 30 yılın TAMAMI yatar (oran 4/4).
+                    // Örgütlü değilse mevcut onaylanmış oran (3/4) aynen kalır.
+                    baseOran = orgutlu ? 1.0 : 0.75;
                     isSuresiz = true;
                     suresizText = "Müebbet Hapis";
                 } else if (sureTip === 'agirlastirilmis_muebbet') {
+                    amCount++;
                     nextDate = addYAG(cumulative, 36, 0, 0); // Kanuni baz: 36 yıl
-                    baseOran = 1.0; // 4/4
+                    baseOran = 1.0; // 4/4 (örgütlü olsun olmasın mevcut onaylanmış kural)
                     isSuresiz = true;
                     suresizText = "Ağırlaştırılmış Müebbet Hapis";
                 } else {
+                    sCount++;
                     const y = parseInt(row.querySelector('.penalty-yil').value) || 0;
                     const a = parseInt(row.querySelector('.penalty-ay').value) || 0;
                     const g = parseInt(row.querySelector('.penalty-gun').value) || 0;
                     nextDate = addYAG(cumulative, y, a, g);
-                    sureMetinYAG = `${y} Yıl ${a} Ay ${g} Gün`;
+                    sureMetinYAG = yagMetinVertical(y, a, g);
 
                     baseOran = (sucTip === 'oldurme' || sucTip === 'cinsel' || sucTip === 'uyusturucu') ? (2 / 3) : 0.5;
+                    // Örgütlü suç (m.107/4): süreli cezada oran en az 2/3 olur;
+                    // zaten tabi olduğu oran bundan fazlaysa o oran uygulanır.
+                    if (orgutlu) baseOran = Math.max(baseOran, 2 / 3);
                 }
 
                 // Bu cezanın GERÇEK TAKVİMDEKİ gün karşılığı (artık yıl dahil, otomatik doğru)
@@ -635,7 +764,7 @@
                     metin: isSuresiz ? suresizText : sureMetinYAG,
                     sucMetni: getSucrefText(sucTip),
                     tarih: sTarih ? formatDate(new Date(sTarih)) : "-",
-                    oranMetni: oranToText(rowOran)
+                    oranMetni: oranToTextPlain(rowOran)
                 });
 
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
@@ -672,9 +801,47 @@
 
             document.getElementById('grandTotalMahsup').innerText = `${grandTotalMahsupDays} Gün`;
 
+            // --- KOMBİNASYON (İÇTİMA) ÜST SINIRI UYGULAMASI (m.107/3, m.107/4, m.108/1-c) ---
+            let effectiveRawDays = totalRawDays;
+            let effectiveYatarGun = totalYatarGun;
+            let capWarningText = "";
+
+            const combinationCategory = getCombinationCategory(amCount, mCount, sCount);
+            if (combinationCategory) {
+                const tier = hasOrgutlu ? 'orgutlu' : 'normal';
+                let ceilingYil = COMBINATION_CAP_YIL[tier][combinationCategory];
+                let maddeRef = COMBINATION_CAP_MADDE[tier][combinationCategory];
+
+                // Mükerrerlik sadece 'e' kategorisinde farklı bir tavana karşılık gelir (zaten örgütlü tablosundaki 32 ile aynı değerdir)
+                if (combinationCategory === 'e' && hasMukerrer) {
+                    ceilingYil = COMBINATION_CAP_MUKERRER_E_YIL;
+                    maddeRef = COMBINATION_CAP_MADDE.mukerrer_e;
+                }
+
+                const sttCapDate = addYAG(D0, ceilingYil, 0, 0);
+                const sttCapDays = diffDaysCalendar(D0, sttCapDate);
+
+                if (Math.ceil(totalYatarGun) > sttCapDays) {
+                    effectiveYatarGun = sttCapDays;
+                    capWarningText += `Hükümlünün koşullu salıverilme için infaz kurumunda geçirmesi gereken süre, hesaplanan tutar bu sınırı aştığından, 5275 sayılı Kanun ${maddeRef} maddesi gereğince en fazla ${ceilingYil} yıl olarak hesaplanmıştır. `;
+                }
+
+                // BTT (hakederek tahliye) tavanı: kanunda sadece 'e' kategorisi (birden fazla süreli ceza) için, kullanıcı onaylı pratik bilgiye göre uygulanır.
+                if (combinationCategory === 'e') {
+                    const bttCeilingYil = hasMukerrer ? BTT_CAP_E_YIL.mukerrer : BTT_CAP_E_YIL.normal;
+                    const bttCapDate = addYAG(D0, bttCeilingYil, 0, 0);
+                    const bttCapDays = diffDaysCalendar(D0, bttCapDate);
+
+                    if (totalRawDays > bttCapDays) {
+                        effectiveRawDays = bttCapDays;
+                        capWarningText += `Hakederek tahliye (BTT) süresi de aynı madde çerçevesinde en fazla ${bttCeilingYil} yıl ile sınırlı tutulmuştur.`;
+                    }
+                }
+            }
+
             // Nihai gün sayıları
-            const bttDays = Math.max(0, totalRawDays - grandTotalMahsupDays);
-            const sttDays = Math.max(0, Math.ceil(totalYatarGun) - grandTotalMahsupDays);
+            const bttDays = Math.max(0, effectiveRawDays - grandTotalMahsupDays);
+            const sttDays = Math.max(0, Math.ceil(effectiveYatarGun) - grandTotalMahsupDays);
 
             // BTT / STT - infaz başlangıcına gerçek gün sayısı eklenerek bulunur
             // (JS'in gün ekleme işlemi her zaman doğru takvim/artık yıl geçişi yapar)
@@ -694,7 +861,7 @@
             if (repRowsBody) {
                 repRowsBody.innerHTML = rowReportData.map(r => `
                     <tr class="border-b border-slate-300">
-                        <td class="p-1.5 border-r border-slate-300">${r.metin} — ${r.sucMetni}</td>
+                        <td class="p-1.5 border-r border-slate-300">${r.metin}<br><span class="text-[9px] text-slate-500">${r.sucMetni}</span></td>
                         <td class="p-1.5 border-r border-slate-300 text-sky-800">${r.tarih}</td>
                         <td class="p-1.5 font-semibold text-amber-700">${r.oranMetni}</td>
                     </tr>
@@ -707,6 +874,52 @@
 
             const bugunFormatted = formatDate(new Date());
             document.getElementById('repTarihAlani').innerText = bugunFormatted;
+
+            // Raporda Mahsup Bilgileri Tablosu
+            const repMahsupBody = document.getElementById('repMahsupRows');
+            if (repMahsupBody) {
+                const mahsupLabels = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', ds: 'Denetimli Serbestlik' };
+                const rows = [];
+                mahsupRows.forEach(row => {
+                    const tur = row.querySelector('.mahsup-tur').value;
+                    const sVal = row.querySelector('.mahsup-start').value;
+                    const eVal = row.querySelector('.mahsup-end').value;
+                    const gun = row.querySelector('.mahsup-row-total').innerText;
+                    if (sVal && eVal) {
+                        rows.push(`
+                            <tr class="border-b border-slate-300">
+                                <td class="p-1.5 border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
+                                <td class="p-1.5 border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
+                                <td class="p-1.5 border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
+                                <td class="p-1.5 font-semibold text-emerald-700">${gun} Gün</td>
+                            </tr>
+                        `);
+                    }
+                });
+                repMahsupBody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="4" class="p-1.5 text-center text-slate-400">Mahsup kaydı bulunmamaktadır.</td></tr>`;
+            }
+            const repMahsupToplamEl = document.getElementById('repMahsupToplam');
+            if (repMahsupToplamEl) repMahsupToplamEl.innerText = `${grandTotalMahsupDays} Gün`;
+
+            // Açıklama: otomatik üretilen kanuni uyarı metni + kullanıcının yazdığı manuel not
+            const manuelNot = (document.getElementById('aciklamaManuel') || {}).value || "";
+            const repAciklamaEl = document.getElementById('repAciklama');
+            if (repAciklamaEl) {
+                const parcalar = [capWarningText.trim(), manuelNot.trim()].filter(Boolean);
+                repAciklamaEl.innerText = parcalar.length ? parcalar.join('\n\n') : "—";
+            }
+
+            // Ekrandaki uyarı kutusu (Hesapla anında görünür)
+            const warningBanner = document.getElementById('capWarningBanner');
+            if (warningBanner) {
+                const warningBannerText = warningBanner.querySelector('span');
+                if (capWarningText.trim()) {
+                    if (warningBannerText) warningBannerText.innerText = capWarningText.trim();
+                    warningBanner.classList.remove('hidden');
+                } else {
+                    warningBanner.classList.add('hidden');
+                }
+            }
         }
 
         // Reset All Data
@@ -716,9 +929,11 @@
             document.getElementById('dosyaRef').value = 'INF-2024/7821';
             document.getElementById('penaltyTableBody').innerHTML = '';
             document.getElementById('mahsupTableBody').innerHTML = '';
+            const aciklamaEl = document.getElementById('aciklamaManuel');
+            if (aciklamaEl) aciklamaEl.value = '';
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('infazBaslangic').value = today;
-            addPenaltyRow('sureli', 0, 0, 0, 'yaralama', today, 'yok');
+            addPenaltyRow('sureli', 0, 0, 0, 'yaralama', today, 'yok', false);
             calculateAll();
         }
 
@@ -738,7 +953,8 @@
                     gun: parseInt(row.querySelector('.penalty-gun').value) || 0,
                     sucTip: row.querySelector('.penalty-suc').value,
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
-                    mukerrir: row.querySelector('.penalty-mukerrir').value
+                    mukerrir: row.querySelector('.penalty-mukerrir').value,
+                    orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false
                 });
             });
 
@@ -756,6 +972,7 @@
                 hukumluTc: document.getElementById('hukumluTc').value,
                 dosyaRef: document.getElementById('dosyaRef').value,
                 infazBaslangic: document.getElementById('infazBaslangic').value,
+                aciklamaManuel: (document.getElementById('aciklamaManuel') || {}).value || "",
                 penalties: penalties,
                 mahsups: mahsups,
                 timestamp: new Date().toISOString()
@@ -787,11 +1004,15 @@
                     if (data.hukumluTc !== undefined) document.getElementById('hukumluTc').value = data.hukumluTc;
                     if (data.dosyaRef !== undefined) document.getElementById('dosyaRef').value = data.dosyaRef;
                     if (data.infazBaslangic) document.getElementById('infazBaslangic').value = data.infazBaslangic;
+                    if (data.aciklamaManuel !== undefined) {
+                        const aciklamaEl = document.getElementById('aciklamaManuel');
+                        if (aciklamaEl) aciklamaEl.value = data.aciklamaManuel;
+                    }
 
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucTip, p.sucTarihi, p.mukerrir);
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucTip, p.sucTarihi, p.mukerrir, p.orgutlu);
                         });
                     }
 
