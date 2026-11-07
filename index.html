@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İNFAZCI - İnfaz ve Müddetname Hesaplama Sistemi</title>
+    <title>İNFAZCI - Müddetname Hesaplama (Manuel Suç Maddesi)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter & JetBrains Mono -->
@@ -58,7 +58,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-extrabold tracking-wider text-white flex items-center gap-2">
-                        İNFAZCI <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">PRO v9</span>
+                        İNFAZCI <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">PRO v11</span>
                     </h1>
                     <p class="text-xs text-slate-400">Gelişmiş İnfaz Süreleri ve Müddetname Hesaplama Otomasyonu</p>
                 </div>
@@ -86,72 +86,23 @@
         <!-- Left Input Controls (7 Columns - Alt Alta Sıralı) -->
         <div class="lg:col-span-7 space-y-6 no-print">
 
-            <!-- Hükümlü Kimlik Bilgileri (Müddetname Şablonuna Tam Uyumlu) -->
+            <!-- Hükümlü Bilgileri -->
             <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear text-amber-500"></i> Hükümlü Kimlik Bilgileri
+                    <i class="fa-solid fa-user-gear text-amber-500"></i> Hükümlü & Referans Kayıtları
                 </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div class="sm:col-span-2">
-                        <label class="block text-slate-400 mb-1">Adı ve Soyadı</label>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Hükümlü Adı Soyadı</label>
                         <input type="text" id="hukumluAd" value="Ali Veli KONYA" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1">T.C. Kimlik No</label>
+                        <label class="block text-slate-400 mb-1">Kimlik / Sicil No</label>
                         <input type="text" id="hukumluTc" value="11111111111" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1">Baba Adı</label>
-                        <input type="text" id="hukumluBabaAd" value="" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1">Ana Adı</label>
-                        <input type="text" id="hukumluAnaAd" value="" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1">Doğum Tarihi</label>
-                        <input type="date" id="hukumluDogumTarihi" value="" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none text-sky-400">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1">Doğum Yeri</label>
-                        <input type="text" id="hukumluDogumYeri" value="" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1">Nüfusa Kayıtlı Olduğu İl/İlçe</label>
-                        <input type="text" id="hukumluNufusKayit" value="" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label class="block text-slate-400 mb-1">İkametgah Adresi</label>
-                        <input type="text" id="hukumluIkametgah" value="" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dosya ve Mahkeme Bilgileri -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-folder-open text-amber-500"></i> Dosya ve Mahkeme Bilgileri
-                </h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div>
-                        <label class="block text-slate-400 mb-1">Cumhuriyet Başsavcılığı</label>
-                        <input type="text" id="dosyaBassavcilik" value="" placeholder="Örn: Silifke Cumhuriyet Başsavcılığı" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1">Cumhuriyet Başsavcılığı Dosya No</label>
+                        <label class="block text-slate-400 mb-1">İlam / Dosya Ref No</label>
                         <input type="text" id="dosyaRef" value="INF-2024/7821" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1">Cezaevi Hükümlü Defter No</label>
-                        <input type="text" id="dosyaDefterNo" value="" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 mb-1">Hükmü Veren Mahkeme</label>
-                        <input type="text" id="dosyaMahkeme" value="" placeholder="Örn: Silifke İnfaz Hakimliği" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-slate-400 mb-1">Karar Bilgisi</label>
-                        <input type="text" id="dosyaKararBilgisi" value="" placeholder="Örn: 06/01/2026 Tarih 2026/20 Esas Sayılı Kararı" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
                     </div>
                 </div>
             </div>
@@ -162,9 +113,14 @@
                     <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                         <i class="fa-solid fa-layer-group text-amber-500"></i> Cezalar, Süresiz Hapis & Suç Maddesi (5275 s.K. m.99)
                     </h2>
-                    <button onclick="addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
-                        <i class="fa-solid fa-plus"></i> Ceza Ekle
-                    </button>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Ceza Ekle
+                        </button>
+                        <button onclick="addManuelPenaltyRow()" class="px-2.5 py-1 text-xs bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/30 rounded font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> Manuel Ekle
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Dynamic Penalty Table -->
@@ -173,7 +129,7 @@
                         <thead>
                             <tr class="text-slate-400 border-b border-slate-800 bg-slate-950">
                                 <th class="p-2">Ceza Süresi / Süresiz Hapis & Suç Maddesi</th>
-                                <th class="p-2">İlam No, Suç Tarihi & Mükerrirlik Durumu</th>
+                                <th class="p-2">Suç Tarihi & Mükerrirlik Durumu</th>
                                 <th class="p-2 w-28 text-right">Gün / Oran</th>
                                 <th class="p-2 w-10"></th>
                             </tr>
@@ -183,6 +139,7 @@
                         </tbody>
                     </table>
                 </div>
+                <datalist id="sucMaddeDatalist"></datalist>
             </div>
 
             <!-- Mahsup Bilgileri ve İnfaz Başlangıç Tarihi Birleştirilmiş Kutu -->
@@ -254,10 +211,10 @@
         <div class="lg:col-span-5 space-y-5">
 
             <!-- Resmi Müddetname Formu (Fotoğraftaki Şablona Tam Uyumlu) -->
-            <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs font-sans print-card relative space-y-2.5">
+            <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs font-sans print-card relative space-y-4">
 
                 <!-- Başlık -->
-                <div class="text-center border-b-2 border-slate-900 pb-1">
+                <div class="text-center border-b-2 border-slate-900 pb-2">
                     <h2 class="text-sm font-extrabold tracking-wide uppercase text-slate-900">MÜDDETNAME</h2>
                     <h3 class="text-[11px] font-bold text-slate-700 uppercase">(Hükümlüler İçin)</h3>
                 </div>
@@ -266,56 +223,56 @@
                 <table class="w-full border-collapse border border-slate-400 text-[11px]">
                     <tbody>
                         <tr class="border-b border-slate-300">
-                            <td class="py-0.5 px-2 font-bold bg-slate-100 w-1/2 border-r border-slate-300">Cumhuriyet Başsavcılığı</td>
-                            <td class="py-0.5 px-2">: <span id="repBassavcilik">-</span></td>
+                            <td class="py-1 px-2 font-bold bg-slate-100 w-1/2 border-r border-slate-300">Cumhuriyet Başsavcılığı</td>
+                            <td class="py-1 px-2">: <span id="repBassavcilik">-</span></td>
                         </tr>
                         <tr class="border-b border-slate-300">
-                            <td class="py-0.5 px-2 font-bold bg-slate-100 border-r border-slate-300">Cumhuriyet Başsavcılığı Dosya No</td>
-                            <td class="py-0.5 px-2">: <span id="repDosyaNo">-</span></td>
+                            <td class="py-1 px-2 font-bold bg-slate-100 border-r border-slate-300">Cumhuriyet Başsavcılığı Dosya No</td>
+                            <td class="py-1 px-2">: <span id="repDosyaNo">-</span></td>
                         </tr>
                         <tr>
-                            <td class="py-0.5 px-2 font-bold bg-slate-100 border-r border-slate-300">Cezaevi Hükümlü Defter Numarasi</td>
-                            <td class="py-0.5 px-2">: <span id="repDefterNo">-</span></td>
+                            <td class="py-1 px-2 font-bold bg-slate-100 border-r border-slate-300">Cezaevi Hükümlü Defter Numarasi</td>
+                            <td class="py-1 px-2">: <span id="repDefterNo">-</span></td>
                         </tr>
                     </tbody>
                 </table>
 
                 <!-- 2. Bölüm: Hükümlü Kimlik Bilgileri -->
                 <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-0.5 border border-slate-400 border-b-0">HÜKÜMLÜ KİMLİK BİLGİLERİ</h4>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">HÜKÜMLÜ KİMLİK BİLGİLERİ</h4>
                     <table class="w-full border-collapse border border-slate-400 text-[11px]">
                         <tbody>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">T.C. Kimlik No</td>
-                                <td class="py-0.5 px-2" id="repTc">-</td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">T.C. Kimlik No</td>
+                                <td class="py-1 px-2" id="repTc">-</td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">Adı ve Soyadı</td>
-                                <td class="py-0.5 px-2 font-semibold" id="repAd">-</td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">Adı ve Soyadı</td>
+                                <td class="py-1 px-2 font-semibold" id="repAd">-</td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 border-r border-slate-300">Baba Adı</td>
-                                <td class="py-0.5 px-2" id="repBabaAd"></td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Baba Adı</td>
+                                <td class="py-1 px-2" id="repBabaAd"></td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 border-r border-slate-300">Ana Adı</td>
-                                <td class="py-0.5 px-2" id="repAnaAd"></td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Ana Adı</td>
+                                <td class="py-1 px-2" id="repAnaAd"></td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 border-r border-slate-300">Doğum Tarihi</td>
-                                <td class="py-0.5 px-2" id="repDogumTarihi"></td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Doğum Tarihi</td>
+                                <td class="py-1 px-2" id="repDogumTarihi"></td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 border-r border-slate-300">Doğum Yeri</td>
-                                <td class="py-0.5 px-2" id="repDogumYeri"></td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Doğum Yeri</td>
+                                <td class="py-1 px-2" id="repDogumYeri"></td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 border-r border-slate-300">Nüfusa Kayıtlı Olduğu İl ve İlçe</td>
-                                <td class="py-0.5 px-2" id="repNufusKayit"></td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">Nüfusa Kayıtlı Olduğu İl ve İlçe</td>
+                                <td class="py-1 px-2" id="repNufusKayit"></td>
                             </tr>
                             <tr>
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 border-r border-slate-300">İkametgah Adresi</td>
-                                <td class="py-0.5 px-2" id="repIkamet"></td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 border-r border-slate-300">İkametgah Adresi</td>
+                                <td class="py-1 px-2" id="repIkamet"></td>
                             </tr>
                         </tbody>
                     </table>
@@ -323,35 +280,33 @@
 
                 <!-- 3. Bölüm: Ceza Bilgileri -->
                 <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-0.5 border border-slate-400 border-b-0">CEZA BİLGİLERİ</h4>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">CEZA BİLGİLERİ</h4>
                     <table class="w-full border-collapse border border-slate-400 text-[11px]">
                         <tbody>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HÜKMÜ VEREN MAHKEME</td>
-                                <td class="py-0.5 px-2" id="repMahkeme">-</td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HÜKMÜ VEREN MAHKEME</td>
+                                <td class="py-1 px-2" id="repMahkeme">-</td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KARAR BİLGİSİ</td>
-                                <td class="py-0.5 px-2" id="repKararBilgisi">-</td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MAHKEME ESAS NO</td>
+                                <td class="py-1 px-2" id="repEsasNo">-</td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">SUÇ TARİHİ / TARİHLERİ</td>
-                                <td class="py-0.5 px-2 text-sky-800" id="repSucTarihi">-</td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KARAR NO</td>
+                                <td class="py-1 px-2" id="repKararNo">-</td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">CEZASI</td>
-                                <td class="py-0.5 px-2 font-bold text-slate-900" id="repCeza">-</td>
+                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">CEZASI (TOPLAM)</td>
+                                <td class="py-1 px-2 font-bold text-slate-900" id="repCeza">-</td>
                             </tr>
                             <tr>
                                 <td colspan="2" class="p-0">
                                     <table class="w-full border-collapse text-[10px]">
                                         <thead>
                                             <tr class="bg-slate-100 border-t border-b border-slate-400">
-                                                <th class="p-1 text-left border-r border-slate-300 font-bold">İlam No</th>
-                                                <th class="p-1 text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
-                                                <th class="p-1 text-left border-r border-slate-300 font-bold">Ceza Mad.</th>
-                                                <th class="p-1 text-left border-r border-slate-300 font-bold">Ceza Bilgisi</th>
-                                                <th class="p-1 text-left font-bold">İnfaz Türü</th>
+                                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Ceza Süresi / Suç Maddesi</th>
+                                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
+                                                <th class="p-1.5 text-left font-bold">İnfaz Oranı</th>
                                             </tr>
                                         </thead>
                                         <tbody id="repCezaRows">
@@ -369,53 +324,31 @@
                     <table class="w-full border-collapse border border-slate-400 text-[11px]">
                         <tbody>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">CEZAEVİNE GİRİŞ TARİHİ</td>
-                                <td class="py-0.5 px-2 font-semibold text-sky-800" id="repBaslangic">-</td>
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">CEZAEVİNE GİRİŞ TARİHİ</td>
+                                <td class="py-1.5 px-2 font-semibold text-sky-800" id="repBaslangic">-</td>
                             </tr>
                             <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HAKEDEREK TAHLİYE TARİHİ (BTT)</td>
-                                <td class="py-0.5 px-2 font-bold text-red-700 font-mono text-sm" id="repBtt">-</td>
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HAKEDEREK TAHLİYE TARİHİ (BTT)</td>
+                                <td class="py-1.5 px-2 font-bold text-red-700 font-mono text-sm" id="repBtt">-</td>
                             </tr>
                             <tr>
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KOŞULLU SALIVERİLME TARİHİ (STT)</td>
-                                <td class="py-0.5 px-2 font-bold text-emerald-700 font-mono text-sm" id="repStt">-</td>
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KOŞULLU SALIVERİLME TARİHİ (STT)</td>
+                                <td class="py-1.5 px-2 font-bold text-emerald-700 font-mono text-sm" id="repStt">-</td>
                             </tr>
                         </tbody>
                     </table>
-                </div>
-
-                <!-- 4.1 Bölüm: Muhtemel Ayrılma Tarihleri (Tahmini) -->
-                <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-0.5 border border-slate-400 border-b-0">MUHTEMEL AYRILMA TARİHLERİ (TAHMİNİ)</h4>
-                    <table class="w-full border-collapse border border-slate-400 text-[11px]">
-                        <tbody>
-                            <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MUHTEMEL AÇIK CEZA İNFAZ KURUMUNA AYRILMA</td>
-                                <td class="py-0.5 px-2 font-semibold text-sky-800" id="repAcikCezaMuhtemel">-</td>
-                            </tr>
-                            <tr class="border-b border-slate-300">
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MUHTEMEL DENETİMLİ SERBESTLİĞE AYRILMA</td>
-                                <td class="py-0.5 px-2 font-semibold text-sky-800" id="repDsMuhtemel">-</td>
-                            </tr>
-                            <tr>
-                                <td class="py-0.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">ERKEN İYİLEŞTİRME (DOĞRUDAN AÇIK CEZAEVİ) İHTİMALİ</td>
-                                <td class="py-0.5 px-2 text-[10px]" id="repErkenIyilestirme">-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p class="text-[9px] text-slate-500 italic px-1 pt-0.5">Bu alanlar kesin bir hak değil, mevzuattaki genel eşiklere göre yapılan tahmini bir ön hesaplamadır; kesin tarih ilgili idare/kurul tarafından belirlenir.</p>
                 </div>
 
                 <!-- 5. Bölüm: Mahsup Bilgileri -->
                 <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-0.5 border border-slate-400 border-b-0">MAHSUP BİLGİLERİ</h4>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">MAHSUP BİLGİLERİ</h4>
                     <table class="w-full border-collapse border border-slate-400 text-[10px]">
                         <thead>
                             <tr class="bg-slate-100 border-b border-slate-400">
-                                <th class="p-1 text-left border-r border-slate-300 font-bold">Mahsup Türü</th>
-                                <th class="p-1 text-left border-r border-slate-300 font-bold">Başlangıç</th>
-                                <th class="p-1 text-left border-r border-slate-300 font-bold">Bitiş</th>
-                                <th class="p-1 text-left font-bold">Gün</th>
+                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Mahsup Türü</th>
+                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Başlangıç</th>
+                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Bitiş</th>
+                                <th class="p-1.5 text-left font-bold">Gün</th>
                             </tr>
                         </thead>
                         <tbody id="repMahsupRows">
@@ -423,8 +356,8 @@
                         </tbody>
                         <tfoot>
                             <tr class="border-t border-slate-400 bg-slate-50">
-                                <td colspan="3" class="p-1 text-right font-bold border-r border-slate-300">TOPLAM MAHSUP</td>
-                                <td class="p-1 font-bold text-emerald-700" id="repMahsupToplam">0 Gün</td>
+                                <td colspan="3" class="p-1.5 text-right font-bold border-r border-slate-300">TOPLAM MAHSUP</td>
+                                <td class="p-1.5 font-bold text-emerald-700" id="repMahsupToplam">0 Gün</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -432,12 +365,12 @@
 
                 <!-- 6. Bölüm: Açıklama -->
                 <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-0.5 border border-slate-400 border-b-0">AÇIKLAMA</h4>
+                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">AÇIKLAMA</h4>
                     <div class="border border-slate-400 p-2 text-[10.5px] whitespace-pre-line min-h-[2.5rem]" id="repAciklama">—</div>
                 </div>
 
                 <!-- İmza Bölümü -->
-                <div class="pt-4 flex justify-between items-end">
+                <div class="pt-8 flex justify-between items-end">
                     <div class="text-[9px] text-slate-500">
                         <p id="repTarihAlani">.../.../....</p>
                     </div>
@@ -461,14 +394,202 @@
 
     </main>
 
+    <!-- Suç maddesi için tek, sabit konumlu (fixed) kaydırılabilir öneri kutusu -->
+    <div id="globalSucSuggestions" class="hidden fixed max-h-48 overflow-y-auto bg-slate-900 border border-slate-700 rounded shadow-lg z-50 text-xs"></div>
+
     <!-- JavaScript Execution Logic -->
     <script>
+        /* ======================================================
+           SUÇ MADDESİ -> İNFAZ ORANI LİSTESİ (kullanıcı tarafından
+           hazırlanan kayıtlardan alınmıştır). Kullanıcı suç maddesini
+           serbest metin olarak girer; bu liste sadece datalist önerisi
+           ve otomatik oran ön-doldurma için kullanılır. Kullanıcı
+           dilediği oranı manuel olarak değiştirebilir.
+           ====================================================== */
+        const SUC_MADDE_LISTESI = [
+            { madde: 'Diğer Diğer', aciklama: 'Diğer', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 87/2.d', aciklama: 'Ağır Yaralama', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 81/1', aciklama: 'Öldürme', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 82/1.a', aciklama: 'Öldürme', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 82/1-d', aciklama: 'Öldürme', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 82/1-d.3', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 82/1-d.3.1', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 82/1-d.3.2', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 83', aciklama: 'Öldürme', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 86/3-a', aciklama: 'Yakın akrabayı yaralama', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 86/3-a.1', aciklama: 'Üst soya karşı yaralama', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 86/3-a.2', aciklama: 'Alt soya karşı yaralama', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 86/3-a.3', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 86/3-a.3.1', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 86/3-a.3.2', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 86/3-a.4', aciklama: 'Kardeşe karşı yaralama', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 142', aciklama: 'Hırsızlık', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 148', aciklama: 'Yağma', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 149', aciklama: 'Yağma', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 188/5-b', aciklama: 'Uyuşturucu', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 188', aciklama: 'Uyuşturucu', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 190', aciklama: 'Uyuşturucu', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 96', aciklama: 'Eziyet', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 102', aciklama: 'Cinsel', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 103', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 104', aciklama: 'Cinsel Taciz', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 105', aciklama: 'Cinsel Taciz', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 102/1', aciklama: 'Cinsel', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 104/1', aciklama: 'Cinsel Taciz', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 105', aciklama: 'Cinsel Taciz', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 102/2', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 103', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 104/2', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 104/3', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 220', aciklama: 'Örgüt', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 94', aciklama: 'İşkence', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 95', aciklama: 'İşkence', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 132', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 133', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 134', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 135', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 136', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 137', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 138', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 302', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 303', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 304', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 305', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 306', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 307', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 308', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 309', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 310', aciklama: 'Terör', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 311', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 312', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 313', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 314', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 315', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 316', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 317', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 318', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 319', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 320', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/4' },
+            { madde: 'Türk Ceza Kanunu 321', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 322', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 323', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 324', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 325', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'Türk Ceza Kanunu 326', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 327', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 328', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 329', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 330', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 331', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 332', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 333', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 334', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 335', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 336', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 337', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 338', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 339', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'Terörle Mücadele Kanunu Tüm Maddeler', aciklama: 'Terör', oran: '1/3' },
+            { madde: 'Devlet İstihbarat Hizmetleri ve Milli İstihbarat Teşkilatı Kanunu Tüm Maddeler', aciklama: '-', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 221', aciklama: 'Örgüt', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 58/9', aciklama: 'Örgüt', oran: '1/3' },
+            { madde: 'Türk Ceza Kanunu 96/2-b', aciklama: '', oran: '1/3' },
+        ];
+
+        // Suç maddesi metnine göre listeden eşleşen kaydı bulur (büyük/küçük harf duyarsız, tam eşleşme)
+        function findMaddeInfo(maddeText) {
+            if (!maddeText) return null;
+            const normalized = maddeText.trim().toLocaleLowerCase('tr-TR');
+            return SUC_MADDE_LISTESI.find(it => it.madde.toLocaleLowerCase('tr-TR') === normalized) || null;
+        }
+
+        // "1/2", "2/3" gibi oran metnini ondalık sayıya çevirir
+        function oranStrToNum(oranStr) {
+            if (!oranStr) return 0.5;
+            const parts = oranStr.split('/');
+            if (parts.length === 2) {
+                const n = parseFloat(parts[0]);
+                const d = parseFloat(parts[1]);
+                if (d) return n / d;
+            }
+            return 0.5;
+        }
+
+        // Aktif olarak öneri kutusunu kullanan suç maddesi input'u (global, tek kutu kullanılıyor)
+        let activeSucMaddeInput = null;
+
+        // Kullanıcı suç maddesi alanına yazdıkça, listede eşleşen bir kayıt varsa
+        // infaz oranını otomatik önerir (kullanıcı dilediği zaman kendi değiştirebilir)
+        function onSucMaddeInput(inputEl) {
+            const tr = inputEl.closest('tr');
+            const oranSelect = tr ? tr.querySelector('.penalty-oran') : null;
+            const info = findMaddeInfo(inputEl.value);
+            if (info && oranSelect) {
+                oranSelect.value = info.oran;
+            }
+            renderSucMaddeSuggestions(inputEl);
+        }
+
+        // Suç maddesi yazılırken, kaydırılabilir (scroll) özel öneri kutusunu doldurur.
+        // Native <datalist> kendi içinde kaydırma desteklemediği için, TEK bir global kutu
+        // (position: fixed) kullanılıyor; bu kutu hiçbir panelin boyutunu etkilemez,
+        // sadece ilgili input'un altına geçici olarak konumlanır.
+        function renderSucMaddeSuggestions(inputEl) {
+            const box = document.getElementById('globalSucSuggestions');
+            if (!box) return;
+            activeSucMaddeInput = inputEl;
+            const q = inputEl.value.trim().toLocaleLowerCase('tr-TR');
+            const matches = q ? SUC_MADDE_LISTESI.filter(it => it.madde.toLocaleLowerCase('tr-TR').includes(q)) : SUC_MADDE_LISTESI;
+            if (matches.length === 0) {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+                return;
+            }
+            box.innerHTML = matches.map(it => `
+                <div class="penalty-suc-suggestion-item px-2 py-1.5 hover:bg-slate-700 cursor-pointer border-b border-slate-800 last:border-0" onmousedown="event.preventDefault(); selectSucMaddeSuggestion(this)" data-madde="${it.madde.replace(/"/g, '&quot;')}" data-oran="${it.oran}">
+                    <div class="text-slate-200">${it.madde}</div>
+                    ${it.aciklama ? `<div class="text-[10px] text-slate-500">${it.aciklama}</div>` : ''}
+                </div>
+            `).join('');
+            const rect = inputEl.getBoundingClientRect();
+            box.style.left = rect.left + 'px';
+            box.style.top = rect.bottom + 'px';
+            box.style.width = rect.width + 'px';
+            box.classList.remove('hidden');
+        }
+
+        // Listeden bir öneriye tıklanınca aktif suç maddesi kutusuna ve (varsa) oran kutusuna yazar.
+        function selectSucMaddeSuggestion(itemEl) {
+            const box = document.getElementById('globalSucSuggestions');
+            if (activeSucMaddeInput) activeSucMaddeInput.value = itemEl.dataset.madde;
+            const tr = activeSucMaddeInput ? activeSucMaddeInput.closest('tr') : null;
+            const oranSelect = tr ? tr.querySelector('.penalty-oran') : null;
+            if (oranSelect && itemEl.dataset.oran) oranSelect.value = itemEl.dataset.oran;
+            if (box) box.classList.add('hidden');
+        }
+
+        // Odak başka yere geçince öneri kutusunu kapatır (tıklamaya zaman bırakmak için küçük gecikmeli)
+        function hideSucMaddeSuggestionsLater(inputEl) {
+            const box = document.getElementById('globalSucSuggestions');
+            if (!box) return;
+            setTimeout(() => box.classList.add('hidden'), 150);
+        }
+
+        // Datalist'i kullanıcının hazırladığı suç maddesi listesiyle doldurur
+        function populateSucMaddeDatalist() {
+            const dl = document.getElementById('sucMaddeDatalist');
+            if (!dl) return;
+            dl.innerHTML = SUC_MADDE_LISTESI.map(it => `<option value="${it.madde.replace(/"/g, '&quot;')}">${it.aciklama ? it.aciklama.replace(/</g, '&lt;') : ''}</option>`).join('');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('infazBaslangic').value = today;
 
+            populateSucMaddeDatalist();
+
             // Açılışta 1 adet ceza satırı ekle
-            addPenaltyRow('sureli', 1, 0, 0, 'tck86_1', today, 'yok', false, '');
+            addPenaltyRow('sureli', 1, 0, 0, '', today, 'yok', false);
             calculateAll();
         });
 
@@ -583,122 +704,43 @@
         const BTT_CAP_E_YIL = { normal: 42, mukerrer: 48 };
 
         /* ======================================================
-           SUÇ MADDELERİ VERİTABANI (TCK & İnfaz Rejimleri)
+           MÜEBBET / AĞIRLAŞTIRILMIŞ MÜEBBETTE SABİT YIL TABLOSU
+           (kullanıcı onayıyla, kanun metni + gerçek müddetname
+           örneğiyle doğrulandı — 5275 s.K. m.107/2, m.107/4, m.108/1)
 
-           Kaynak: Kullanıcının sağladığı TCK_Maddeleri_ve_Infaz_Rejimleri
-           belgesi, 2026-11-07'de kullanıcı onayıyla aşağıdaki şekilde
-           DÜZELTİLEREK uygulanmıştır (belgedeki ham haliyle DEĞİL):
-             - TCK 102/2, 103/1  : 2/3 -> 3/4 (yetişkin hükümlü, 2014 sonrası)
-             - TCK 105/1         : 1/2 -> 2/3 (cinsel dokunulmazlığa karşı suçlar grubu)
-             - TCK 132,133,134,135,136 : 1/2 -> 2/3 (TCK 132-138 "özel hayata karşı suçlar" toplu hükmü)
-             - TCK 188/3         : 2/3 -> 3/4 (2014 sonrası suçlarda yetişkin hükümlü)
-             - TCK 220/1         : 1/2 -> 2/3 (kanun metni örgüt kurma/yönetmeyi doğrudan 2/3 grubuna sokuyor)
-             - TCK 86/1 ve 86/2'nin "eşe karşı" satırları KALDIRILDI (kanunda böyle bir
-               ayrı madde yok; eşe karşı ağırlatıcı sebep sadece 86/3-a'da var)
-             - TCK 82/1-d (eşe karşı öldürme) ve 96/2-b (eşe karşı eziyet) EKLENDİ
-           TCK 76, 77 ve 309 için kanunda kesin bir dayanak doğrulanamadı;
-           belgedeki değerler korunmuştur (es:true -> açık cezaevine ayrılmada
-           "eşe karşı" özel 3 yıl kuralına tabi suçları işaretler, ileride kullanılacak).
-           o: infaz oranı (1/2, 2/3 veya 3/4), ref: 5275 s.K. madde referansı.
+           ÖNEMLİ: Müebbet/Ağırlaştırılmış müebbette koşullu salıverilme
+           (STT) ve hakederek tahliye (BTT) süreleri bir ORANIN (1/2, 2/3 vb.)
+           ham gün sayısına uygulanmasıyla DEĞİL, kanunda doğrudan yazan
+           SABİT yıl sayısıyla belirlenir.
+
+           STT (koşullu salıverilme) — TEYİTLİ (kanun metninden):
+             - Adi suç          : Müebbet 24 yıl, Ağ.Müebbet 30 yıl   (m.107/2)
+             - Örgütlü suç      : Müebbet 30 yıl, Ağ.Müebbet 36 yıl   (m.107/4)
+             - Mükerrir (1./2.)  : Müebbet 33 yıl, Ağ.Müebbet 39 yıl   (m.108/1,
+               m.108/3 gereği 2. kez mükerrerlikte de aynı süre uygulanır)
+
+           BTT (hakederek/bihakkın tahliye):
+             - Adi suç müebbet  : 36 yıl  — GERÇEK MÜDDETNAME ÖRNEĞİYLE DOĞRULANDI
+               (20/04/2023 giriş, 1244 gün mahsup, 14/11/2055 BTT => tam 36 yıl)
+             - Örgütlü müebbet  : 48 yıl  — kullanıcı tarafından teyit edildi
+             - Adi suç Ağ.Müebbet: 60 yıl — referans belgeden (Osman Atalay),
+               gerçek örnekle henüz doğrulanmadı
+             - Örgütlü Ağ.Müebbet: 72 yıl — referans belgeden, henüz doğrulanmadı
+             - Mükerrir müebbet/Ağ.müebbet BTT: KESİN KANUN/ÖRNEK VERİSİ YOK.
+               Şimdilik örgütlü suç değerleriyle aynı (48 / 72 yıl) varsayıldı;
+               gerçek bir müddetname örneğiyle teyit edilmesi gerekiyor.
            ====================================================== */
-        const CRIME_LIST = [
-            { v: 'tck76_1',    m: 'TCK 76/1',    a: 'Soykırım Suçu (Ölüm meydana gelmesi hali)', o: 0.75, ref: '107/2' },
-            { v: 'tck77_1',    m: 'TCK 77/1',    a: 'İnsanlığa Karşı Suçlar', o: (2 / 3), ref: '107/2' },
-            { v: 'tck79_1',    m: 'TCK 79/1',    a: 'Göçmen Kaçakçılığı', o: 0.5, ref: '107/2' },
-            { v: 'tck80_1',    m: 'TCK 80/1',    a: 'İnsan Ticareti', o: 0.5, ref: '107/2' },
-            { v: 'tck81_1',    m: 'TCK 81/1',    a: 'Kasten Öldürme (Temel şekli)', o: (2 / 3), ref: '107/2' },
-            { v: 'tck82_1a',   m: 'TCK 82/1.a',  a: 'Nitelikli Kasten Öldürme (Tasarlayarak)', o: (2 / 3), ref: '107/2' },
-            { v: 'tck82_1b',   m: 'TCK 82/1.b',  a: 'Nitelikli Kasten Öldürme (Canavarca hisle/eziyet çektirerek)', o: (2 / 3), ref: '107/2' },
-            { v: 'tck82_1d_es',m: 'TCK 82/1.d',  a: 'Nitelikli Kasten Öldürme (Eşe karşı)', o: (2 / 3), ref: '107/2', es: true },
-            { v: 'tck83_1',    m: 'TCK 83/1',    a: 'Kasten Öldürmenin İhmali Davranışla İşlenmesi', o: (2 / 3), ref: '107/2' },
-            { v: 'tck85_1',    m: 'TCK 85/1',    a: 'Taksirle Öldürme', o: 0.5, ref: '107/2' },
-            { v: 'tck86_1',    m: 'TCK 86/1',    a: 'Kasten Yaralama (Temel şekli)', o: 0.5, ref: '107/2' },
-            { v: 'tck86_2',    m: 'TCK 86/2',    a: 'Kasten Yaralama (Basit tıbbi müdahale ile giderilebilecek)', o: 0.5, ref: '107/2' },
-            { v: 'tck86_3a',   m: 'TCK 86/3.a',  a: 'Nitelikli Kasten Yaralama (Üstsoy/altsoy/kardeşe karşı)', o: 0.5, ref: '107/2' },
-            { v: 'tck86_3a_es',m: 'TCK 86/3.a',  a: 'Nitelikli Kasten Yaralama (Eşe karşı)', o: 0.5, ref: '107/2', es: true },
-            { v: 'tck86_3e',   m: 'TCK 86/3.e',  a: 'Nitelikli Kasten Yaralama (Silahla)', o: 0.5, ref: '107/2' },
-            { v: 'tck87_1',    m: 'TCK 87/1',    a: 'Neticesi Sebebiyle Ağırlaşmış Yaralama', o: 0.5, ref: '107/2' },
-            { v: 'tck89_1',    m: 'TCK 89/1',    a: 'Taksirle Yaralama', o: 0.5, ref: '107/2' },
-            { v: 'tck94_1',    m: 'TCK 94/1',    a: 'İşkence Suçu', o: (2 / 3), ref: '107/2' },
-            { v: 'tck96_1',    m: 'TCK 96/1',    a: 'Eziyet Suçu', o: (2 / 3), ref: '107/2' },
-            { v: 'tck96_2b_es',m: 'TCK 96/2.b',  a: 'Eziyet Suçu (Eşe karşı)', o: (2 / 3), ref: '107/2', es: true },
-            { v: 'tck102_1',   m: 'TCK 102/1',   a: 'Cinsel Saldırı (Basit cinsel saldırı)', o: (2 / 3), ref: '107/2' },
-            { v: 'tck102_2',   m: 'TCK 102/2',   a: 'Nitelikli Cinsel Saldırı (Vücuda organ/cisim sokulması)', o: 0.75, ref: '107/2' },
-            { v: 'tck103_1',   m: 'TCK 103/1',   a: 'Çocukların Cinsel İstismarı', o: 0.75, ref: '107/2' },
-            { v: 'tck104_1',   m: 'TCK 104/1',   a: 'Reşit Olmayanla Cinsel İlişki', o: (2 / 3), ref: '107/2' },
-            { v: 'tck105_1',   m: 'TCK 105/1',   a: 'Cinsel Taciz', o: (2 / 3), ref: '107/2' },
-            { v: 'tck106_1',   m: 'TCK 106/1',   a: 'Tehdit Suçu', o: 0.5, ref: '107/2' },
-            { v: 'tck107_1',   m: 'TCK 107/1',   a: 'Şantaj Suçu', o: 0.5, ref: '107/2' },
-            { v: 'tck108_1',   m: 'TCK 108/1',   a: 'Cebir Kullanılması', o: 0.5, ref: '107/2' },
-            { v: 'tck109_1',   m: 'TCK 109/1',   a: 'Kişiyi Hürriyetinden Yoksun Kılma (Temel şekli)', o: 0.5, ref: '107/2' },
-            { v: 'tck109_2',   m: 'TCK 109/2',   a: 'Kişiyi Hürriyetinden Yoksun Kılma (Cebir/tehdit/hile ile)', o: 0.5, ref: '107/2' },
-            { v: 'tck116_1',   m: 'TCK 116/1',   a: 'Konut Dokunulmazlığının İhlali (Gündüz, açık rıza olmaksızın)', o: 0.5, ref: '107/2' },
-            { v: 'tck116_2',   m: 'TCK 116/2',   a: 'İşyeri/Eklentilerinin Dokunulmazlığının İhlali', o: 0.5, ref: '107/2' },
-            { v: 'tck116_4',   m: 'TCK 116/4',   a: 'Konut/İşyeri Dok. İhlali (Cebir/tehdit veya gece vakti)', o: 0.5, ref: '107/2' },
-            { v: 'tck123_1',   m: 'TCK 123/1',   a: 'Kişilerin Huzur ve Sükununu Bozma', o: 0.5, ref: '107/2' },
-            { v: 'tck125_1',   m: 'TCK 125/1',   a: 'Hakaret Suçu (Temel şekli)', o: 0.5, ref: '107/2' },
-            { v: 'tck125_3a',  m: 'TCK 125/3.a', a: 'Nitelikli Hakaret (Kamu görevlisine görevinden dolayı)', o: 0.5, ref: '107/2' },
-            { v: 'tck132_1',   m: 'TCK 132/1',   a: 'Haberleşmenin Gizliliğini İhlal', o: (2 / 3), ref: '107/2' },
-            { v: 'tck133_1',   m: 'TCK 133/1',   a: 'Kişiler Arası Konuşmaların Dinlenmesi ve Kayda Alınması', o: (2 / 3), ref: '107/2' },
-            { v: 'tck134_1',   m: 'TCK 134/1',   a: 'Özel Hayatın Gizliliğini İhlal', o: (2 / 3), ref: '107/2' },
-            { v: 'tck135_1',   m: 'TCK 135/1',   a: 'Kişisel Verilerin Kaydedilmesi', o: (2 / 3), ref: '107/2' },
-            { v: 'tck136_1',   m: 'TCK 136/1',   a: 'Verileri Hukuka Aykırı Olarak Verme/Ele Geçirme', o: (2 / 3), ref: '107/2' },
-            { v: 'tck141_1',   m: 'TCK 141/1',   a: 'Hırsızlık Suçu (Temel şekli)', o: 0.5, ref: '107/2' },
-            { v: 'tck142_1',   m: 'TCK 142/1',   a: 'Nitelikli Hırsızlık', o: 0.5, ref: '107/2' },
-            { v: 'tck142_2h',  m: 'TCK 142/2.h', a: 'Nitelikli Hırsızlık (Kilitli muhafaza altındaki eşya)', o: 0.5, ref: '107/2' },
-            { v: 'tck148_1',   m: 'TCK 148/1',   a: 'Yağma (Gasp) Suçu (Temel şekli)', o: 0.5, ref: '107/2' },
-            { v: 'tck149_1a',  m: 'TCK 149/1.a', a: 'Nitelikli Yağma (Silahla)', o: 0.5, ref: '107/2' },
-            { v: 'tck149_1d',  m: 'TCK 149/1.d', a: 'Nitelikli Yağma (Yol kesmek/konutta/işyerinde)', o: 0.5, ref: '107/2' },
-            { v: 'tck149_1h',  m: 'TCK 149/1.h', a: 'Nitelikli Yağma (Gece vakti)', o: 0.5, ref: '107/2' },
-            { v: 'tck151_1',   m: 'TCK 151/1',   a: 'Mala Zarar Verme', o: 0.5, ref: '107/2' },
-            { v: 'tck155_1',   m: 'TCK 155/1',   a: 'Güveni Kötüye Kullanma (Temel şekli)', o: 0.5, ref: '107/2' },
-            { v: 'tck155_2',   m: 'TCK 155/2',   a: 'Nitelikli Güveni Kötüye Kullanma (Meslek/sanat/ticaret)', o: 0.5, ref: '107/2' },
-            { v: 'tck157_1',   m: 'TCK 157/1',   a: 'Dolandırıcılık Suçu (Temel şekli)', o: 0.5, ref: '107/2' },
-            { v: 'tck158_1f',  m: 'TCK 158/1.f', a: 'Nitelikli Dolandırıcılık (Bilişim sistemleri ile)', o: 0.5, ref: '107/2' },
-            { v: 'tck158_1g',  m: 'TCK 158/1.g', a: 'Nitelikli Dolandırıcılık (Basın/yayın araçlarıyla)', o: 0.5, ref: '107/2' },
-            { v: 'tck165_1',   m: 'TCK 165/1',   a: 'Suç Eşyasının Satın Alınması veya Kabul Edilmesi', o: 0.5, ref: '107/2' },
-            { v: 'tck170_1',   m: 'TCK 170/1',   a: 'Genel Güvenliğin Kasten Tehlikeye Sokulması', o: 0.5, ref: '107/2' },
-            { v: 'tck179_3',   m: 'TCK 179/3',   a: 'Trafik Güvenliğini Tehlikeye Sokma (Alkol/madde etkisiyle)', o: 0.5, ref: '107/2' },
-            { v: 'tck184_1',   m: 'TCK 184/1',   a: 'İmar Kirliliğine Neden Olma', o: 0.5, ref: '107/2' },
-            { v: 'tck188_3',   m: 'TCK 188/3',   a: 'Uyuşturucu veya Uyarıcı Madde İmal ve Ticareti', o: 0.75, ref: '107/2' },
-            { v: 'tck191_1',   m: 'TCK 191/1',   a: 'Kullanmak İçin Uyuşturucu Madde Satın Almak/Bulundurmak', o: 0.5, ref: '107/2' },
-            { v: 'tck197_1',   m: 'TCK 197/1',   a: 'Parada Sahtecilik', o: 0.5, ref: '107/2' },
-            { v: 'tck204_1',   m: 'TCK 204/1',   a: 'Resmi Belgede Sahtecilik', o: 0.5, ref: '107/2' },
-            { v: 'tck207_1',   m: 'TCK 207/1',   a: 'Özel Belgede Sahtecilik', o: 0.5, ref: '107/2' },
-            { v: 'tck213_1',   m: 'TCK 213/1',   a: 'Halk Arasında Korku ve Panik Yaratmak Amacıyla Tehdit', o: 0.5, ref: '107/2' },
-            { v: 'tck216_1',   m: 'TCK 216/1',   a: 'Halkı Kin ve Düşmanlığa Tahrik veya Aşağılama', o: 0.5, ref: '107/2' },
-            { v: 'tck220_1',   m: 'TCK 220/1',   a: 'Suç İşlemek Amacıyla Örgüt Kurma/Yönetme', o: (2 / 3), ref: '107/2' },
-            { v: 'tck235_1',   m: 'TCK 235/1',   a: 'İhaleye Fesat Karıştırma', o: 0.5, ref: '107/2' },
-            { v: 'tck241_1',   m: 'TCK 241/1',   a: 'Tefecilik Suçu', o: 0.5, ref: '107/2' },
-            { v: 'tck243_1',   m: 'TCK 243/1',   a: 'Bilişim Sistemine Girmek', o: 0.5, ref: '107/2' },
-            { v: 'tck244_1',   m: 'TCK 244/1',   a: 'Sistemi Engelleme/Bozma/Verileri Yok Etme', o: 0.5, ref: '107/2' },
-            { v: 'tck245_1',   m: 'TCK 245/1',   a: 'Banka/Kredi Kartlarının Kötüye Kullanılması', o: 0.5, ref: '107/2' },
-            { v: 'tck247_1',   m: 'TCK 247/1',   a: 'Zimmet Suçu', o: 0.5, ref: '107/2' },
-            { v: 'tck250_1',   m: 'TCK 250/1',   a: 'İrtikap Suçu', o: 0.5, ref: '107/2' },
-            { v: 'tck252_1',   m: 'TCK 252/1',   a: 'Rüşvet Suçu', o: 0.5, ref: '107/2' },
-            { v: 'tck257_1',   m: 'TCK 257/1',   a: 'Görevi Kötüye Kullanma', o: 0.5, ref: '107/2' },
-            { v: 'tck265_1',   m: 'TCK 265/1',   a: 'Görevi Yaptırmamak İçin Direnme', o: 0.5, ref: '107/2' },
-            { v: 'tck267_1',   m: 'TCK 267/1',   a: 'İftira Suçu', o: 0.5, ref: '107/2' },
-            { v: 'tck271_1',   m: 'TCK 271/1',   a: 'Suç Uydurma', o: 0.5, ref: '107/2' },
-            { v: 'tck272_1',   m: 'TCK 272/1',   a: 'Yalan Tanıklık', o: 0.5, ref: '107/2' },
-            { v: 'tck281_1',   m: 'TCK 281/1',   a: 'Suç Delillerini Yok Etme/Gizleme/Değiştirme', o: 0.5, ref: '107/2' },
-            { v: 'tck283_1',   m: 'TCK 283/1',   a: 'Suçluyu Kayırma', o: 0.5, ref: '107/2' },
-            { v: 'tck292_1',   m: 'TCK 292/1',   a: 'Hükümlü veya Tutuklunun Kaçması', o: 0.5, ref: '107/2' },
-            { v: 'tck299_1',   m: 'TCK 299/1',   a: 'Cumhurbaşkanına Hakaret', o: 0.5, ref: '107/2' },
-            { v: 'tck301_1',   m: 'TCK 301/1',   a: 'Türk Milletini/Devletini Aşağılama', o: 0.5, ref: '107/2' },
-            { v: 'tck309_1',   m: 'TCK 309/1',   a: 'Anayasayı İhlal', o: 0.75, ref: '107/4' },
-        ];
-
-        // Suç kodundan (value) tam kayıt getirir; bulunamazsa ilk kaydı döner
-        function getCrime(val) {
-            return CRIME_LIST.find(c => c.v === val) || CRIME_LIST[0];
+        function getSuresizSTTYil(sureTip, mukerrir, orgutlu) {
+            const isAgMuebbet = (sureTip === 'agirlastirilmis_muebbet');
+            if (mukerrir !== 'yok') return isAgMuebbet ? 39 : 33;
+            if (orgutlu) return isAgMuebbet ? 36 : 30;
+            return isAgMuebbet ? 30 : 24;
         }
-
-        // Suç seçimi <option> listesini üretir (ceza satırı eklenirken kullanılır)
-        function buildSucOptions(selected) {
-            return CRIME_LIST.map(c =>
-                `<option value="${c.v}" ${c.v === selected ? 'selected' : ''}>${c.m} - ${c.a}${c.es ? ' [Eşe Karşı]' : ''}</option>`
-            ).join('');
+        function getSuresizBTTYil(sureTip, mukerrir, orgutlu) {
+            const isAgMuebbet = (sureTip === 'agirlastirilmis_muebbet');
+            if (mukerrir !== 'yok') return isAgMuebbet ? 72 : 48; // *** TEYİT GEREKİYOR ***
+            if (orgutlu) return isAgMuebbet ? 72 : 48;
+            return isAgMuebbet ? 60 : 36;
         }
 
         // Ceza Süresi Tipine Göre Alanları Değiştirme Fonksiyonu
@@ -707,57 +749,72 @@
             const yilInput = tr.querySelector('.penalty-yil');
             const ayInput = tr.querySelector('.penalty-ay');
             const gunInput = tr.querySelector('.penalty-gun');
+            const apcGunInput = tr.querySelector('.penalty-apc-gun');
+            const sureliFieldsEl = tr.querySelector('.penalty-sureli-fields');
+            const apcFieldsEl = tr.querySelector('.penalty-apc-fields');
             const mukerrirSelect = tr.querySelector('.penalty-mukerrir');
+            const sucMaddeInput = tr.querySelector('.penalty-suc-madde');
+            const oranSelect = tr.querySelector('.penalty-oran');
 
             const isSuresiz = (selectEl.value === 'muebbet' || selectEl.value === 'agirlastirilmis_muebbet');
             const isAdliPara = (selectEl.value === 'adli_para');
 
-            // Yıl/Ay: müebbette ve adli para cezasında kullanılmaz (adli para tek bir "gün" sayısıyla girilir)
-            [yilInput, ayInput].forEach(el => {
-                el.value = 0;
+            // Yıl/Ay/Gün alanları sadece "Süreli Hapis" seçiminde kullanılır.
+            [yilInput, ayInput, gunInput].forEach(el => {
+                if (!el) return;
+                if (isSuresiz || isAdliPara) el.value = 0;
                 el.disabled = (isSuresiz || isAdliPara);
-                el.classList.toggle('opacity-40', (isSuresiz || isAdliPara));
             });
-            // Gün: müebbette kapalı, adli para cezasında AÇIK (gün sayısı doğrudan buraya girilir,
-            // bu durumda normal süreli cezadaki 0-29 sınırı kaldırılır çünkü adli para gün sayısı
-            // yüzlerce gün olabilir - örn. "300 gün").
-            gunInput.disabled = isSuresiz;
-            gunInput.classList.toggle('opacity-40', isSuresiz);
-            if (isSuresiz) gunInput.value = 0;
-            if (isAdliPara) {
-                gunInput.removeAttribute('max');
-                gunInput.placeholder = 'Gün Sayısı';
-            } else {
-                gunInput.setAttribute('max', '29');
-                gunInput.placeholder = 'Gün';
+            if (sureliFieldsEl) {
+                sureliFieldsEl.classList.toggle('hidden', isAdliPara);
+                sureliFieldsEl.classList.toggle('opacity-40', isSuresiz);
             }
 
-            // Müebbet / Ağırlaştırılmış müebbette ve adli para cezasında oran kanunen sabittir
-            // (sırasıyla 3/4-4/4 ve indirimsiz/tam), mükerrerlik bu oranları değiştirmez; seçimi kilitliyoruz.
+            // Adli Para Cezası gün sayısı alanı sadece o seçimde görünür/etkin olur.
+            if (apcFieldsEl) apcFieldsEl.classList.toggle('hidden', !isAdliPara);
+            if (apcGunInput) apcGunInput.disabled = !isAdliPara;
+
+            // Suç maddesi ve infaz oranı süreli hapiste anlamlıdır; süresiz ve adli para cezasında anlamsızdır.
+            [sucMaddeInput, oranSelect].forEach(el => {
+                if (!el) return;
+                el.disabled = (isSuresiz || isAdliPara);
+                el.classList.toggle('opacity-40', isSuresiz || isAdliPara);
+            });
+
+            // Müebbet / Ağırlaştırılmış müebbette koşullu salıverilme süresi artık ORANLA değil,
+            // 5275 s.K. m.107/2 ve m.107/4 ile m.108/1 gereğince SABİT yıl sayısıyla belirleniyor
+            // (bkz. getSuresizSTTYil / getSuresizBTTYil). Bu nedenle mükerrirlik seçimi müebbet/
+            // ağırlaştırılmış müebbette de anlamlıdır ve artık kilitlenmiyor.
+            // Adli para cezası indirimsiz (tam) infaz edildiğinden mükerrirlik onu etkilemez.
             if (mukerrirSelect) {
-                mukerrirSelect.disabled = (isSuresiz || isAdliPara);
-                mukerrirSelect.classList.toggle('opacity-40', (isSuresiz || isAdliPara));
-                if (isSuresiz || isAdliPara) mukerrirSelect.value = 'yok';
+                mukerrirSelect.disabled = isAdliPara;
+                mukerrirSelect.classList.toggle('opacity-40', isAdliPara);
+                if (isAdliPara) mukerrirSelect.value = 'yok';
             }
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucTip = 'tck86_1', sucTarihi = '', mukerrir = 'yok', orgutlu = false, ilamNo = '') {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0) {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
             tr.className = "border-b border-slate-800/50 hover:bg-slate-800/30";
+            tr.dataset.manuelOran = manuelOran ? '1' : '0';
+            if (!oranSecimi) {
+                const maddeInfo = findMaddeInfo(sucMadde);
+                oranSecimi = maddeInfo ? maddeInfo.oran : '1/2';
+            }
             tr.innerHTML = `
                 <td class="p-2 space-y-1.5">
                     <div class="flex items-center gap-1 mb-1">
                         <select class="penalty-sure-tip w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-amber-400 font-bold" onchange="toggleSuresiTip(this)">
                             <option value="sureli" ${sureTip === 'sureli' ? 'selected' : ''}>Süreli Hapis Cezası</option>
+                            <option value="adli_para" ${sureTip === 'adli_para' ? 'selected' : ''}>Adli Para Cezası (TCK m.52)</option>
                             <option value="muebbet" ${sureTip === 'muebbet' ? 'selected' : ''}>Süresiz: Müebbet Hapis</option>
                             <option value="agirlastirilmis_muebbet" ${sureTip === 'agirlastirilmis_muebbet' ? 'selected' : ''}>Süresiz: Ağırlaştırılmış Müebbet</option>
-                            <option value="adli_para" ${sureTip === 'adli_para' ? 'selected' : ''}>Adli Para Cezası (İndirimsiz)</option>
                         </select>
                     </div>
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1 penalty-sureli-fields">
                         <input type="number" min="0" value="${yil}" placeholder="Yıl" class="penalty-yil w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
                         <span class="text-slate-500">Yıl</span>
                         <input type="number" min="0" max="11" value="${ay}" placeholder="Ay" class="penalty-ay w-12 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
@@ -765,17 +822,24 @@
                         <input type="number" min="0" max="29" value="${gun}" placeholder="Gün" class="penalty-gun w-12 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
                         <span class="text-slate-500">Gün</span>
                     </div>
-                    <div>
-                        <select class="penalty-suc w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-slate-200 font-medium">
-                            ${buildSucOptions(sucTip)}
+                    <div class="flex items-center gap-1 hidden penalty-apc-fields">
+                        <input type="number" min="0" value="${apcGun}" placeholder="Gün Sayısı" class="penalty-apc-gun w-20 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <span class="text-slate-500">Gün Adli Para Cezası (indirimsiz infaz edilir)</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <input type="text" value="${(sucMadde || '').replace(/"/g, '&quot;')}" placeholder="Suç maddesini yazın" autocomplete="off" class="penalty-suc-madde w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-slate-200 font-medium" oninput="onSucMaddeInput(this)" onfocus="onSucMaddeInput(this)" onclick="onSucMaddeInput(this)" onblur="hideSucMaddeSuggestionsLater(this)">
+                    </div>
+                    <div class="flex items-center gap-1 penalty-oran-wrap ${manuelOran ? '' : 'hidden'}">
+                        <span class="text-[10px] text-slate-400">Oran:</span>
+                        <select class="penalty-oran w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-amber-400 font-semibold">
+                            <option value="1/2" ${oranSecimi === '1/2' ? 'selected' : ''}>1/2</option>
+                            <option value="2/3" ${oranSecimi === '2/3' ? 'selected' : ''}>2/3</option>
+                            <option value="3/4" ${oranSecimi === '3/4' ? 'selected' : ''}>3/4</option>
+                            <option value="4/4" ${oranSecimi === '4/4' ? 'selected' : ''}>4/4 (İndirimsiz)</option>
                         </select>
                     </div>
                 </td>
                 <td class="p-2 space-y-1.5">
-                    <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-slate-400 w-16">İlam No:</span>
-                        <input type="text" value="${ilamNo || ''}" placeholder="Örn: 2021/608" class="penalty-ilam-no w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-slate-200 font-semibold">
-                    </div>
                     <div class="flex items-center gap-1">
                         <span class="text-[10px] text-slate-400 w-16">Suç Tarihi:</span>
                         <input type="date" value="${sucTarihi || today}" class="penalty-suc-tarihi w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-sky-400 font-semibold">
@@ -792,17 +856,29 @@
                         <input type="checkbox" class="penalty-orgutlu accent-amber-500" ${orgutlu ? 'checked' : ''}>
                         Örgütlü Suç (5275 s.K. m.107/4)
                     </label>
+                    <div class="flex items-center gap-1 pt-0.5 penalty-ekgun-wrap ${manuelOran ? '' : 'hidden'}">
+                        <span class="text-[10px] text-slate-400 w-16">Ek Gün:</span>
+                        <input type="number" min="0" value="${ekGunDeger || 0}" placeholder="0" title="5275 s.K. 108/1-2 md" class="penalty-ek-gun w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                    </div>
                 </td>
                 <td class="p-2 text-right font-mono font-bold text-slate-300">
                     <div class="row-total">0</div>
                     <div class="row-oran text-[9px] text-slate-500 font-normal normal-case mt-0.5 leading-tight"></div>
                 </td>
                 <td class="p-2 text-center">
-                    <button onclick="removePenaltyRow(this)" class="text-slate-300 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="removePenaltyRow(this)" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
             toggleSuresiTip(tr.querySelector('.penalty-sure-tip'));
+        }
+
+        // Manuel Ekle: savcı/uzman kullanıcı için - suç maddesi ve tekerrür yine seçilir,
+        // ama infaz oranı listeden otomatik alınmaz, bu satırda oran kutusu görünür ve
+        // kullanıcı oranı kendi seçer.
+        function addManuelPenaltyRow() {
+            const today = new Date().toISOString().split('T')[0];
+            addPenaltyRow('sureli', 0, 0, 0, '', today, 'yok', false, 0, '1/2', true);
         }
 
         function removePenaltyRow(btn) {
@@ -826,7 +902,6 @@
                         <option value="gozalti" ${tur === 'gozalti' ? 'selected' : ''}>Gözaltı</option>
                         <option value="tutukluluk" ${tur === 'tutukluluk' ? 'selected' : ''}>Tutukluluk</option>
                         <option value="acik_cik" ${tur === 'acik_cik' ? 'selected' : ''}>Açık Çık</option>
-                        <option value="kapali_cik" ${tur === 'kapali_cik' ? 'selected' : ''}>Kapalı Çık</option>
                         <option value="ds" ${tur === 'ds' ? 'selected' : ''}>Denetimli Serbestlik (STT öncesi)</option>
                     </select>
                 </td>
@@ -852,63 +927,41 @@
             return `${day}.${month}.${year}`;
         }
 
-        // İnfaz başlangıcından itibaren GERÇEK takvimde geçen süre içinde bir veya daha fazla
-        // 29 Şubat (artık gün) var mı diye bakar; hesap motoru sabit "365 gün = 1 yıl" çevrimi
-        // kullandığından (artık güne ekstra gün tanımadığından), bu günlerin tarihini not olarak döner.
-        function artikYilNotlari(baslangic, gunSayisi) {
-            const notlar = [];
-            if (!baslangic || !gunSayisi || isNaN(baslangic.getTime())) return notlar;
-            const bitisGercek = addDays(baslangic, gunSayisi);
-            for (let yil = baslangic.getFullYear(); yil <= bitisGercek.getFullYear(); yil++) {
-                const artikYilMi = (yil % 4 === 0 && yil % 100 !== 0) || (yil % 400 === 0);
-                if (!artikYilMi) continue;
-                const subat29 = new Date(yil, 1, 29);
-                if (subat29 > baslangic && subat29 <= bitisGercek) {
-                    notlar.push(`${formatDate(subat29)} tarihli artık yıl düşülmüştür.`);
-                }
+        // Suç Türü Metin Karşılığı Helper (eski 5 kategorili sistemden kalan, artık kullanılmıyor
+        // ama geriye dönük uyumluluk için tanımlı bırakıldı)
+        function getSucrefText(val) {
+            switch (val) {
+                case 'yaralama': return 'Yaralama (TCK 86)';
+                case 'oldurme': return 'Öldürme (TCK 82)';
+                case 'cinsel': return 'Cinsel Suçlar (TCK 102)';
+                case 'uyusturucu': return 'Uyuşturucu Ticareti (TCK 188)';
+                default: return 'Diğer Adli Suçlar';
             }
-            return notlar;
-        }
-
-        // Ceza Bilgisi metnini müddetname şablonundaki gibi üretir (örn: "7 YIL", "10 AY 20 GÜN")
-        function cezaBilgisiMetni(y, a, g) {
-            const parts = [];
-            if (y > 0) parts.push(`${y} Yıl`);
-            if (a > 0) parts.push(`${a} Ay`);
-            if (g > 0) parts.push(`${g} Gün`);
-            if (parts.length === 0) return "0 Gün";
-            return parts.join(' ');
-        }
-
-        // İnfaz Türü metnini üretir (örn: "5275 S.K. 107/2 Md. (1/2)" veya mükerrer/örgütlü hallerinde
-        // ilgili maddeye (108/1-2, 108/3, 107/4) atıf yaparak)
-        function infazTuruMetni(crime, mukerrir, orgutlu, rowOran, isSuresiz) {
-            const oranTxt = oranToTextPlain(rowOran);
-            if (isSuresiz) return `5275 S.K. 107/2 Md. (Kanuni Sabit Süre)`;
-            if (mukerrir === '2') return `5275 S.K. 108/3 Md. (${oranTxt})`;
-            if (mukerrir === '1') return `5275 S.K. 108/1-2 Md. (${oranTxt})`;
-            if (orgutlu) return `5275 S.K. 107/4 Md. (${oranTxt})`;
-            return `5275 S.K. ${crime.ref} Md. (${oranTxt})`;
         }
 
         /* ======================================================
-           HESAPLAMA MOTORU (v8)
+           HESAPLAMA MOTORU (v10)
 
            Kurallar (kullanıcı onayıyla):
-           1) Her cezanın kendi infaz oranı kendi gün sayısına uygulanır,
-              sonra hepsi toplanır (tek bir "en yüksek oran"ı tüm
-              toplama uygulamak YERİNE).
-           2) Mükerrerlik oranı YÜKSELTİR:
-                - Taban 1/2 ise  -> 1. mükerrerlik  -> 2/3
-                - Taban 2/3 ise  -> 1. mükerrerlik  -> 3/4
-                - 2. mükerrerlik -> (taban ne olursa olsun) 3/4
-              Müebbet/Ağırlaştırılmış müebbette oran kanunen sabit
-              olduğu için mükerrerlik bunları etkilemez.
-           3) Denetimli serbestlik (STT öncesi ayrılan süre) bir
+           1) Süreli hapis cezalarında her cezanın kendi infaz oranı kendi
+              gün sayısına uygulanır, sonra hepsi toplanır (tek bir "en
+              yüksek oran"ı tüm toplama uygulamak YERİNE).
+           2) Süreli hapiste mükerrerlik oranı (5275 s.K. m.108/1,3):
+                - 1. kez mükerrerlik -> TABAN (2/3)'tür; kendi suç oranı
+                  zaten 2/3'ten fazlaysa (ör. 3/4) o korunur, yükseltilmez.
+                - 2. kez mükerrerlik -> oran sabit (3/4)'tür (taban ne olursa olsun).
+           3) Müebbet / Ağırlaştırılmış müebbette koşullu salıverilme (STT)
+              ve hakederek tahliye (BTT) artık bir ORAN DEĞİL, kanunda
+              (m.107/2, m.107/4, m.108/1) doğrudan yazan SABİT yıl sayısıdır;
+              bkz. getSuresizSTTYil / getSuresizBTTYil.
+           4) Adli para cezası (TCK m.52) indirimsiz (tam) infaz edilir;
+              gün sayısı doğrudan yatar gün olarak sayılır, içtima
+              kombinasyon tavanlarına dahil edilmez.
+           5) Denetimli serbestlik (STT öncesi ayrılan süre) bir
               MAHSUP kalemidir, cezadan düşülür.
-           4) Açık cezaevine ayrılma / DS'ye ayrılma tarihleri bu
+           6) Açık cezaevine ayrılma / DS'ye ayrılma tarihleri bu
               sürümde HENÜZ yok (birlikte ekleyeceğiz).
-           5) Her ceza satırı resmi raporda ayrı ayrı gösterilir.
+           7) Her ceza satırı resmi raporda ayrı ayrı gösterilir.
 
            Artık yıl / farklı ay uzunlukları: Sabit "365 gün = 1 yıl,
            30 gün = 1 ay" ÇARPIMI YERİNE, her ceza süresi infaz
@@ -926,72 +979,57 @@
             let totalYatarGun = 0;
             const rowReportData = [];
 
-            // Müddetname şablonundaki "CEZASI (TOPLAM)" alanı için HAM (taşımasız) yıl/ay/gün toplamı
-            let hamToplamYil = 0, hamToplamAy = 0, hamToplamGun = 0;
-            let adliParaToplamGun = 0;
-            const suresizEtiketler = [];
-            const tumSucTarihleri = [];
-
             // Kombinasyon (içtima) tavanı için sayaçlar
             let amCount = 0, mCount = 0, sCount = 0;
             let hasMukerrer = false, hasOrgutlu = false;
-            // Açık cezaevine ayrılma "3 yıl kuralı" kapsamındaki suçlar (cinsel dokunulmazlığa karşı suçlar
-            // TCK 102-105 ve eşe karşı işlenen 82/1-d, 86/3-a, 96/2-b) seçilmiş mi?
-            let hasAcikIstisnaSuc = false;
 
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
             penaltyRows.forEach((row) => {
                 const sureTip = row.querySelector('.penalty-sure-tip').value;
-                const sucTip = row.querySelector('.penalty-suc').value;
-                const crime = getCrime(sucTip);
+                const sucMadde = row.querySelector('.penalty-suc-madde').value;
+                const oranSecimiVal = row.querySelector('.penalty-oran').value;
                 const mukerrir = row.querySelector('.penalty-mukerrir').value;
                 const sTarih = row.querySelector('.penalty-suc-tarihi').value;
-                const ilamNoEl = row.querySelector('.penalty-ilam-no');
-                const ilamNo = ilamNoEl ? ilamNoEl.value : '';
                 const orgutluEl = row.querySelector('.penalty-orgutlu');
                 const orgutlu = orgutluEl ? orgutluEl.checked : false;
 
-                if (sTarih) tumSucTarihleri.push(sTarih);
                 if (mukerrir !== 'yok') hasMukerrer = true;
                 if (orgutlu) hasOrgutlu = true;
-                if (crime && (crime.es || /^tck10[2345]/.test(crime.v))) hasAcikIstisnaSuc = true;
 
                 let nextDate;
-                let baseOran = 0.5;
                 let isSuresiz = false;
+                let isAdliPara = false;
                 let suresizText = "";
                 let sureMetinYAG = "";
-                let cezaBilgisiTxt = "";
+                let rowDays = 0;       // BTT'ye (hakederek tahliye) katkı veren ham gün
+                let rowYatarGun = 0;   // STT'ye (koşullu salıverilme) katkı veren yatar gün
+                let rowOranMetni = ""; // Rapordaki "oran" sütununda gösterilecek kısa metin
 
-                if (sureTip === 'muebbet') {
-                    mCount++;
-                    nextDate = addDays(cumulative, 30 * 365); // Kanuni baz: 30 yıl = 30*365 gün (sabit çevrim)
-                    // Örgütlü suç (m.107/4): müebbette 30 yılın TAMAMI yatar (oran 4/4).
-                    // Örgütlü değilse mevcut onaylanmış oran (3/4) aynen kalır.
-                    baseOran = orgutlu ? 1.0 : 0.75;
+                if (sureTip === 'muebbet' || sureTip === 'agirlastirilmis_muebbet') {
                     isSuresiz = true;
-                    suresizText = "Müebbet Hapis";
-                    cezaBilgisiTxt = "MÜEBBET HAPİS";
-                    suresizEtiketler.push("Müebbet Hapis");
-                } else if (sureTip === 'agirlastirilmis_muebbet') {
-                    amCount++;
-                    nextDate = addDays(cumulative, 36 * 365); // Kanuni baz: 36 yıl = 36*365 gün (sabit çevrim)
-                    baseOran = 1.0; // 4/4 (örgütlü olsun olmasın mevcut onaylanmış kural)
-                    isSuresiz = true;
-                    suresizText = "Ağırlaştırılmış Müebbet Hapis";
-                    cezaBilgisiTxt = "AĞIRLAŞTIRILMIŞ MÜEBBET HAPİS";
-                    suresizEtiketler.push("Ağırlaştırılmış Müebbet Hapis");
+                    suresizText = (sureTip === 'muebbet') ? "Müebbet Hapis" : "Ağırlaştırılmış Müebbet Hapis";
+                    if (sureTip === 'muebbet') mCount++; else amCount++;
+
+                    // 5275 s.K. m.107/2, m.107/4, m.108/1 gereği SABİT yıl sayıları (oran DEĞİL)
+                    const sttYil = getSuresizSTTYil(sureTip, mukerrir, orgutlu);
+                    const bttYil = getSuresizBTTYil(sureTip, mukerrir, orgutlu);
+
+                    rowDays = bttYil * 365;      // BTT (hakederek tahliye) - bihakkın süre
+                    rowYatarGun = sttYil * 365;  // STT (koşullu salıverilme)
+                    nextDate = addDays(cumulative, rowDays); // tarih ilerletme bihakkın süre üzerinden
+
+                    rowOranMetni = `${sttYil} Yıl (Sabit)`;
                 } else if (sureTip === 'adli_para') {
-                    // Adli Para Cezası: TL tutarı değil, doğrudan GÜN sayısı olarak girilir;
-                    // indirimsiz (tam) infaz edilir, mükerrerlik/örgütlü oranı yükseltmesi uygulanmaz,
-                    // süreli hapis içtima (28/32 yıl) tavanına dahil edilmez.
-                    const g = parseInt(row.querySelector('.penalty-gun').value) || 0;
-                    nextDate = addDays(cumulative, g);
-                    baseOran = 1.0;
-                    sureMetinYAG = `${g} Gün`;
-                    cezaBilgisiTxt = `${g} GÜN (ADLİ PARA CEZASI)`;
-                    adliParaToplamGun += g;
+                    isAdliPara = true;
+                    const apcGunDeger = parseInt(row.querySelector('.penalty-apc-gun').value) || 0;
+                    // Adli para cezaları indirimsiz (tam) infaz edilir: oran uygulanmaz,
+                    // mükerrerlik de etkilemez. İçtima (m.107/3-4) kombinasyon tavanlarına dahil edilmez.
+                    rowDays = apcGunDeger;
+                    rowYatarGun = apcGunDeger;
+                    nextDate = addDays(cumulative, rowDays);
+                    sureMetinYAG = `${apcGunDeger} Gün (Adli Para Cezası)`;
+                    rowOranMetni = "İndirimsiz (Tam)";
                 } else {
                     sCount++;
                     const y = parseInt(row.querySelector('.penalty-yil').value) || 0;
@@ -1001,58 +1039,80 @@
                     const rowGunSabit = (y * 365) + (a * 30) + g;
                     nextDate = addDays(cumulative, rowGunSabit);
                     sureMetinYAG = yagMetinVertical(y, a, g);
-                    cezaBilgisiTxt = cezaBilgisiMetni(y, a, g);
-                    hamToplamYil += y; hamToplamAy += a; hamToplamGun += g;
 
-                    // Oran artık seçilen suç maddesinin kendi infaz oranından (CRIME_LIST) gelir.
-                    baseOran = crime.o;
+                    // "Ceza Ekle" ile eklenen satırlarda oran, suç maddesi listesinden
+                    // otomatik alınır (vatandış oranı bilmez). "Manuel Ekle" ile eklenen
+                    // satırlarda oran savcı/uzman kullanıcı tarafından elle seçilir (bu durumda
+                    // seçilen değer doğrudan YATAR oranıdır).
+                    //
+                    // "Ceza Ekle" listesindeki (SUC_MADDE_LISTESI) oran değeri ise YATAR oranı DEĞİL,
+                    // İNDİRİM oranıdır (kullanıcı onayıyla düzeltildi): örn. 1/4 indirim =>
+                    // yatar oranı = 1 - 1/4 = 3/4; 1/3 indirim => yatar oranı = 1 - 1/3 = 2/3.
+                    // 1/2 indirimde yatar da 1/2 olduğu için bu dönüşüm 1/2'yi değiştirmez.
+                    const manuelOranMi = row.dataset.manuelOran === '1';
+                    let baseOran = manuelOranMi
+                        ? oranStrToNum(oranSecimiVal)
+                        : (1 - oranStrToNum((findMaddeInfo(sucMadde) || {}).oran || '1/2'));
                     // Örgütlü suç (m.107/4): süreli cezada oran en az 2/3 olur;
                     // zaten tabi olduğu oran bundan fazlaysa o oran uygulanır.
                     if (orgutlu) baseOran = Math.max(baseOran, 2 / 3);
-                }
 
-                // Bu cezanın SABİT kanuni gün karşılığı (365 gün/yıl, 30 gün/ay - artık yıl etkisi YOK)
-                const rowDays = diffDaysCalendar(cumulative, nextDate);
+                    // Bu cezanın SABİT kanuni gün karşılığı (365 gün/yıl, 30 gün/ay - artık yıl etkisi YOK)
+                    rowDays = diffDaysCalendar(cumulative, nextDate);
 
-                // Mükerrerlik oran yükseltmesi (sadece süreli hapis cezalarında uygulanır; adli para hariç)
-                let rowOran = baseOran;
-                if (!isSuresiz && sureTip !== 'adli_para') {
+                    // Mükerrerlik oranı (5275 s.K. m.108/1,3):
+                    // 1. kez mükerrerlikte TABAN (2/3)'tür; kendi suç oranı zaten bundan
+                    // yüksekse (ör. 3/4) o korunur — "bir kademe yükselt" YANLIŞTIR, düzeltildi.
+                    // 2. kez mükerrerlikte oran sabit (3/4)'tür.
+                    let rowOran = baseOran;
                     if (mukerrir === '1') {
-                        if (Math.abs(baseOran - 0.5) < 0.001) rowOran = 2 / 3;
-                        else if (Math.abs(baseOran - (2 / 3)) < 0.001) rowOran = 0.75;
+                        rowOran = Math.max(baseOran, 2 / 3);
                     } else if (mukerrir === '2') {
                         rowOran = 0.75;
                     }
-                }
 
-                const rowYatarGun = rowDays * rowOran;
+                    rowYatarGun = rowDays * rowOran;
+                    rowOranMetni = oranToTextPlain(rowOran);
+
+                    // Ek Gün (5275 s.K. 108/1-2 md): kullanıcının girdiği gün sayısı, yatar günün
+                    // üzerine DOĞRUDAN eklenir (oranla çarpılmaz); raporda "oran+gün" olarak gösterilir.
+                    const ekGunInput = row.querySelector('.penalty-ek-gun');
+                    const ekGun = ekGunInput ? (parseInt(ekGunInput.value) || 0) : 0;
+                    if (ekGun > 0) {
+                        rowYatarGun += ekGun;
+                        rowOranMetni = `5275 S.K. 108/1-2 md. ${oranToTextPlain(rowOran)}+${ekGun}`;
+                    }
+                }
 
                 totalRawDays += rowDays;
                 totalYatarGun += rowYatarGun;
 
-                row.querySelector('.row-total').innerText = `${rowDays} Gün`;
+                row.querySelector('.row-total').innerText = isSuresiz ? `${rowDays} Gün (Bihakkın)` : `${rowDays} Gün`;
                 const oranLabel = row.querySelector('.row-oran');
-                if (oranLabel) oranLabel.innerText = `Oran: ${oranToText(rowOran)} • Yatar: ${Math.floor(rowYatarGun)}g`;
+                if (oranLabel) {
+                    if (isSuresiz) {
+                        oranLabel.innerText = `STT: ${Math.round(rowYatarGun / 365)} Yıl • BTT: ${Math.round(rowDays / 365)} Yıl`;
+                    } else if (isAdliPara) {
+                        oranLabel.innerText = `İndirimsiz • Yatar: ${Math.floor(rowYatarGun)}g`;
+                    } else {
+                        oranLabel.innerText = `Oran: ${oranToText(rowDays ? rowYatarGun / rowDays : 0)} • Yatar: ${Math.floor(rowYatarGun)}g`;
+                    }
+                }
 
                 rowReportData.push({
-                    ilamNo: ilamNo || "-",
                     metin: isSuresiz ? suresizText : sureMetinYAG,
-                    cezaBilgisi: cezaBilgisiTxt,
-                    maddeKodu: crime.m,
-                    sucMetni: `${crime.m} - ${crime.a}`,
+                    sucMetni: isAdliPara ? "Adli Para Cezası (TCK m.52)" : (sucMadde || 'Diğer Adli Suçlar'),
                     tarih: sTarih ? formatDate(new Date(sTarih)) : "-",
-                    oranMetni: oranToTextPlain(rowOran),
-                    infazTuru: (sureTip === 'adli_para') ? 'TCK m.52 (İndirimsiz Tam İnfaz)' : infazTuruMetni(crime, mukerrir, orgutlu, rowOran, isSuresiz)
+                    oranMetni: rowOranMetni
                 });
 
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
             });
 
             // Toplam ceza süresi - SABİT kanuni çevrimle (365 gün/yıl, 30 gün/ay) Y-A-G gösterimi
+            // (Ekrana ayrıca basılmıyor; resmi raporda CEZASI (TOPLAM) alanında kullanılır.)
             const toplamYAG = gunSayisindanYAG(totalRawDays);
             const cezaMetin = `${toplamYAG.y} Yıl ${toplamYAG.a} Ay ${toplamYAG.g} Gün`;
-
-            // Not: küsüratlı gün, kanunda açık hüküm olmadığı için HÜKÜMLÜ LEHİNE aşağı yuvarlanır (Math.floor)
 
             // 2. Mahsup Hesabı (Gözaltı / Tutukluluk / Açık Çık / Denetimli Serbestlik)
             let grandTotalMahsupDays = 0;
@@ -1123,76 +1183,20 @@
             const sttDate = new Date(D0.getTime());
             sttDate.setDate(sttDate.getDate() + sttDays);
 
-            // --- MUHTEMEL AYRILMA TARİHLERİ (TAHMİNİ) ---
-            // Not: Bu üç alan KESİN bir hak değil, mevzuattaki genel eşiklere göre yapılan bir
-            // ÖN TAHMİNDİR; nihai karar ilgili idare/kurul tarafından verilir.
-
-            // 1) Muhtemel Denetimli Serbestliğe Ayrılma: STT'den 1 yıl (365 gün) önce kullanılabilir (5275 S.K. m.105/A).
-            const dsMuhtemelTarih = addDays(sttDate, -365);
-
-            // 2) Muhtemel Açık Ceza İnfaz Kurumuna Ayrılma: kural olarak STT'ye 1 yıldan az kalınca (365 gün);
-            // cinsel dokunulmazlığa karşı suçlar (TCK 102-105) ile eşe karşı işlenen 82/1-d, 86/3-a, 96/2-b
-            // maddelerinden hükümlülerde bu süre 3 yıla (3*365 gün) çıkar.
-            const acikCezaEsikGun = hasAcikIstisnaSuc ? (3 * 365) : 365;
-            const acikCezaMuhtemelTarih = addDays(sttDate, -acikCezaEsikGun);
-
-            // 3) Erken İyileştirme / Doğrudan Açık Ceza İnfaz Kurumuna Alınma İhtimali: Açık Ceza İnfaz
-            // Kurumlarına Ayrılma Yönetmeliği m.5 uyarınca, kasıtlı suçlarda toplam ceza 3 yıl veya altında
-            // ise (ve süresiz/örgütlü/istisna suç yoksa) hükümlü iyi halli olması kaydıyla hiç kapalı
-            // cezaevine girmeden DOĞRUDAN açık cezaevine alınabilir. Bu bir TARİH değil, bir UYGUNLUK notudur.
-            const dogrudanAcikUygun = (mCount === 0 && amCount === 0 && !hasOrgutlu && !hasAcikIstisnaSuc && totalRawDays > 0 && totalRawDays <= (3 * 365));
-
-            // Resmi rapor alanları - Hükümlü Kimlik Bilgileri
+            // Resmi rapor alanları
             document.getElementById('repAd').innerText = document.getElementById('hukumluAd').value || "-";
             document.getElementById('repTc').innerText = document.getElementById('hukumluTc').value || "-";
-            document.getElementById('repBabaAd').innerText = document.getElementById('hukumluBabaAd').value || "-";
-            document.getElementById('repAnaAd').innerText = document.getElementById('hukumluAnaAd').value || "-";
-            const dogumTarihiVal = document.getElementById('hukumluDogumTarihi').value;
-            document.getElementById('repDogumTarihi').innerText = dogumTarihiVal ? formatDate(new Date(dogumTarihiVal)) : "-";
-            document.getElementById('repDogumYeri').innerText = document.getElementById('hukumluDogumYeri').value || "-";
-            document.getElementById('repNufusKayit').innerText = document.getElementById('hukumluNufusKayit').value || "-";
-            document.getElementById('repIkamet').innerText = document.getElementById('hukumluIkametgah').value || "-";
-
-            // Resmi rapor alanları - Dosya ve Mahkeme Bilgileri
-            document.getElementById('repBassavcilik').innerText = document.getElementById('dosyaBassavcilik').value || "-";
             document.getElementById('repDosyaNo').innerText = document.getElementById('dosyaRef').value || "-";
-            document.getElementById('repDefterNo').innerText = document.getElementById('dosyaDefterNo').value || "-";
-            document.getElementById('repMahkeme').innerText = document.getElementById('dosyaMahkeme').value || "-";
-            document.getElementById('repKararBilgisi').innerText = document.getElementById('dosyaKararBilgisi').value || "-";
+            document.getElementById('repCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
 
-            // Suç Tarihi/Tarihleri: satırlar arasındaki EN ERKEN suç tarihi (gerçek müddetnamedeki gibi)
-            if (tumSucTarihleri.length) {
-                const enErken = tumSucTarihleri.map(d => new Date(d)).sort((a, b) => a - b)[0];
-                document.getElementById('repSucTarihi').innerText = formatDate(enErken);
-            } else {
-                document.getElementById('repSucTarihi').innerText = "-";
-            }
-
-            // CEZASI (TOPLAM): gerçek müddetname şablonundaki gibi HAM (taşımasız) yıl/ay/gün toplamı + HAPİS ibaresi,
-            // süresiz ceza varsa adı da eklenir. Ayrıca, hesap motorunun kullandığı kanuni-sabit (365/30 gün) NORMALİZE
-            // toplam, küçük bir alt satırda bilgi amaçlı ayrıca gösterilir (hesaplama bundan etkilenmez).
-            const hamParcalar = [];
-            if (hamToplamYil || hamToplamAy || hamToplamGun) {
-                hamParcalar.push(`${hamToplamYil} Yıl ${hamToplamAy} Ay ${hamToplamGun} Gün HAPİS`);
-            }
-            const suresizUnique = [...new Set(suresizEtiketler)];
-            suresizUnique.forEach(s => hamParcalar.push(s));
-            if (adliParaToplamGun > 0) {
-                hamParcalar.push(`${adliParaToplamGun} Gün ADLİ PARA CEZASI`);
-            }
-            const cezaBaslikMetni = hamParcalar.length ? hamParcalar.join(' + ') : "-";
-            document.getElementById('repCeza').innerHTML = `${cezaBaslikMetni}<br><span class="text-[9px] font-normal text-slate-500">(Normalize: ${cezaMetin} — Toplam ${totalRawDays} Gün)</span>`;
-
-            // Her ceza satırını raporda ayrı ayrı göster (İlam No | Suç Tarihi | Ceza Mad. | Ceza Bilgisi | İnfaz Türü)
+            // Her ceza satırını raporda ayrı ayrı göster
             const repRowsBody = document.getElementById('repCezaRows');
             if (repRowsBody) {
                 repRowsBody.innerHTML = rowReportData.map(r => `
                     <tr class="border-b border-slate-300">
-                        <td class="p-1 border-r border-slate-300">${r.ilamNo}</td>
-                        <td class="p-1 border-r border-slate-300 text-sky-800">${r.tarih}</td>
-                        <td class="p-1 border-r border-slate-300 font-semibold">${r.maddeKodu}</td>
-                        <td class="p-1 border-r border-slate-300 font-semibold">${r.cezaBilgisi}</td>
-                        <td class="p-1 font-semibold text-amber-700">${r.infazTuru}</td>
+                        <td class="p-1.5 border-r border-slate-300">${r.metin}<br><span class="text-[9px] text-slate-500">${r.sucMetni}</span></td>
+                        <td class="p-1.5 border-r border-slate-300 text-sky-800">${r.tarih}</td>
+                        <td class="p-1.5 font-semibold text-amber-700">${r.oranMetni}</td>
                     </tr>
                 `).join('');
             }
@@ -1201,29 +1205,13 @@
             document.getElementById('repBtt').innerText = formatDate(bttDate);
             document.getElementById('repStt').innerText = formatDate(sttDate);
 
-            // Muhtemel Ayrılma Tarihleri (Tahmini) alanları
-            const repAcikCezaEl = document.getElementById('repAcikCezaMuhtemel');
-            if (repAcikCezaEl) {
-                repAcikCezaEl.innerText = formatDate(acikCezaMuhtemelTarih) + (hasAcikIstisnaSuc ? ' (3 Yıl Kuralı)' : ' (1 Yıl Kuralı)');
-            }
-            const repDsMuhtemelEl = document.getElementById('repDsMuhtemel');
-            if (repDsMuhtemelEl) {
-                repDsMuhtemelEl.innerText = formatDate(dsMuhtemelTarih);
-            }
-            const repErkenIyilestirmeEl = document.getElementById('repErkenIyilestirme');
-            if (repErkenIyilestirmeEl) {
-                repErkenIyilestirmeEl.innerText = dogrudanAcikUygun
-                    ? "Toplam cezası 3 yıl veya altında olduğundan, iyi halli olması kaydıyla doğrudan açık ceza infaz kurumuna alınma ihtimali bulunmaktadır."
-                    : "Koşulları sağlanmıyor (ACİKAY Yönetmeliği m.5).";
-            }
-
             const bugunFormatted = formatDate(new Date());
             document.getElementById('repTarihAlani').innerText = bugunFormatted;
 
             // Raporda Mahsup Bilgileri Tablosu
             const repMahsupBody = document.getElementById('repMahsupRows');
             if (repMahsupBody) {
-                const mahsupLabels = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', kapali_cik: 'Kapalı Çık', ds: 'Denetimli Serbestlik' };
+                const mahsupLabels = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', ds: 'Denetimli Serbestlik' };
                 const rows = [];
                 mahsupRows.forEach(row => {
                     const tur = row.querySelector('.mahsup-tur').value;
@@ -1233,10 +1221,10 @@
                     if (sVal && eVal) {
                         rows.push(`
                             <tr class="border-b border-slate-300">
-                                <td class="p-1 border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
-                                <td class="p-1 border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
-                                <td class="p-1 border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
-                                <td class="p-1 font-semibold text-emerald-700">${gun} Gün</td>
+                                <td class="p-1.5 border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
+                                <td class="p-1.5 border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
+                                <td class="p-1.5 border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
+                                <td class="p-1.5 font-semibold text-emerald-700">${gun} Gün</td>
                             </tr>
                         `);
                     }
@@ -1250,20 +1238,8 @@
             const manuelNot = (document.getElementById('aciklamaManuel') || {}).value || "";
             const repAciklamaEl = document.getElementById('repAciklama');
             if (repAciklamaEl) {
-                // Artık yıl (29 Şubat) notları: infaz başlangıcından, hesaplanan HAM toplam gün kadar
-                // ileri gidilen gerçek takvim aralığında kalan her 29 Şubat için ayrı not üretilir.
-                const artikNotlar = artikYilNotlari(D0, totalRawDays);
-                // Örgütlü suç veya cinsel dokunulmazlığa karşı suç / eşe karşı istisna maddeleri seçiliyse,
-                // açık cezaevine doğrudan geçiş hakkının bazı kaynaklara göre ayrıca kısıtlı/istisnai olabileceğine
-                // dair bilgilendirme notu (hesaplanan "muhtemel" tarih bu nedenle kesin kabul edilmemelidir).
-                let acikCezaUyariNotu = "";
-                if (hasOrgutlu || hasAcikIstisnaSuc) {
-                    acikCezaUyariNotu = "Örgütlü suç ve/veya cinsel dokunulmazlığa karşı suç/eşe karşı istisna maddesi bulunması nedeniyle, açık ceza infaz kurumuna ayrılma hakkı ve süresi bakımından ilgili mevzuat ayrıca ve özenle incelenmelidir.";
-                }
-                // Açıklamanın en altında HER ZAMAN sabit kalan itiraz hakkı notu.
-                const sabitKapanisNotu = "Müddetnameye karşı İnfaz Hakimliğine itiraz hakkının saklı olduğu tebliğ olunur.";
-                const parcalar = [capWarningText.trim(), ...artikNotlar, acikCezaUyariNotu, manuelNot.trim(), sabitKapanisNotu].filter(Boolean);
-                repAciklamaEl.innerText = parcalar.join('\n\n');
+                const parcalar = [capWarningText.trim(), manuelNot.trim()].filter(Boolean);
+                repAciklamaEl.innerText = parcalar.length ? parcalar.join('\n\n') : "—";
             }
 
             // Ekrandaki uyarı kutusu (Hesapla anında görünür)
@@ -1280,34 +1256,17 @@
         }
 
         // Reset All Data
-        // Basit metin/tarih alanlarının input id listesi (resetAll / exportJSON / importJSON hepsi bunu kullanır)
-        const KIMLIK_DOSYA_ALANLARI = [
-            'hukumluAd', 'hukumluTc', 'hukumluBabaAd', 'hukumluAnaAd', 'hukumluDogumTarihi',
-            'hukumluDogumYeri', 'hukumluNufusKayit', 'hukumluIkametgah',
-            'dosyaRef', 'dosyaBassavcilik', 'dosyaDefterNo', 'dosyaMahkeme', 'dosyaKararBilgisi'
-        ];
-
         function resetAll() {
             document.getElementById('hukumluAd').value = 'Ali Veli KONYA';
             document.getElementById('hukumluTc').value = '11111111111';
-            document.getElementById('hukumluBabaAd').value = '';
-            document.getElementById('hukumluAnaAd').value = '';
-            document.getElementById('hukumluDogumTarihi').value = '';
-            document.getElementById('hukumluDogumYeri').value = '';
-            document.getElementById('hukumluNufusKayit').value = '';
-            document.getElementById('hukumluIkametgah').value = '';
             document.getElementById('dosyaRef').value = 'INF-2024/7821';
-            document.getElementById('dosyaBassavcilik').value = '';
-            document.getElementById('dosyaDefterNo').value = '';
-            document.getElementById('dosyaMahkeme').value = '';
-            document.getElementById('dosyaKararBilgisi').value = '';
             document.getElementById('penaltyTableBody').innerHTML = '';
             document.getElementById('mahsupTableBody').innerHTML = '';
             const aciklamaEl = document.getElementById('aciklamaManuel');
             if (aciklamaEl) aciklamaEl.value = '';
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('infazBaslangic').value = today;
-            addPenaltyRow('sureli', 0, 0, 0, 'tck86_1', today, 'yok', false, '');
+            addPenaltyRow('sureli', 0, 0, 0, '', today, 'yok', false);
             calculateAll();
         }
 
@@ -1325,11 +1284,14 @@
                     yil: parseInt(row.querySelector('.penalty-yil').value) || 0,
                     ay: parseInt(row.querySelector('.penalty-ay').value) || 0,
                     gun: parseInt(row.querySelector('.penalty-gun').value) || 0,
-                    sucTip: row.querySelector('.penalty-suc').value,
+                    sucMadde: row.querySelector('.penalty-suc-madde').value,
+                    oran: row.querySelector('.penalty-oran').value,
+                    manuelOran: row.dataset.manuelOran === '1',
+                    ekGun: row.querySelector('.penalty-ek-gun') ? (parseInt(row.querySelector('.penalty-ek-gun').value) || 0) : 0,
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
-                    ilamNo: row.querySelector('.penalty-ilam-no') ? row.querySelector('.penalty-ilam-no').value : ''
+                    apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0
                 });
             });
 
@@ -1343,13 +1305,15 @@
             });
 
             const data = {
+                hukumluAd: document.getElementById('hukumluAd').value,
+                hukumluTc: document.getElementById('hukumluTc').value,
+                dosyaRef: document.getElementById('dosyaRef').value,
                 infazBaslangic: document.getElementById('infazBaslangic').value,
                 aciklamaManuel: (document.getElementById('aciklamaManuel') || {}).value || "",
                 penalties: penalties,
                 mahsups: mahsups,
                 timestamp: new Date().toISOString()
             };
-            KIMLIK_DOSYA_ALANLARI.forEach(id => { data[id] = document.getElementById(id).value; });
 
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1373,9 +1337,9 @@
                 try {
                     const data = JSON.parse(e.target.result);
 
-                    KIMLIK_DOSYA_ALANLARI.forEach(id => {
-                        if (data[id] !== undefined) document.getElementById(id).value = data[id];
-                    });
+                    if (data.hukumluAd !== undefined) document.getElementById('hukumluAd').value = data.hukumluAd;
+                    if (data.hukumluTc !== undefined) document.getElementById('hukumluTc').value = data.hukumluTc;
+                    if (data.dosyaRef !== undefined) document.getElementById('dosyaRef').value = data.dosyaRef;
                     if (data.infazBaslangic) document.getElementById('infazBaslangic').value = data.infazBaslangic;
                     if (data.aciklamaManuel !== undefined) {
                         const aciklamaEl = document.getElementById('aciklamaManuel');
@@ -1385,7 +1349,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucTip, p.sucTarihi, p.mukerrir, p.orgutlu, p.ilamNo);
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0);
                         });
                     }
 
