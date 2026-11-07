@@ -1679,10 +1679,12 @@
                 const gecici106Uygulanir = !anyIstisna106 && allBeforeGecici106;
                 const gecici106Ek = gecici106Uygulanir ? 3 : 0;
 
-                // --- 30/03/2020 eşiği kuralı (istisna YOK; denetim süresinin kendisini
-                // belirler + açığa ayrılmaya ayrıca +3 yıl eklenir). İçtimadaki suçlardan
-                // biri bile 30/03/2020'den SONRA ise tüm içtima için 1 yıla düşer.
-                const allBefore30032020 = !anyTarihsiz && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
+                // --- 30/03/2020 eşiği kuralı: denetim süresinin kendisini belirler +
+                // açığa ayrılmaya ayrıca +3 yıl eklenir. İçtimadaki suçlardan biri bile
+                // 30/03/2020'den SONRA ise tüm içtima için 1 yıla düşer. İstisna suç
+                // varsa (anyIstisna106), suç tarihi ne olursa olsun bu +3 yıl hiç
+                // uygulanmaz (kullanıcı onayıyla güncellenmiştir).
+                const allBefore30032020 = !anyTarihsiz && !anyIstisna106 && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYil = allBefore30032020 ? 3 : 1;
                 const esik30032020Ek = allBefore30032020 ? 3 : 0;
 
@@ -1702,18 +1704,20 @@
 
                 const notParcalari = [];
                 if (anyTarihsiz) {
-                    notParcalari.push(`İçtimadaki bir veya daha fazla cezanın suç tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sonrası) kabul edilmiştir.`);
+                    notParcalari.push(`İçtimadaki bir veya daha fazla cezanın suç tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sonrası) kabul edilmiştir.`);
+                } else if (anyIstisna106) {
+                    notParcalari.push(`İçtimadaki suçlardan en az biri istisna suç kapsamında olduğundan, suç tarihi ne olursa olsun 30/03/2020 eşikli ve Geçici 10/6. madde kapsamındaki +3 yıllık erken açık/denetimli serbestlik hakları hiç uygulanmamış, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmıştır.`);
                 } else if (allBefore30032020) {
                     notParcalari.push(`İçtimadaki suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe ayrılma süresi 3 yıl olarak, açık cezaevine ayrılma süresine de +3 yıl eklenerek hesaplanmıştır.`);
                 } else {
                     notParcalari.push(`İçtimadaki suçlardan en az biri 30/03/2020'den sonra işlendiğinden, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmış ve 30/03/2020 eşikli +3 yıllık açık cezaevi hakkı uygulanmamıştır.`);
                 }
-                if (gecici106Uygulanir) {
-                    notParcalari.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, içtimadaki suçların tamamının tarihi 31/07/2023 ve öncesi olduğundan açık cezaevine ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
-                } else if (anyIstisna106) {
-                    notParcalari.push(`İçtimadaki suçlardan en az biri Geçici 10/6. madde kapsamındaki istisna suçlardan olduğundan, bu maddeye bağlı +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
-                } else if (!anyTarihsiz && !allBeforeGecici106) {
-                    notParcalari.push(`İçtimadaki suçlardan en az birinin tarihi 01/08/2023 veya sonrası olduğundan, Geçici 10/6. madde kapsamındaki +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
+                if (!anyIstisna106) {
+                    if (gecici106Uygulanir) {
+                        notParcalari.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, içtimadaki suçların tamamının tarihi 31/07/2023 ve öncesi olduğundan açık cezaevine ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
+                    } else if (!anyTarihsiz && !allBeforeGecici106) {
+                        notParcalari.push(`İçtimadaki suçlardan en az birinin tarihi 01/08/2023 veya sonrası olduğundan, Geçici 10/6. madde kapsamındaki +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
+                    }
                 }
                 if (acikDsAdaylar.some(r => !r.teyitli)) {
                     notParcalari.push(`UYARI: İçtimadaki bazı suç maddeleri için açık süresi, bu sohbette madde madde teyit edilmemiş olup "Diğer Suçlar" genel kuralına (7 yıl açık) göre varsayılan atanmıştır; lütfen madde madde kontrol ediniz.`);
