@@ -933,13 +933,23 @@
             if (apcFieldsEl) apcFieldsEl.classList.toggle('hidden', !isAdliPara);
             if (apcGunInput) apcGunInput.disabled = !isAdliPara;
 
-            // Suç maddesi ve infaz oranı süreli hapiste anlamlıdır; süresiz, adli para
-            // cezası ve özel infaz rejiminde (4/4 sabit) anlamsızdır.
-            [sucMaddeInput, oranSelect].forEach(el => {
-                if (!el) return;
-                el.disabled = (isSuresiz || isAdliPara || isOzelInfaz);
-                el.classList.toggle('opacity-40', isSuresiz || isAdliPara || isOzelInfaz);
-            });
+            // İnfaz oranı (1/2, 2/3 vb.) süreli hapiste anlamlıdır; müebbet/ağırlaştırılmış
+            // müebbette STT/BTT oranla değil kanunda sabit yıl sayısıyla belirlendiğinden
+            // (bkz. getSuresizSTTYil/getSuresizBTTYil) oran seçimi anlamsızdır ve kapatılır.
+            if (oranSelect) {
+                oranSelect.disabled = (isSuresiz || isAdliPara || isOzelInfaz);
+                oranSelect.classList.toggle('opacity-40', isSuresiz || isAdliPara || isOzelInfaz);
+            }
+
+            // Suç maddesi müebbet/ağırlaştırılmış müebbette de anlamlıdır: işlenen suçun
+            // istisna suç kapsamında olup olmadığı (30/03/2020 ve Geçici 10/6 eşikli +3
+            // yıllık açık/denetimli serbestlik haklarını etkiler) suç maddesinden
+            // belirlenir. Bu nedenle sadece adli para cezası ve özel infaz rejiminde
+            // kapatılır, müebbette AÇIK bırakılır.
+            if (sucMaddeInput) {
+                sucMaddeInput.disabled = (isAdliPara || isOzelInfaz);
+                sucMaddeInput.classList.toggle('opacity-40', isAdliPara || isOzelInfaz);
+            }
 
             // Müebbet / Ağırlaştırılmış müebbette koşullu salıverilme süresi artık ORANLA değil,
             // 5275 s.K. m.107/2 ve m.107/4 ile m.108/1 gereğince SABİT yıl sayısıyla belirleniyor
@@ -1291,6 +1301,14 @@
             // satırları bu hesaba dahil edilmez (ayrı kurallara tabidir).
             const acikDsAdaylar = [];
 
+            // Müebbet (ağırlaştırılmış olmayan) satırların suç tarihi/istisna suç bilgisi:
+            // açık cezaevine ayrılma (madde 14'teki sabit 5 yıl kala) ve denetimli
+            // serbestliğe ayrılma (sabit 1 yıl kala) süresine, süreli hapisteki aynı
+            // mantıkla (30/03/2020 ve Geçici 10/6 eşikleri) +3 yıl eklenip eklenmeyeceğini
+            // belirlemek için kullanılır. Ağırlaştırılmış müebbette açığa ayrılma hakkı
+            // zaten yoktur, bu nedenle bu diziye dahil edilmez.
+            const muebbetAdaylar = [];
+
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
             penaltyRows.forEach((row) => {
@@ -1327,6 +1345,18 @@
                         istisna106: acikDsBilgi.istisna106,
                         teyitli: acikDsBilgi.teyitli,
                         sucTarihiDate: sucTarihiDate
+                    });
+                }
+
+                // Müebbet (ağırlaştırılmış olmayan) satırlar: açığa/denetime ayrılma
+                // süresi sabit olsa da (5 yıl / 1 yıl kala), bu sürelere 30/03/2020 ve
+                // Geçici 10/6 eşikli +3 yıllık haklar aynı istisna suç mantığıyla
+                // uygulanabilir; bunun için suç maddesinin istisna106 bilgisi gerekir.
+                if (sureTip === 'muebbet') {
+                    const muebbetAcikDsBilgi = getAcikDsBilgi(sucMadde);
+                    muebbetAdaylar.push({
+                        istisna106: muebbetAcikDsBilgi.istisna106,
+                        sucTarihiDate: sTarih ? new Date(sTarih) : null
                     });
                 }
 
@@ -1654,21 +1684,56 @@
                 acikAyrilmaMetin = "Açığa Ayrılma Hakkı Yok (Ağırlaştırılmış Müebbet)";
                 dsAyrilmaMetin = "Uygulanmaz (Ağırlaştırılmış Müebbet)";
             } else if (mCount > 0) {
-                // Kullanıcı onayıyla: müebbet içtimada varsa (süreli hapis cezalarıyla
-                // karışık olsa bile) açığa ayrılma süresi suç ayrımı olmaksızın SABİT
-                // 5 yıl kaladır; denetimli serbestliğe ayrılma süresi de HER ZAMAN
-                // SABİT 1 yıl kaladır (Geçici 10/6 +3 yıl hakkı bu dal için henüz
-                // değerlendirilmiyor - sadece müebbet için ayrıca konuşulmadı).
-                const acikKalaGun = 5 * 365;
-                const dsKalaGun = 1 * 365;
+                // Müebbette açığa ayrılma için TEMEL süre madde 14 gereği SABİT 5 yıl
+                // kaladır, denetimli serbestlik için TEMEL süre SABİT 1 yıl kaladır.
+                // Bu temel süreler, süreli hapisteki AYNI mantıkla, suç tarihine ve
+                // işlenen suçun istisna suç olup olmamasına göre 30/03/2020 ve Geçici
+                // 10/6 (31/07/2023) eşiklerinden +3 yıl alabilir; çünkü bu düzenlemeler
+                // cezanın süreli/müebbet olmasına bakmaz, SUÇUN istisna kapsamında olup
+                // olmadığına bakar (kullanıcı onayıyla eklenmiştir).
+                const anyIstisnaM = muebbetAdaylar.some(r => r.istisna106);
+                const anyTarihsizM = muebbetAdaylar.some(r => !r.sucTarihiDate);
+
+                const allBefore30032020M = !anyTarihsizM && !anyIstisnaM && muebbetAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
+                const dsKalaTemelYilM = allBefore30032020M ? 3 : 1;
+                const esik30032020EkM = allBefore30032020M ? 3 : 0;
+
+                const allBeforeGecici106M = !anyTarihsizM && muebbetAdaylar.every(r => r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
+                const gecici106UygulanirM = !anyIstisnaM && allBeforeGecici106M && !allBefore30032020M;
+                const gecici106EkM = gecici106UygulanirM ? 3 : 0;
+
+                const acikKalaYilToplamM = 5 + esik30032020EkM + gecici106EkM;
+                const dsKalaYilToplamM = dsKalaTemelYilM + gecici106EkM;
+                const acikKalaGun = acikKalaYilToplamM * 365;
+                const dsKalaGun = dsKalaYilToplamM * 365;
+
                 acikAyrilmaMetin = sttDays > acikKalaGun
                     ? formatDate(addDays(sttDate, -acikKalaGun))
                     : formatDate(addDays(D0, kapaliKalmaGerekliGun));
                 dsAyrilmaMetin = sttDays > dsKalaGun
                     ? formatDate(addDays(sttDate, -dsKalaGun))
                     : formatDate(addDays(D0, kapaliKalmaGerekliGun));
-                acikAyrilmaMetin += ` (Müebbet nedeniyle STT'den 5 yıl kala açığa ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
-                dsAyrilmaMetin += ` (Müebbet nedeniyle STT'den 1 yıl kala denetimli serbestliğe ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
+                acikAyrilmaMetin += ` (Müebbet nedeniyle ve suç tarihine göre STT'den ${acikKalaYilToplamM} yıl kala açığa ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
+                dsAyrilmaMetin += ` (Müebbet nedeniyle ve suç tarihine göre STT'den ${dsKalaYilToplamM} yıl kala denetimli serbestliğe ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
+
+                const notParcalariM = [];
+                if (anyTarihsizM) {
+                    notParcalariM.push(`Müebbetteki suçun tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sabit) kabul edilmiştir.`);
+                } else if (anyIstisnaM) {
+                    notParcalariM.push(`Müebbetteki suç istisna suç kapsamında olduğundan, suç tarihi ne olursa olsun 30/03/2020 eşikli ve Geçici 10/6. madde kapsamındaki +3 yıllık erken açık/denetimli serbestlik hakları uygulanmamış, açığa ayrılma süresi 5 yıl, denetimli serbestliğe ayrılma süresi 1 yıl (sabit) olarak hesaplanmıştır.`);
+                } else if (allBefore30032020M) {
+                    notParcalariM.push(`Müebbetteki suç 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe ayrılma süresi 3 yıl olarak, açığa ayrılma süresine de +3 yıl eklenerek hesaplanmıştır.`);
+                } else {
+                    notParcalariM.push(`Müebbetteki suç 30/03/2020'den sonra işlendiğinden, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmış ve 30/03/2020 eşikli +3 yıllık açığa ayrılma hakkı uygulanmamıştır.`);
+                }
+                if (!anyIstisnaM) {
+                    if (gecici106UygulanirM) {
+                        notParcalariM.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, suçun tarihi 31/07/2023 ve öncesi olduğundan açığa ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
+                    } else if (!anyTarihsizM && !allBeforeGecici106M) {
+                        notParcalariM.push(`Suçun tarihi 01/08/2023 veya sonrası olduğundan, Geçici 10/6. madde kapsamındaki +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
+                    }
+                }
+                acikDsNot = notParcalariM.join(' ');
             } else if (acikDsAdaylar.length > 0) {
                 const temelAcikKala = Math.min(...acikDsAdaylar.map(r => r.acik));
                 const anyIstisna106 = acikDsAdaylar.some(r => r.istisna106);
