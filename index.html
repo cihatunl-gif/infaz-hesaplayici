@@ -269,9 +269,17 @@
                                 <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HAKEDEREK TAHLİYE TARİHİ (BTT)</td>
                                 <td class="py-1.5 px-2 font-bold text-red-700 font-mono text-sm" id="repBtt">-</td>
                             </tr>
-                            <tr>
+                            <tr class="border-b border-slate-300">
                                 <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KOŞULLU SALIVERİLME TARİHİ (STT)</td>
                                 <td class="py-1.5 px-2 font-bold text-emerald-700 font-mono text-sm" id="repStt">-</td>
+                            </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MUHTEMEL AÇIK CEZA İNFAZ KURUMUNA AYRILMA TARİHİ</td>
+                                <td class="py-1.5 px-2 font-bold text-indigo-700 font-mono text-sm" id="repAcikAyrilma">-</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MUHTEMEL DENETİMLİ SERBESTLİĞE AYRILMA TARİHİ</td>
+                                <td class="py-1.5 px-2 font-bold text-purple-700 font-mono text-sm" id="repDsAyrilma">-</td>
                             </tr>
                         </tbody>
                     </table>
@@ -441,6 +449,98 @@
             if (!maddeText) return null;
             const normalized = maddeText.trim().toLocaleLowerCase('tr-TR');
             return SUC_MADDE_LISTESI.find(it => it.madde.toLocaleLowerCase('tr-TR') === normalized) || null;
+        }
+
+        /* ======================================================
+           AÇIK CEZA İNFAZ KURUMUNA / DENETİMLİ SERBESTLİĞE AYRILMA
+           ------------------------------------------------------
+           "acik"   : Koşullu salıverilme tarihine (STT) kaç yıl KALA
+                      hükümlünün açık ceza infaz kurumuna ayrılabileceği.
+           "dsOnce"/"dsSonra": KULLANILMIYOR (geçmiş deneme alanı, kod
+                      tarafından artık okunmuyor). Denetimli serbestliğe
+                      ayrılma süresi madde bazlı DEĞİL; tamamen 30/03/2020
+                      eşiğine göre SABİT belirlenir: içtimadaki suçların
+                      TAMAMI 30/03/2020 ve öncesiyse DS'ye 3 yıl kala,
+                      içtimada 30/03/2020'den SONRA tarihli bir suç bile
+                      varsa tüm içtima için DS'ye 1 yıl kala (bkz. aşağıda
+                      hesaplama bloğundaki dsKalaTemelYil). Bu sabit süreye,
+                      Geçici 10/6. madde şartları (aşağıda) sağlanıyorsa
+                      AYRICA +3 yıl eklenir — istisna suç şartı bu 30/03/2020
+                      kuralında YOKTUR, herkese eşit uygulanır.
+           "istisna106": 5275 s.K.'ya eklenen GEÇİCİ 10/6. madde (31/07/2023
+                      ve öncesi suçlara +3 yıl erken açık/DS hakkı) kapsamındaki
+                      İSTİSNA suçlardan mı (kasten öldürme 82/1-d,e,f; cinsel
+                      dokunulmazlık 102,103,104/2-3; 2.Kitap 4.Kısım 4-7.Bölüm
+                      [TCK 302-339]; terör; örgüt faaliyeti kapsamında işlenen suç).
+                      true ise bu suç için +3 yıl hakkı HİÇ uygulanmaz.
+           "teyitli": Bu satırın kullanıcıyla bu sohbette madde madde teyit
+                      edildiğini gösterir. false olan satırlar (ve eşleşme
+                      bulunamayan her madde) "DİĞER SUÇLAR" genel varsayılan
+                      kuralına (7 yıl açık / 3-1 yıl DS, istisna değil) düşer
+                      ve KESİN DEĞİLDİR — madde madde gözden geçirilmelidir.
+           NOT: 82/1-d bendi burada "üstsoy/altsoy/eş/kardeşe karşı"ın TÜMÜ
+           için 3 yıl kala olarak basitleştirilmiştir; d bendinin eşe karşı
+           alt-hali ile üstsoy/altsoy/kardeş alt-halinin açık süresi farklı
+           olabileceği ihtimali netleştirilmedi, teyitli=false bırakıldı.
+           ====================================================== */
+        const GECICI_10_6_ESIK_TARIHI = new Date('2023-07-31T23:59:59');
+        const DS_30032020_ESIK_TARIHI = new Date('2020-03-30T23:59:59');
+        const ACIK_DS_VARSAYILAN = { acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: false };
+
+        // Sıra ÖNEMLİDİR: en spesifik anahtar en üstte olmalı (startsWith ile eşleştirilir).
+        const ACIK_DS_TABLOSU = [
+            { key: 'Türk Ceza Kanunu 141', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 142', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 148', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 149/1-f-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'Türk Ceza Kanunu 149/1-f', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'Türk Ceza Kanunu 149/1-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'Türk Ceza Kanunu 149', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 188', acik: 5, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 190', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 102', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'Türk Ceza Kanunu 103', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'Türk Ceza Kanunu 104/2', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'Türk Ceza Kanunu 104/3', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'Türk Ceza Kanunu 104', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 105', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 82/1-d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'Türk Ceza Kanunu 81', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 82', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 83', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'Türk Ceza Kanunu 86/3-a', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 87/2.d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 94', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 95', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 96/2-b', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 96', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 220', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'Türk Ceza Kanunu 221', acik: 2, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'Terörle Mücadele Kanunu', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'Türk Ceza Kanunu 132', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 133', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 134', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 135', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 136', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 137', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'Türk Ceza Kanunu 138', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+        ];
+        // TCK 302-339 (2.Kitap 4.Kısım 4,5,6,7.Bölüm: Devletin güvenliği / Anayasal düzen /
+        // Milli savunma / Devlet sırları-casusluk) -> Geçici 10/6 istisna listesine girer.
+        for (let m = 302; m <= 339; m++) {
+            ACIK_DS_TABLOSU.push({ key: `Türk Ceza Kanunu ${m}`, acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false });
+        }
+
+        function getAcikDsBilgi(sucMadde) {
+            if (sucMadde) {
+                const trimmed = sucMadde.trim();
+                for (const rec of ACIK_DS_TABLOSU) {
+                    if (trimmed.startsWith(rec.key)) {
+                        return { acik: rec.acik, dsOnce: rec.dsOnce, dsSonra: rec.dsSonra, istisna106: rec.istisna106, eslesme: rec.key, teyitli: rec.teyitli };
+                    }
+                }
+            }
+            return { acik: ACIK_DS_VARSAYILAN.acik, dsOnce: ACIK_DS_VARSAYILAN.dsOnce, dsSonra: ACIK_DS_VARSAYILAN.dsSonra, istisna106: ACIK_DS_VARSAYILAN.istisna106, eslesme: 'Diğer Suçlar (Varsayılan)', teyitli: false };
         }
 
         // "1/2", "2/3" gibi oran metnini ondalık sayıya çevirir
@@ -1136,8 +1236,10 @@
               kombinasyon tavanlarına dahil edilmez.
            5) Denetimli serbestlik (STT öncesi ayrılan süre) bir
               MAHSUP kalemidir, cezadan düşülür.
-           6) Açık cezaevine ayrılma / DS'ye ayrılma tarihleri bu
-              sürümde HENÜZ yok (birlikte ekleyeceğiz).
+           6) Açık cezaevine ayrılma / DS'ye ayrılma tarihleri hesaplanır
+              (bkz. ACIK_DS_TABLOSU / getAcikDsBilgi ve bu fonksiyonun
+              sttDate hesaplandıktan sonraki bölümü); bazı maddeler için
+              değerler henüz madde madde teyit edilmedi, bkz. "teyitli" alanı.
            7) Her ceza satırı resmi raporda ayrı ayrı gösterilir.
 
            Artık yıl / farklı ay uzunlukları: Sabit "365 gün = 1 yıl,
@@ -1169,6 +1271,12 @@
             // kurum (açık/kapalı) notu üretmek için toplanır.
             const ozelInfazTipleriKullanilan = new Set();
 
+            // Açık ceza infaz kurumuna / denetimli serbestliğe ayrılma hesabı için
+            // içtimadaki (süreli hapis) satırların açık/DS kala bilgisi burada toplanır.
+            // Özel infaz rejimi, adli para cezası, müebbet ve ağırlaştırılmış müebbet
+            // satırları bu hesaba dahil edilmez (ayrı kurallara tabidir).
+            const acikDsAdaylar = [];
+
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
             penaltyRows.forEach((row) => {
@@ -1189,6 +1297,24 @@
                     if (orgutlu) hasOrgutlu = true;
                 }
                 cocukYasRowData.push({ sucTarihi: sTarih ? new Date(sTarih) : null, sucMadde: sucMadde });
+
+                // Açık cezaevi / DS ayrılma hesabına katılacak satırlar: özel infaz
+                // rejimi, adli para cezası, müebbet ve ağırlaştırılmış müebbet HARİÇ
+                // olağan süreli hapis cezaları.
+                if (!isOzelInfazRow && sureTip !== 'adli_para' && sureTip !== 'muebbet' && sureTip !== 'agirlastirilmis_muebbet') {
+                    // NOT: Denetimli serbestliğe ayrılma süresi madde bazlı DEĞİL; tamamen
+                    // 30/03/2020 eşiğine göre sabit belirlenir (bkz. aşağıdaki hesaplama
+                    // bloğu: dsKalaTemelYil). Buradaki tablo yalnızca "acik" (açık cezaevi
+                    // kala-yıl) ve istisna106/teyitli bilgisi için kullanılır.
+                    const acikDsBilgi = getAcikDsBilgi(sucMadde);
+                    const sucTarihiDate = sTarih ? new Date(sTarih) : null;
+                    acikDsAdaylar.push({
+                        acik: acikDsBilgi.acik,
+                        istisna106: acikDsBilgi.istisna106,
+                        teyitli: acikDsBilgi.teyitli,
+                        sucTarihiDate: sucTarihiDate
+                    });
+                }
 
                 let nextDate;
                 let isSuresiz = false;
@@ -1429,6 +1555,91 @@
             const sttDate = new Date(D0.getTime());
             sttDate.setDate(sttDate.getDate() + sttDays);
 
+            /* ======================================================
+               MUHTEMEL AÇIK CEZA İNFAZ KURUMUNA / DENETİMLİ SERBESTLİĞE
+               AYRILMA TARİHİ
+               - Ağırlaştırılmış müebbet varsa: açığa ayrılma hakkı yoktur.
+               - (Sadece) müebbet varsa: suç ayrımı olmaksızın sabit 5 yıl
+                 kala açığa ayrılır; DS kuralı bu sürümde netleşmediği için
+                 hesaplanmaz.
+               - Süreli hapis içtimasında: içtimadaki suçlardan EN DÜŞÜK
+                 (en kısıtlayıcı) açık/DS kala değeri esas alınır. Geçici
+                 10/6 madde (+3 yıl) hakkı: içtimada istisna suç VARSA hiç
+                 uygulanmaz; istisna suç yoksa ve suçların TAMAMININ tarihi
+                 31/07/2023 ve öncesiyse +3 yıl açık VE +3 yıl DS'ye eklenir
+                 (DS'deki ek hak, en az 3 ay açık cezaevinde kalmış olma
+                 şartına bağlıdır - bu şart otomatik doğrulanamaz, not
+                 olarak düşülür).
+               ====================================================== */
+            let acikAyrilmaMetin = "-";
+            let dsAyrilmaMetin = "-";
+            let acikDsNot = "";
+
+            if (amCount > 0) {
+                acikAyrilmaMetin = "Açığa Ayrılma Hakkı Yok (Ağırlaştırılmış Müebbet)";
+                dsAyrilmaMetin = "Uygulanmaz (Ağırlaştırılmış Müebbet)";
+            } else if (mCount > 0) {
+                // Kullanıcı onayıyla: müebbet içtimada varsa (süreli hapis cezalarıyla
+                // karışık olsa bile) açığa ayrılma süresi suç ayrımı olmaksızın SABİT
+                // 5 yıl kaladır; denetimli serbestliğe ayrılma süresi de HER ZAMAN
+                // SABİT 1 yıl kaladır (Geçici 10/6 +3 yıl hakkı bu dal için henüz
+                // değerlendirilmiyor - sadece müebbet için ayrıca konuşulmadı).
+                const acikKalaGun = 5 * 365;
+                const dsKalaGun = 1 * 365;
+                acikAyrilmaMetin = sttDays > acikKalaGun
+                    ? formatDate(addDays(sttDate, -acikKalaGun))
+                    : "Hesaplanamadı (STT süresi 5 yıldan az)";
+                dsAyrilmaMetin = sttDays > dsKalaGun
+                    ? formatDate(addDays(sttDate, -dsKalaGun))
+                    : "Hesaplanamadı (STT süresi 1 yıldan az)";
+            } else if (acikDsAdaylar.length > 0) {
+                const temelAcikKala = Math.min(...acikDsAdaylar.map(r => r.acik));
+                const anyIstisna106 = acikDsAdaylar.some(r => r.istisna106);
+                const anyTarihsiz = acikDsAdaylar.some(r => !r.sucTarihiDate);
+
+                // --- Geçici 10/6. madde (31/07/2023 eşiği, istisna suç listesi var) ---
+                const allBeforeGecici106 = !anyTarihsiz && acikDsAdaylar.every(r => r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
+                const gecici106Uygulanir = !anyIstisna106 && allBeforeGecici106;
+                const gecici106Ek = gecici106Uygulanir ? 3 : 0;
+
+                // --- 30/03/2020 eşiği kuralı (istisna YOK; denetim süresinin kendisini
+                // belirler + açığa ayrılmaya ayrıca +3 yıl eklenir). İçtimadaki suçlardan
+                // biri bile 30/03/2020'den SONRA ise tüm içtima için 1 yıla düşer.
+                const allBefore30032020 = !anyTarihsiz && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
+                const dsKalaTemelYil = allBefore30032020 ? 3 : 1;
+                const esik30032020Ek = allBefore30032020 ? 3 : 0;
+
+                const acikKalaGun = (temelAcikKala + esik30032020Ek + gecici106Ek) * 365;
+                const dsKalaGun = (dsKalaTemelYil + gecici106Ek) * 365;
+
+                acikAyrilmaMetin = sttDays > acikKalaGun
+                    ? formatDate(addDays(sttDate, -acikKalaGun))
+                    : "Hesaplanamadı (süre yetersiz; doğrudan açık cezaevi değerlendirilmeli)";
+                dsAyrilmaMetin = sttDays > dsKalaGun
+                    ? formatDate(addDays(sttDate, -dsKalaGun))
+                    : "Hesaplanamadı (süre yetersiz)";
+
+                const notParcalari = [];
+                if (anyTarihsiz) {
+                    notParcalari.push(`İçtimadaki bir veya daha fazla cezanın suç tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sonrası) kabul edilmiştir.`);
+                } else if (allBefore30032020) {
+                    notParcalari.push(`İçtimadaki suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe ayrılma süresi 3 yıl olarak, açık cezaevine ayrılma süresine de +3 yıl eklenerek hesaplanmıştır.`);
+                } else {
+                    notParcalari.push(`İçtimadaki suçlardan en az biri 30/03/2020'den sonra işlendiğinden, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmış ve 30/03/2020 eşikli +3 yıllık açık cezaevi hakkı uygulanmamıştır.`);
+                }
+                if (gecici106Uygulanir) {
+                    notParcalari.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, içtimadaki suçların tamamının tarihi 31/07/2023 ve öncesi olduğundan açık cezaevine ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
+                } else if (anyIstisna106) {
+                    notParcalari.push(`İçtimadaki suçlardan en az biri Geçici 10/6. madde kapsamındaki istisna suçlardan olduğundan, bu maddeye bağlı +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
+                } else if (!anyTarihsiz && !allBeforeGecici106) {
+                    notParcalari.push(`İçtimadaki suçlardan en az birinin tarihi 01/08/2023 veya sonrası olduğundan, Geçici 10/6. madde kapsamındaki +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
+                }
+                if (acikDsAdaylar.some(r => !r.teyitli)) {
+                    notParcalari.push(`UYARI: İçtimadaki bazı suç maddeleri için açık süresi, bu sohbette madde madde teyit edilmemiş olup "Diğer Suçlar" genel kuralına (7 yıl açık) göre varsayılan atanmıştır; lütfen madde madde kontrol ediniz.`);
+                }
+                acikDsNot = notParcalari.join(' ');
+            }
+
             // Resmi rapor alanları
             document.getElementById('repCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
 
@@ -1447,6 +1658,8 @@
             document.getElementById('repBaslangic').innerText = formatDate(D0);
             document.getElementById('repBtt').innerText = formatDate(bttDate);
             document.getElementById('repStt').innerText = formatDate(sttDate);
+            document.getElementById('repAcikAyrilma').innerText = acikAyrilmaMetin;
+            document.getElementById('repDsAyrilma').innerText = dsAyrilmaMetin;
 
             const bugunFormatted = formatDate(new Date());
             document.getElementById('repTarihAlani').innerText = bugunFormatted;
@@ -1519,6 +1732,7 @@
             if (repAciklamaEl) {
                 const parcalar = [
                     capWarningText.trim(),
+                    acikDsNot.trim(),
                     cocukYasAciklamaMetni.trim(),
                     ...ozelInfazAciklamaParcalari,
                     manuelNot.trim() ? escapeHtml(manuelNot.trim()) : ""
