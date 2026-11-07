@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr" class="h-full bg-slate-950 text-slate-100">
+<html lang="tr" class="h-full bg-slate-100 text-slate-900">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,9 +35,9 @@
     </script>
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #090d16; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         @media print {
             body { background: white !important; color: black !important; }
@@ -47,29 +47,29 @@
         }
     </style>
 </head>
-<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col min-h-screen selection:bg-amber-500 selection:text-slate-950">
+<body class="h-full font-sans antialiased bg-slate-100 text-slate-900 flex flex-col min-h-screen selection:bg-amber-500 selection:text-slate-950">
 
     <!-- Header Navbar -->
-    <header class="no-print bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+    <header class="no-print bg-white/90 border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="bg-gradient-to-br from-amber-500 to-amber-700 p-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-slate-950 font-extrabold">
                     <i class="fa-solid fa-scale-balanced text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-extrabold tracking-wider text-white flex items-center gap-2">
-                        İNFAZCI <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">PRO v11</span>
+                    <h1 class="text-lg font-extrabold tracking-wider text-slate-900 flex items-center gap-2">
+                        İNFAZCI <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/30">PRO v11</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Gelişmiş İnfaz Süreleri ve Müddetname Hesaplama Otomasyonu</p>
+                    <p class="text-xs text-slate-500">Gelişmiş İnfaz Süreleri ve Müddetname Hesaplama Otomasyonu</p>
                 </div>
             </div>
 
             <!-- Header Quick Actions -->
             <div class="flex items-center space-x-2">
-                <button onclick="resetAll()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition flex items-center gap-1.5">
+                <button onclick="resetAll()" class="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition flex items-center gap-1.5">
                     <i class="fa-solid fa-arrow-rotate-left"></i> Sıfırla
                 </button>
-                <button onclick="triggerJSONImport()" class="px-3 py-1.5 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition flex items-center gap-1.5">
+                <button onclick="triggerJSONImport()" class="px-3 py-1.5 text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition flex items-center gap-1.5">
                     <i class="fa-solid fa-file-import"></i> Yükle
                 </button>
                 <input type="file" id="jsonInput" onchange="importJSON(event)" class="hidden" accept=".json">
@@ -87,37 +87,37 @@
         <div class="lg:col-span-7 space-y-6 no-print">
 
             <!-- Hükümlü Bilgileri -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
                     <i class="fa-solid fa-user-gear text-amber-500"></i> Hükümlü & Referans Kayıtları
                 </h2>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
-                        <label class="block text-slate-400 mb-1">Hükümlü Adı Soyadı</label>
-                        <input type="text" id="hukumluAd" value="Ali Veli KONYA" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                        <label class="block text-slate-500 mb-1">Hükümlü Adı Soyadı</label>
+                        <input type="text" id="hukumluAd" value="Ali Veli KONYA" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1">Kimlik / Sicil No</label>
-                        <input type="text" id="hukumluTc" value="11111111111" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                        <label class="block text-slate-500 mb-1">Kimlik / Sicil No</label>
+                        <input type="text" id="hukumluTc" value="11111111111" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1">İlam / Dosya Ref No</label>
-                        <input type="text" id="dosyaRef" value="INF-2024/7821" class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                        <label class="block text-slate-500 mb-1">İlam / Dosya Ref No</label>
+                        <input type="text" id="dosyaRef" value="INF-2024/7821" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
                     </div>
                 </div>
             </div>
 
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                 <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                         <i class="fa-solid fa-layer-group text-amber-500"></i> Cezalar, Süresiz Hapis & Suç Maddesi (5275 s.K. m.99)
                     </h2>
                     <div class="flex items-center gap-1.5">
-                        <button onclick="addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
+                        <button onclick="addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Ceza Ekle
                         </button>
-                        <button onclick="addManuelPenaltyRow()" class="px-2.5 py-1 text-xs bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 border border-sky-500/30 rounded font-semibold transition flex items-center gap-1">
+                        <button onclick="addManuelPenaltyRow()" class="px-2.5 py-1 text-xs bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 border border-sky-500/30 rounded font-semibold transition flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Manuel Ekle
                         </button>
                     </div>
@@ -127,7 +127,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
-                            <tr class="text-slate-400 border-b border-slate-800 bg-slate-950">
+                            <tr class="text-slate-500 border-b border-slate-200 bg-slate-100">
                                 <th class="p-2">Ceza Süresi / Süresiz Hapis & Suç Maddesi</th>
                                 <th class="p-2">Suç Tarihi & Mükerrirlik Durumu</th>
                                 <th class="p-2 w-28 text-right">Gün / Oran</th>
@@ -143,20 +143,20 @@
             </div>
 
             <!-- Mahsup Bilgileri ve İnfaz Başlangıç Tarihi Birleştirilmiş Kutu -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl space-y-4">
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-4">
                 <!-- İnfaz Başlangıç Tarihi -->
-                <div class="text-xs border-b border-slate-800 pb-3">
-                    <label class="block text-slate-400 mb-1 font-bold">İnfaz Başlangıç Tarihi (Cezaevine Giriş Tarihi)</label>
-                    <input type="date" id="infazBaslangic" class="w-full sm:w-1/2 bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-400">
+                <div class="text-xs border-b border-slate-200 pb-3">
+                    <label class="block text-slate-500 mb-1 font-bold">İnfaz Başlangıç Tarihi (Cezaevine Giriş Tarihi)</label>
+                    <input type="date" id="infazBaslangic" class="w-full sm:w-1/2 bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
                 </div>
 
                 <!-- Mahsup Aralıkları Tablosu (Boş Başlangıç) -->
                 <div>
                     <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                             <i class="fa-solid fa-calendar-check text-amber-500"></i> Mahsup Aralıkları (Gözaltı / Tutukluluk / Denetimli Serbestlik)
                         </h2>
-                        <button onclick="addMahsupRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
+                        <button onclick="addMahsupRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Mahsup Ekle
                         </button>
                     </div>
@@ -164,7 +164,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead>
-                                <tr class="text-slate-400 border-b border-slate-800 bg-slate-950">
+                                <tr class="text-slate-500 border-b border-slate-200 bg-slate-100">
                                     <th class="p-2">Mahsup Türü</th>
                                     <th class="p-2">Giriş / Başlangıç</th>
                                     <th class="p-2">Çıkış / Bitiş</th>
@@ -177,25 +177,25 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="mt-3 flex justify-between items-center text-xs font-semibold bg-slate-950 p-2.5 rounded border border-slate-800">
-                        <span class="text-slate-400">Toplam Mahsup Düşülecek Süre:</span>
-                        <span id="grandTotalMahsup" class="text-emerald-400 font-mono text-sm">0 Gün</span>
+                    <div class="mt-3 flex justify-between items-center text-xs font-semibold bg-slate-100 p-2.5 rounded border border-slate-300">
+                        <span class="text-slate-500">Toplam Mahsup Düşülecek Süre:</span>
+                        <span id="grandTotalMahsup" class="text-emerald-700 font-mono text-sm">0 Gün</span>
                     </div>
                 </div>
             </div>
 
             <!-- Kanuni Üst Sınır Uyarısı (STT/BTT 28/32/42/48 yıl vb. - m.107/3, m.107/4, m.108/1-c) -->
-            <div id="capWarningBanner" class="hidden bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs rounded-xl p-3 flex items-start gap-2">
+            <div id="capWarningBanner" class="hidden bg-amber-50 border border-amber-300 text-amber-800 text-xs rounded-xl p-3 flex items-start gap-2">
                 <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                 <span></span>
             </div>
 
             <!-- Açıklama (Manuel Not) -->
-            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-4 shadow-xl">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-2">
                     <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
                 </h2>
-                <textarea id="aciklamaManuel" rows="2" placeholder="İleride eklenecek ek açıklamalar buraya yazılabilir..." class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
+                <textarea id="aciklamaManuel" rows="2" placeholder="İleride eklenecek ek açıklamalar buraya yazılabilir..." class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
             </div>
 
             <!-- Hesapla Butonu -->
@@ -304,9 +304,9 @@
                                     <table class="w-full border-collapse text-[10px]">
                                         <thead>
                                             <tr class="bg-slate-100 border-t border-b border-slate-400">
-                                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Ceza Süresi / Suç Maddesi</th>
-                                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
-                                                <th class="p-1.5 text-left font-bold">İnfaz Oranı</th>
+                                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Ceza Süresi / Suç Maddesi</th>
+                                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
+                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">İnfaz Oranı</th>
                                             </tr>
                                         </thead>
                                         <tbody id="repCezaRows">
@@ -345,10 +345,10 @@
                     <table class="w-full border-collapse border border-slate-400 text-[10px]">
                         <thead>
                             <tr class="bg-slate-100 border-b border-slate-400">
-                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Mahsup Türü</th>
-                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Başlangıç</th>
-                                <th class="p-1.5 text-left border-r border-slate-300 font-bold">Bitiş</th>
-                                <th class="p-1.5 text-left font-bold">Gün</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Mahsup Türü</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Başlangıç</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Bitiş</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Gün</th>
                             </tr>
                         </thead>
                         <tbody id="repMahsupRows">
@@ -356,8 +356,8 @@
                         </tbody>
                         <tfoot>
                             <tr class="border-t border-slate-400 bg-slate-50">
-                                <td colspan="3" class="p-1.5 text-right font-bold border-r border-slate-300">TOPLAM MAHSUP</td>
-                                <td class="p-1.5 font-bold text-emerald-700" id="repMahsupToplam">0 Gün</td>
+                                <td colspan="3" class="py-0.5 px-1.5 leading-tight text-right font-bold border-r border-slate-300">TOPLAM MAHSUP</td>
+                                <td class="py-0.5 px-1.5 leading-tight font-bold text-emerald-700" id="repMahsupToplam">0 Gün</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -385,7 +385,7 @@
 
             <!-- Download Actions -->
             <div class="no-print flex gap-2">
-                <button onclick="exportJSON()" class="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
+                <button onclick="exportJSON()" class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-download"></i> JSON Dışa Aktar
                 </button>
             </div>
@@ -395,7 +395,7 @@
     </main>
 
     <!-- Suç maddesi için tek, sabit konumlu (fixed) kaydırılabilir öneri kutusu -->
-    <div id="globalSucSuggestions" class="hidden fixed max-h-48 overflow-y-auto bg-slate-900 border border-slate-700 rounded shadow-lg z-50 text-xs"></div>
+    <div id="globalSucSuggestions" class="hidden fixed max-h-48 overflow-y-auto bg-white border border-slate-200 rounded shadow-lg z-50 text-xs"></div>
 
     <!-- JavaScript Execution Logic -->
     <script>
@@ -558,8 +558,8 @@
                 return;
             }
             box.innerHTML = matches.map(it => `
-                <div class="penalty-suc-suggestion-item px-2 py-1.5 hover:bg-slate-700 cursor-pointer border-b border-slate-800 last:border-0" onmousedown="event.preventDefault(); selectSucMaddeSuggestion(this)" data-madde="${it.madde.replace(/"/g, '&quot;')}" data-oran="${it.oran}">
-                    <div class="text-slate-200">${it.madde}</div>
+                <div class="penalty-suc-suggestion-item px-2 py-1.5 hover:bg-amber-50 cursor-pointer border-b border-slate-200 last:border-0" onmousedown="event.preventDefault(); selectSucMaddeSuggestion(this)" data-madde="${it.madde.replace(/"/g, '&quot;')}" data-oran="${it.oran}">
+                    <div class="text-slate-800">${it.madde}</div>
                     ${it.aciklama ? `<div class="text-[10px] text-slate-500">${it.aciklama}</div>` : ''}
                 </div>
             `).join('');
@@ -810,7 +810,7 @@
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
-            tr.className = "border-b border-slate-800/50 hover:bg-slate-800/30";
+            tr.className = "penalty-row border-b-2 border-slate-200 odd:bg-white even:bg-slate-50 hover:bg-amber-50 transition-colors align-top";
             tr.dataset.manuelOran = manuelOran ? '1' : '0';
             if (!oranSecimi) {
                 const maddeInfo = findMaddeInfo(sucMadde);
@@ -818,8 +818,12 @@
             }
             tr.innerHTML = `
                 <td class="p-2 space-y-1.5">
+                    <div class="flex items-center justify-between mb-1 pb-1 border-b border-slate-200">
+                        <span class="penalty-row-badge inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-[11px] font-extrabold shadow-sm">?</span>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ceza Kalemi</span>
+                    </div>
                     <div class="flex items-center gap-1 mb-1">
-                        <select class="penalty-sure-tip w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-amber-400 font-bold" onchange="toggleSuresiTip(this)">
+                        <select class="penalty-sure-tip w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-bold" onchange="toggleSuresiTip(this)">
                             <option value="sureli" ${sureTip === 'sureli' ? 'selected' : ''}>Süreli Hapis Cezası</option>
                             <option value="adli_para" ${sureTip === 'adli_para' ? 'selected' : ''}>Adli Para Cezası (TCK m.52)</option>
                             <option value="muebbet" ${sureTip === 'muebbet' ? 'selected' : ''}>Süresiz: Müebbet Hapis</option>
@@ -827,23 +831,23 @@
                         </select>
                     </div>
                     <div class="flex items-center gap-1 penalty-sureli-fields">
-                        <input type="number" min="0" value="${yil}" placeholder="Yıl" class="penalty-yil w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <input type="number" min="0" value="${yil}" placeholder="Yıl" class="penalty-yil w-14 bg-slate-50 border border-slate-300 rounded px-1.5 py-1 outline-none font-semibold text-amber-700 text-center">
                         <span class="text-slate-500">Yıl</span>
-                        <input type="number" min="0" max="11" value="${ay}" placeholder="Ay" class="penalty-ay w-12 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <input type="number" min="0" max="11" value="${ay}" placeholder="Ay" class="penalty-ay w-12 bg-slate-50 border border-slate-300 rounded px-1.5 py-1 outline-none font-semibold text-amber-700 text-center">
                         <span class="text-slate-500">Ay</span>
-                        <input type="number" min="0" max="29" value="${gun}" placeholder="Gün" class="penalty-gun w-12 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <input type="number" min="0" max="29" value="${gun}" placeholder="Gün" class="penalty-gun w-12 bg-slate-50 border border-slate-300 rounded px-1.5 py-1 outline-none font-semibold text-amber-700 text-center">
                         <span class="text-slate-500">Gün</span>
                     </div>
                     <div class="flex items-center gap-1 hidden penalty-apc-fields">
-                        <input type="number" min="0" value="${apcGun}" placeholder="Gün Sayısı" class="penalty-apc-gun w-20 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <input type="number" min="0" value="${apcGun}" placeholder="Gün Sayısı" class="penalty-apc-gun w-20 bg-slate-50 border border-slate-300 rounded px-1.5 py-1 outline-none font-semibold text-amber-700 text-center">
                         <span class="text-slate-500">Gün Adli Para Cezası (indirimsiz infaz edilir)</span>
                     </div>
                     <div class="flex items-center gap-1">
-                        <input type="text" value="${(sucMadde || '').replace(/"/g, '&quot;')}" placeholder="Suç maddesini yazın" autocomplete="off" class="penalty-suc-madde w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-slate-200 font-medium" oninput="onSucMaddeInput(this)" onfocus="onSucMaddeInput(this)" onclick="onSucMaddeInput(this)" onblur="hideSucMaddeSuggestionsLater(this)">
+                        <input type="text" value="${(sucMadde || '').replace(/"/g, '&quot;')}" placeholder="Suç maddesini yazın" autocomplete="off" class="penalty-suc-madde w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-slate-800 font-medium" oninput="onSucMaddeInput(this)" onfocus="onSucMaddeInput(this)" onclick="onSucMaddeInput(this)" onblur="hideSucMaddeSuggestionsLater(this)">
                     </div>
                     <div class="flex items-center gap-1 penalty-oran-wrap ${manuelOran ? '' : 'hidden'}">
-                        <span class="text-[10px] text-slate-400">Oran:</span>
-                        <select class="penalty-oran w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-amber-400 font-semibold">
+                        <span class="text-[10px] text-slate-500">Oran:</span>
+                        <select class="penalty-oran w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold">
                             <option value="1/2" ${oranSecimi === '1/2' ? 'selected' : ''}>1/2</option>
                             <option value="2/3" ${oranSecimi === '2/3' ? 'selected' : ''}>2/3</option>
                             <option value="3/4" ${oranSecimi === '3/4' ? 'selected' : ''}>3/4</option>
@@ -853,36 +857,46 @@
                 </td>
                 <td class="p-2 space-y-1.5">
                     <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-slate-400 w-16">Suç Tarihi:</span>
-                        <input type="date" value="${sucTarihi || today}" class="penalty-suc-tarihi w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-sky-400 font-semibold">
+                        <span class="text-[10px] text-slate-500 w-16">Suç Tarihi:</span>
+                        <input type="date" value="${sucTarihi || today}" class="penalty-suc-tarihi w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-sky-700 font-semibold">
                     </div>
                     <div class="flex items-center gap-1">
-                        <span class="text-[10px] text-slate-400 w-16">Mükerrir mi?</span>
-                        <select class="penalty-mukerrir w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-amber-400 font-semibold">
+                        <span class="text-[10px] text-slate-500 w-16">Mükerrir mi?</span>
+                        <select class="penalty-mukerrir w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold">
                             <option value="yok" ${mukerrir === 'yok' ? 'selected' : ''}>Tekerrür Yok</option>
                             <option value="1" ${mukerrir === '1' ? 'selected' : ''}>1. Tekerrür</option>
                             <option value="2" ${mukerrir === '2' ? 'selected' : ''}>2. Tekerrür</option>
                         </select>
                     </div>
-                    <label class="flex items-center gap-1.5 text-[10px] text-slate-400 pt-0.5">
+                    <label class="flex items-center gap-1.5 text-[10px] text-slate-500 pt-0.5">
                         <input type="checkbox" class="penalty-orgutlu accent-amber-500" ${orgutlu ? 'checked' : ''}>
                         Örgütlü Suç (5275 s.K. m.107/4)
                     </label>
                     <div class="flex items-center gap-1 pt-0.5 penalty-ekgun-wrap ${manuelOran ? '' : 'hidden'}">
-                        <span class="text-[10px] text-slate-400 w-16">Ek Gün:</span>
-                        <input type="number" min="0" value="${ekGunDeger || 0}" placeholder="0" title="5275 s.K. 108/1-2 md" class="penalty-ek-gun w-14 bg-slate-950 border border-slate-800 rounded px-1.5 py-1 outline-none font-semibold text-amber-400 text-center">
+                        <span class="text-[10px] text-slate-500 w-16">Ek Gün:</span>
+                        <input type="number" min="0" value="${ekGunDeger || 0}" placeholder="0" title="5275 s.K. 108/1-2 md" class="penalty-ek-gun w-14 bg-slate-50 border border-slate-300 rounded px-1.5 py-1 outline-none font-semibold text-amber-700 text-center">
                     </div>
                 </td>
-                <td class="p-2 text-right font-mono font-bold text-slate-300">
+                <td class="p-2 text-right font-mono font-bold text-slate-700">
                     <div class="row-total">0</div>
                     <div class="row-oran text-[9px] text-slate-500 font-normal normal-case mt-0.5 leading-tight"></div>
                 </td>
                 <td class="p-2 text-center">
-                    <button onclick="removePenaltyRow(this)" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="removePenaltyRow(this)" class="text-slate-500 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
             toggleSuresiTip(tr.querySelector('.penalty-sure-tip'));
+            renumberPenaltyRows();
+        }
+
+        // Her ceza satırının sol üstündeki numara rozetini günceller (1, 2, 3...)
+        // böylece kullanıcı eklediği ceza satırlarını birbirinden kolayca ayırt edebilir.
+        function renumberPenaltyRows() {
+            document.querySelectorAll('#penaltyTableBody tr').forEach((row, idx) => {
+                const badge = row.querySelector('.penalty-row-badge');
+                if (badge) badge.textContent = idx + 1;
+            });
         }
 
         // Manuel Ekle: savcı/uzman kullanıcı için - suç maddesi ve tekerrür yine seçilir,
@@ -897,6 +911,7 @@
             const rows = document.querySelectorAll('#penaltyTableBody tr');
             if (rows.length > 1) {
                 btn.closest('tr').remove();
+                renumberPenaltyRows();
                 calculateAll();
             } else {
                 alert("En az bir ceza satırı kalmalıdır.");
@@ -907,20 +922,20 @@
         function addMahsupRow(tur = 'tutukluluk', start = '', end = '') {
             const tbody = document.getElementById('mahsupTableBody');
             const tr = document.createElement('tr');
-            tr.className = "border-b border-slate-800/50 hover:bg-slate-800/30";
+            tr.className = "border-b border-slate-200 odd:bg-white even:bg-slate-50 hover:bg-sky-50 transition-colors";
             tr.innerHTML = `
                 <td class="p-2 w-36">
-                    <select class="mahsup-tur w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none text-sky-300 font-medium">
+                    <select class="mahsup-tur w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-sky-700 font-medium">
                         <option value="gozalti" ${tur === 'gozalti' ? 'selected' : ''}>Gözaltı</option>
                         <option value="tutukluluk" ${tur === 'tutukluluk' ? 'selected' : ''}>Tutukluluk</option>
                         <option value="acik_cik" ${tur === 'acik_cik' ? 'selected' : ''}>Açık Çık</option>
                         <option value="ds" ${tur === 'ds' ? 'selected' : ''}>Denetimli Serbestlik (STT öncesi)</option>
                     </select>
                 </td>
-                <td class="p-2"><input type="date" value="${start}" class="mahsup-start w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none"></td>
-                <td class="p-2"><input type="date" value="${end}" class="mahsup-end w-full bg-slate-950 border border-slate-800 rounded px-2 py-1 outline-none"></td>
-                <td class="p-2 text-right font-mono font-bold text-emerald-400 mahsup-row-total">0</td>
-                <td class="p-2 text-center"><button onclick="removeMahsupRow(this)" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button></td>
+                <td class="p-2"><input type="date" value="${start}" class="mahsup-start w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none"></td>
+                <td class="p-2"><input type="date" value="${end}" class="mahsup-end w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none"></td>
+                <td class="p-2 text-right font-mono font-bold text-emerald-700 mahsup-row-total">0</td>
+                <td class="p-2 text-center"><button onclick="removeMahsupRow(this)" class="text-slate-500 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></td>
             `;
             tbody.appendChild(tr);
         }
@@ -1206,9 +1221,9 @@
             if (repRowsBody) {
                 repRowsBody.innerHTML = rowReportData.map(r => `
                     <tr class="border-b border-slate-300">
-                        <td class="p-1.5 border-r border-slate-300">${r.metin}<br><span class="text-[9px] text-slate-500">${r.sucMetni}</span></td>
-                        <td class="p-1.5 border-r border-slate-300 text-sky-800">${r.tarih}</td>
-                        <td class="p-1.5 font-semibold text-amber-700">${r.oranMetni}</td>
+                        <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${r.metin}<br><span class="text-[9px] text-slate-500">${r.sucMetni}</span></td>
+                        <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${r.tarih}</td>
+                        <td class="py-0.5 px-1.5 leading-tight font-semibold text-amber-700">${r.oranMetni}</td>
                     </tr>
                 `).join('');
             }
@@ -1233,15 +1248,15 @@
                     if (sVal && eVal) {
                         rows.push(`
                             <tr class="border-b border-slate-300">
-                                <td class="p-1.5 border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
-                                <td class="p-1.5 border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
-                                <td class="p-1.5 border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
-                                <td class="p-1.5 font-semibold text-emerald-700">${gun} Gün</td>
+                                <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
+                                <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
+                                <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
+                                <td class="py-0.5 px-1.5 leading-tight font-semibold text-emerald-700">${gun} Gün</td>
                             </tr>
                         `);
                     }
                 });
-                repMahsupBody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="4" class="p-1.5 text-center text-slate-400">Mahsup kaydı bulunmamaktadır.</td></tr>`;
+                repMahsupBody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="4" class="py-0.5 px-1.5 leading-tight text-center text-slate-500">Mahsup kaydı bulunmamaktadır.</td></tr>`;
             }
             const repMahsupToplamEl = document.getElementById('repMahsupToplam');
             if (repMahsupToplamEl) repMahsupToplamEl.innerText = `${grandTotalMahsupDays} Gün`;
