@@ -432,12 +432,10 @@
             { madde: 'Türk Ceza Kanunu 102/1', aciklama: 'Cinsel', oran: '1/3' },
             { madde: 'Türk Ceza Kanunu 102/2', aciklama: 'Cinsel', oran: '1/4' },
             { madde: 'Türk Ceza Kanunu 103', aciklama: 'Cinsel', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 103', aciklama: 'Cinsel', oran: '1/4' },
             { madde: 'Türk Ceza Kanunu 104', aciklama: 'Cinsel Taciz', oran: '1/3' },
             { madde: 'Türk Ceza Kanunu 104/1', aciklama: 'Cinsel Taciz', oran: '1/3' },
             { madde: 'Türk Ceza Kanunu 104/2', aciklama: 'Cinsel', oran: '1/4' },
             { madde: 'Türk Ceza Kanunu 104/3', aciklama: 'Cinsel', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 105', aciklama: 'Cinsel Taciz', oran: '1/3' },
             { madde: 'Türk Ceza Kanunu 105', aciklama: 'Cinsel Taciz', oran: '1/3' },
             { madde: 'Türk Ceza Kanunu 109', aciklama: 'Kişiyi Hürriyetinden Yoksun Kılma', oran: '1/2' },
             { madde: 'Türk Ceza Kanunu 132', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
@@ -516,6 +514,19 @@
             return 0.5;
         }
 
+        // SUC_MADDE_LISTESI'ndeki "indirim oranı" değerini (1/2, 1/3, 1/4...),
+        // elle oran seçim kutusundaki (penalty-oran) gerçek "yatar oranı" seçeneklerine
+        // (1/2, 2/3, 3/4, 4/4) çevirir. Bu sadece kutunun GÖRÜNÜMÜ içindir;
+        // asıl hesaplama zaten satır 1052 civarında (1 - indirim) ile doğru yapılıyor.
+        function indirimToYatarOranStr(indirimStr) {
+            const yatar = 1 - oranStrToNum(indirimStr);
+            if (Math.abs(yatar - 0.5) < 0.001) return '1/2';
+            if (Math.abs(yatar - (2 / 3)) < 0.001) return '2/3';
+            if (Math.abs(yatar - 0.75) < 0.001) return '3/4';
+            if (Math.abs(yatar - 1) < 0.001) return '4/4';
+            return '1/2';
+        }
+
         // Aktif olarak öneri kutusunu kullanan suç maddesi input'u (global, tek kutu kullanılıyor)
         let activeSucMaddeInput = null;
 
@@ -526,7 +537,7 @@
             const oranSelect = tr ? tr.querySelector('.penalty-oran') : null;
             const info = findMaddeInfo(inputEl.value);
             if (info && oranSelect) {
-                oranSelect.value = info.oran;
+                oranSelect.value = indirimToYatarOranStr(info.oran);
             }
             renderSucMaddeSuggestions(inputEl);
         }
@@ -565,7 +576,7 @@
             if (activeSucMaddeInput) activeSucMaddeInput.value = itemEl.dataset.madde;
             const tr = activeSucMaddeInput ? activeSucMaddeInput.closest('tr') : null;
             const oranSelect = tr ? tr.querySelector('.penalty-oran') : null;
-            if (oranSelect && itemEl.dataset.oran) oranSelect.value = itemEl.dataset.oran;
+            if (oranSelect && itemEl.dataset.oran) oranSelect.value = indirimToYatarOranStr(itemEl.dataset.oran);
             if (box) box.classList.add('hidden');
         }
 
