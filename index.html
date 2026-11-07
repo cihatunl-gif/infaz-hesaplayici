@@ -136,6 +136,20 @@
                         </div>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır.</p>
+
+                    <!-- Açık/Denetime ayrılma için asgari kapalı kalma şartı: giriş tarihi ile
+                         bugün arasında bir süre farkı varsa, bu sürenin nerede geçtiği otomatik
+                         VARSAYILMAZ; kullanıcıya sorulur. -->
+                    <div id="girisGunFarkiBox" class="hidden mt-3 pt-3 border-t border-slate-200 bg-amber-50/60 -mx-4 -mb-4 px-4 pb-4 rounded-b-xl">
+                        <p class="text-[11px] font-bold text-amber-800 mb-1.5">
+                            <i class="fa-solid fa-circle-question"></i> Giriş tarihi ile bugün arasında <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> günlük bir süre var. Açık/denetime ayrılma için asgari kapalı kalma şartının sağlanıp sağlanmadığını anlamak için bu süre nerede geçirilmiş?
+                        </p>
+                        <select id="girisGunuDurum" onchange="calculateAll()" class="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500">
+                            <option value="">— Belirtilmedi (şart sağlandı mı anlaşılamıyor) —</option>
+                            <option value="tamamen_kapali">Bu süre tamamen kapalı ceza infaz kurumunda geçirildi</option>
+                            <option value="kismen_disarida">Bu sürenin bir kısmı/tamamı açıkta veya dışarıda geçirildi (firar, açık cezaevi, DS vb.)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Mahsup Aralıkları Tablosu (Boş Başlangıç) -->
@@ -1463,6 +1477,10 @@
             // grandTotalMahsupAgirlikli: STT hedefinden düşülecek toplam (Tutukluluk/Açık Çık'ta çocuk yaş katsayılı)
             let grandTotalMahsupDays = 0;
             let grandTotalMahsupAgirlikli = 0;
+            // Açık/denetime ayrılma için asgari kapalı kalma şartına sayılan mahsup günleri:
+            // sadece Tutukluluk (hükümlü bu süreyi kapalı tutukevi/cezaevinde geçirmiş sayılır).
+            // Gözaltı, Açık Çık ve Denetimli Serbestlik mahsupları kapalı kalma şartına dahil edilmez.
+            let tutuklulukToplamGun = 0;
             const cocukYasMahsupNotlari = []; // açıklama kutusunda listelenecek etkilenen aralıklar
             const mahsupRows = document.querySelectorAll('#mahsupTableBody tr');
 
@@ -1478,6 +1496,7 @@
                     const diffDays = Math.max(0, diffDaysCalendar(sDate, eDate));
                     row.querySelector('.mahsup-row-total').innerText = diffDays;
                     grandTotalMahsupDays += diffDays;
+                    if (tur === 'tutukluluk') tutuklulukToplamGun += diffDays;
 
                     let agirlikliGun = diffDays;
                     if (cocukYasKurali && (tur === 'tutukluluk' || tur === 'acik_cik') && diffDays > 0) {
@@ -1573,22 +1592,58 @@
 
                AÇIK/DENETİME AYRILABİLMEK İÇİN ASGARİ KAPALI KURUMDA KALMA
                ŞARTI: toplam ceza (totalRawDays, raporda gösterilen "toplam
-               ceza" ile aynı değer) 10 yıldan az ise en az 1 ay; 10 yıl ve
-               üzeri ise toplam cezanın 1/10'u kadar süre kapalı ceza infaz
-               kurumunda geçirilmiş olmalıdır. Bu şart, hem açık cezaevine
-               hem de denetimli serbestliğe ayrılma için GEÇERLİDİR; her iki
-               alanın yanına da (varsa) bu şart metni eklenir. Kullanıcı
-               tarafından onaylanan bir kuraldır; otomatik doğrulanamaz
-               (hükümlünün fiilen kapalıda ne kadar kaldığı ayrıca
-               izlenmelidir), sadece bilgi/uyarı notu olarak yazılır.
+               ceza" ile aynı değer) 10 yıldan az ise en az 1 ay (30 gün);
+               10 yıl ve üzeri ise toplam cezanın 1/10'u kadar süre kapalı
+               ceza infaz kurumunda geçirilmiş olmalıdır. Bu şart, hem açık
+               cezaevine hem de denetimli serbestliğe ayrılma için GEÇERLİDİR.
+
+               Fiilen ne kadarının kapalıda geçtiği OTOMATİK VARSAYILMAZ:
+               - Mahsup tablosundaki "Tutukluluk" günleri kapalıda geçmiş sayılır.
+               - Giriş tarihi (D0) ile bugün arasında bir gün farkı varsa, bu
+                 sürenin nerede geçirildiği kullanıcıya SORULUR (bkz.
+                 #girisGunuDurum). Kullanıcı "tamamen kapalı" derse bu süre de
+                 kapalıda geçmiş sayılır; hiçbir şey seçilmezse şartın
+                 sağlanıp sağlanmadığı "belirsiz" olarak işaretlenir ve
+                 OTOMATİK OLARAK SAĞLANMIŞ KABUL EDİLMEZ.
                ====================================================== */
             const ON_YIL_GUN_ESIK = 10 * 365;
-            let kapaliKalmaSartMetni = "";
-            if (totalRawDays < ON_YIL_GUN_ESIK) {
-                kapaliKalmaSartMetni = "Şart: Açığa/denetime ayrılmadan önce en az 1 ay kapalı ceza infaz kurumunda kalınmış olması gerekir.";
+            const kapaliKalmaGerekliGun = totalRawDays < ON_YIL_GUN_ESIK ? 30 : Math.ceil(totalRawDays / 10);
+            const kapaliKalmaGerekliGunAciklama = totalRawDays < ON_YIL_GUN_ESIK
+                ? "en az 1 ay (30 gün)"
+                : `toplam cezanın 1/10'u olan ${kapaliKalmaGerekliGun} gün`;
+
+            // Giriş tarihi (D0) ile BUGÜN arasındaki gerçek gün farkı ve kullanıcının
+            // bu süre için verdiği cevap (girisGunuDurum select kutusu).
+            const bugunGercekTarih = new Date();
+            const girisGunFarki = Math.max(0, diffDaysCalendar(D0, bugunGercekTarih));
+            const girisGunuDurumSelect = document.getElementById('girisGunuDurum');
+            const girisGunuDurumVal = girisGunuDurumSelect ? girisGunuDurumSelect.value : '';
+
+            const girisGunFarkiBox = document.getElementById('girisGunFarkiBox');
+            if (girisGunFarkiBox) {
+                if (girisGunFarki > 0) {
+                    girisGunFarkiBox.classList.remove('hidden');
+                    const sayiEl = document.getElementById('girisGunFarkiGunSayisi');
+                    if (sayiEl) sayiEl.innerText = girisGunFarki;
+                } else {
+                    girisGunFarkiBox.classList.add('hidden');
+                }
+            }
+
+            // Kapalıda fiilen geçirilmiş sayılan toplam gün (konservatif: belirsizlik
+            // halinde giriş-bugün farkı hiç kapalıya dahil edilmez).
+            const kapalidaGecirilenGun = tutuklulukToplamGun + (girisGunuDurumVal === 'tamamen_kapali' ? girisGunFarki : 0);
+            const kapaliSartBelirsiz = girisGunFarki > 0 && girisGunuDurumVal === '';
+            const kapaliSartSaglandiMi = !kapaliSartBelirsiz && kapalidaGecirilenGun >= kapaliKalmaGerekliGun;
+
+            let kapaliKalmaSartMetni;
+            if (kapaliSartBelirsiz) {
+                kapaliKalmaSartMetni = `Şart: Açığa/denetime ayrılmadan önce ${kapaliKalmaGerekliGunAciklama} kapalı ceza infaz kurumunda kalınmış olması gerekir. Giriş tarihi (${formatDate(D0)}) ile bugün arasındaki ${girisGunFarki} günün nerede geçirildiği belirtilmediğinden, bu şartın sağlanıp sağlanmadığı TESPİT EDİLEMEMİŞTİR — lütfen yukarıdaki soruyu yanıtlayınız.`;
+            } else if (kapaliSartSaglandiMi) {
+                kapaliKalmaSartMetni = `Şart SAĞLANMIŞTIR: ${kapaliKalmaGerekliGunAciklama} kapalı kalma şartı karşısında, hükümlü ${kapalidaGecirilenGun} gün kapalı ceza infaz kurumunda kalmıştır.`;
             } else {
-                const kapaliKalmaGunHesap = Math.ceil(totalRawDays / 10);
-                kapaliKalmaSartMetni = `Şart: Açığa/denetime ayrılmadan önce toplam cezanın 1/10'u olan ${kapaliKalmaGunHesap} gün kapalı ceza infaz kurumunda kalınmış olması gerekir.`;
+                const eksikGun = kapaliKalmaGerekliGun - kapalidaGecirilenGun;
+                kapaliKalmaSartMetni = `Şart HENÜZ SAĞLANMAMIŞTIR: ${kapaliKalmaGerekliGunAciklama} kapalı kalma şartı karşısında, hükümlü şu ana kadar ${kapalidaGecirilenGun} gün kapalı ceza infaz kurumunda kalmıştır (eksik: ${eksikGun} gün).`;
             }
 
             let acikAyrilmaMetin = "-";
@@ -1608,10 +1663,10 @@
                 const dsKalaGun = 1 * 365;
                 acikAyrilmaMetin = sttDays > acikKalaGun
                     ? formatDate(addDays(sttDate, -acikKalaGun))
-                    : "Hesaplanamadı (STT süresi 5 yıldan az)";
+                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan açığa hak kazanma - STT süresi 5 yıldan az olduğundan, kapalı kalma şartı tamamlanınca açığa ayrılabilir)`;
                 dsAyrilmaMetin = sttDays > dsKalaGun
                     ? formatDate(addDays(sttDate, -dsKalaGun))
-                    : "Hesaplanamadı (STT süresi 1 yıldan az)";
+                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan denetime hak kazanma - STT süresi 1 yıldan az olduğundan, kapalı kalma şartı tamamlanınca denetime ayrılabilir)`;
                 acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
                 dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
             } else if (acikDsAdaylar.length > 0) {
@@ -1636,10 +1691,10 @@
 
                 acikAyrilmaMetin = sttDays > acikKalaGun
                     ? formatDate(addDays(sttDate, -acikKalaGun))
-                    : "Hesaplanamadı (süre yetersiz; doğrudan açık cezaevi değerlendirilmeli)";
+                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan açığa hak kazanma - madde bazlı açık kala süresi STT süresinden uzun olduğundan, kapalı kalma şartı tamamlanınca açığa ayrılabilir)`;
                 dsAyrilmaMetin = sttDays > dsKalaGun
                     ? formatDate(addDays(sttDate, -dsKalaGun))
-                    : "Hesaplanamadı (süre yetersiz)";
+                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan denetime hak kazanma - madde bazlı DS kala süresi STT süresinden uzun olduğundan, kapalı kalma şartı tamamlanınca denetime ayrılabilir)`;
 
                 const notParcalari = [];
                 if (anyTarihsiz) {
