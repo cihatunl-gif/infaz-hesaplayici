@@ -105,6 +105,35 @@
                         <input type="text" id="dosyaRef" value="INF-2024/7821" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
                     </div>
                 </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-3">
+                    <div>
+                        <label class="block text-slate-500 mb-1">Baba Adı</label>
+                        <input type="text" id="hukumluBabaAdi" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1">Ana Adı</label>
+                        <input type="text" id="hukumluAnaAdi" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1">Doğum Tarihi</label>
+                        <input type="date" id="hukumluDogumTarihi" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs mt-3">
+                    <div>
+                        <label class="block text-slate-500 mb-1">Doğum Yeri</label>
+                        <input type="text" id="hukumluDogumYeri" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1">Nüfusa Kayıtlı Olduğu İl/İlçe</label>
+                        <input type="text" id="hukumluNufusKayit" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1">İkametgah Adresi</label>
+                        <input type="text" id="hukumluIkamet" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none">
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır.</p>
             </div>
 
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
@@ -990,6 +1019,109 @@
         }
 
         /* ======================================================
+           ÇOCUK YAŞ İNDİRİMİ (koşullu salıverilme hesabına özel)
+
+           Kural A (Geçici Madde - 30/3/2020'ye kadar işlenen suçlar):
+             15 yaşını dolduruncaya kadar geçirilen 1 gün = 3 gün,
+             18 yaşını dolduruncaya kadar geçirilen 1 gün = 2 gün.
+             İstisna (hariç tutulan suç) YOKTUR.
+           Kural B (5275 s.K. m.107/5 - 30/3/2020'den sonraki suçlar):
+             15 yaşını dolduruncaya kadar geçirilen 1 gün = 2 gün.
+             TCK 81/82/83 (kasten öldürme), 102/103 (cinsel dokunulmazlık),
+             188 (uyuşturucu), 220 (örgüt kurma) suçlarında UYGULANMAZ.
+
+           Hangi kuralın uygulanacağı, hükümlünün dosyasındaki suç
+           tarihlerinden en erken olanına bakılarak belirlenir (kullanıcı
+           onayıyla "en lehe" ilkesi otomatik sağlanır, çünkü A kuralı B
+           kuralından her zaman daha lehedir ve tarihler zaten ayrıktır).
+
+           Kapsam (kullanıcı onayıyla): SADECE mahsuptaki "Tutukluluk" ve
+           "Açık Çık" süreleri ile infaz başlangıcından itibaren hükümlünün
+           fiilen ceza infaz kurumunda geçirdiği süre bu katsayıya girer;
+           "Gözaltı" ve "Denetimli Serbestlik" mahsupları girmez. Hesap,
+           SADECE koşullu salıverilme (STT) süresini etkiler; hakederek
+           tahliye (BTT) süresi kanunda açıkça ayrı tutulduğundan değişmez.
+           Doğum tarihi girilmezse bu bölüm tamamen devre dışı kalır ve
+           eski (düz) hesaplama birebir korunur.
+           ====================================================== */
+
+        const COCUK_YAS_HARIC_REGEX = /\b(81|82|83|102|103|188|220)\b/;
+
+        function sucMaddeCocukYasHaricMi(sucMadde) {
+            if (!sucMadde) return false;
+            return COCUK_YAS_HARIC_REGEX.test(sucMadde);
+        }
+
+        // Hangi kural (A/B) uygulanacağını, dosyadaki en erken suç tarihine göre belirler.
+        function belirleCocukYasKurali(rows) {
+            const esikTarih = new Date("2020-03-30");
+            let earliestTarih = null;
+            let haricVarMi = false;
+            rows.forEach(r => {
+                if (r.sucTarihi && !isNaN(r.sucTarihi.getTime())) {
+                    if (!earliestTarih || r.sucTarihi.getTime() < earliestTarih.getTime()) earliestTarih = r.sucTarihi;
+                }
+                if (sucMaddeCocukYasHaricMi(r.sucMadde)) haricVarMi = true;
+            });
+            if (!earliestTarih) return null;
+            if (earliestTarih.getTime() <= esikTarih.getTime()) return 'A'; // Geçici madde - her zaman A'dan daha lehe seçenek yok
+            if (!haricVarMi) return 'B';
+            return null; // 30/3/2020 sonrası + istisna suç -> indirim yok
+        }
+
+        // Bir tarihe gerçek takvimle (artık yıl dahil) yıl ekler - yaş eşiği tarihlerini bulmak için.
+        function yilEkleGercek(baseDate, yil) {
+            const d = new Date(baseDate.getTime());
+            d.setFullYear(d.getFullYear() + yil);
+            return d;
+        }
+
+        // Belirli bir takvim gününün çocuk yaş katsayısını döndürür (1, 2 veya 3).
+        function cocukYasKatsayisi(tarih, kural, yas15Tarihi, yas18Tarihi) {
+            if (!kural) return 1;
+            if (yas15Tarihi && tarih.getTime() < yas15Tarihi.getTime()) {
+                return kural === 'A' ? 3 : 2;
+            }
+            if (kural === 'A' && yas18Tarihi && tarih.getTime() < yas18Tarihi.getTime()) {
+                return 2;
+            }
+            return 1;
+        }
+
+        // [sDate, eDate) aralığındaki mahsup gününü çocuk yaş katsayısıyla ağırlıklandırır.
+        function agirlikliMahsupGun(sDate, eDate, kural, yas15Tarihi, yas18Tarihi) {
+            const realGun = Math.max(0, diffDaysCalendar(sDate, eDate));
+            if (!kural || realGun === 0) return realGun;
+            let toplam = 0;
+            const cursor = new Date(sDate.getTime());
+            for (let i = 0; i < realGun; i++) {
+                toplam += cocukYasKatsayisi(cursor, kural, yas15Tarihi, yas18Tarihi);
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return toplam;
+        }
+
+        // D0'dan itibaren, kalan "yatar gün" hedefine çocuk yaş katsayılı olarak ulaşılana kadar
+        // gün gün ilerler; gerekli GERÇEK gün sayısını ve katsayı dağılımını döndürür.
+        function simulateSTTGercekGun(D0, remainingYatarGun, kural, yas15Tarihi, yas18Tarihi) {
+            const sonuc = { gun: 0, agirlikliGunDetay: { gun3: 0, gun2: 0, gun1: 0 } };
+            if (remainingYatarGun <= 0) return sonuc;
+            let acc = 0;
+            const cursor = new Date(D0.getTime());
+            const MAX_GUN = 200000; // güvenlik limiti (~550 yıl) - sonsuz döngüyü engeller
+            while (acc < remainingYatarGun && sonuc.gun < MAX_GUN) {
+                const k = cocukYasKatsayisi(cursor, kural, yas15Tarihi, yas18Tarihi);
+                if (k === 3) sonuc.agirlikliGunDetay.gun3++;
+                else if (k === 2) sonuc.agirlikliGunDetay.gun2++;
+                else sonuc.agirlikliGunDetay.gun1++;
+                acc += k;
+                sonuc.gun++;
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return sonuc;
+        }
+
+        /* ======================================================
            HESAPLAMA MOTORU (v10)
 
            Kurallar (kullanıcı onayıyla):
@@ -1033,6 +1165,10 @@
             let amCount = 0, mCount = 0, sCount = 0;
             let hasMukerrer = false, hasOrgutlu = false;
 
+            // Çocuk yaş indirimi hangi kuralın (A/B) uygulanacağını belirlemek için
+            // her satırın suç tarihi/maddesi burada toplanır.
+            const cocukYasRowData = [];
+
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
             penaltyRows.forEach((row) => {
@@ -1046,6 +1182,7 @@
 
                 if (mukerrir !== 'yok') hasMukerrer = true;
                 if (orgutlu) hasOrgutlu = true;
+                cocukYasRowData.push({ sucTarihi: sTarih ? new Date(sTarih) : null, sucMadde: sucMadde });
 
                 let nextDate;
                 let isSuresiz = false;
@@ -1159,18 +1296,31 @@
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
             });
 
+            // --- ÇOCUK YAŞ İNDİRİMİ: doğum tarihi girildiyse kural ve yaş eşik tarihlerini belirle ---
+            const dogumTarihiStr = document.getElementById('hukumluDogumTarihi') ? document.getElementById('hukumluDogumTarihi').value : '';
+            const dogumTarihi = dogumTarihiStr ? new Date(dogumTarihiStr) : null;
+            const cocukYasKurali = dogumTarihi ? belirleCocukYasKurali(cocukYasRowData) : null;
+            const yas15Tarihi = dogumTarihi ? yilEkleGercek(dogumTarihi, 15) : null;
+            const yas18Tarihi = dogumTarihi ? yilEkleGercek(dogumTarihi, 18) : null;
+
             // Toplam ceza süresi - SABİT kanuni çevrimle (365 gün/yıl, 30 gün/ay) Y-A-G gösterimi
             // (Ekrana ayrıca basılmıyor; resmi raporda CEZASI (TOPLAM) alanında kullanılır.)
             const toplamYAG = gunSayisindanYAG(totalRawDays);
             const cezaMetin = `${toplamYAG.y} Yıl ${toplamYAG.a} Ay ${toplamYAG.g} Gün`;
 
             // 2. Mahsup Hesabı (Gözaltı / Tutukluluk / Açık Çık / Denetimli Serbestlik)
+            // grandTotalMahsupDays: GERÇEK gün toplamı (BTT ve ekrandaki toplam için - çocuk yaş uygulanmaz)
+            // grandTotalMahsupAgirlikli: STT hedefinden düşülecek toplam (Tutukluluk/Açık Çık'ta çocuk yaş katsayılı)
             let grandTotalMahsupDays = 0;
+            let grandTotalMahsupAgirlikli = 0;
+            const cocukYasMahsupNotlari = []; // açıklama kutusunda listelenecek etkilenen aralıklar
             const mahsupRows = document.querySelectorAll('#mahsupTableBody tr');
 
             mahsupRows.forEach(row => {
                 const sVal = row.querySelector('.mahsup-start').value;
                 const eVal = row.querySelector('.mahsup-end').value;
+                const tur = row.querySelector('.mahsup-tur').value;
+                row.dataset.cocukYasEtkisi = '';
 
                 if (sVal && eVal) {
                     const sDate = new Date(sVal);
@@ -1178,6 +1328,16 @@
                     const diffDays = Math.max(0, diffDaysCalendar(sDate, eDate));
                     row.querySelector('.mahsup-row-total').innerText = diffDays;
                     grandTotalMahsupDays += diffDays;
+
+                    let agirlikliGun = diffDays;
+                    if (cocukYasKurali && (tur === 'tutukluluk' || tur === 'acik_cik') && diffDays > 0) {
+                        agirlikliGun = agirlikliMahsupGun(sDate, eDate, cocukYasKurali, yas15Tarihi, yas18Tarihi);
+                        if (agirlikliGun !== diffDays) {
+                            row.dataset.cocukYasEtkisi = '1';
+                            cocukYasMahsupNotlari.push({ sDate, eDate, gercekGun: diffDays, agirlikliGun });
+                        }
+                    }
+                    grandTotalMahsupAgirlikli += agirlikliGun;
                 } else {
                     row.querySelector('.mahsup-row-total').innerText = 0;
                 }
@@ -1222,9 +1382,21 @@
             }
 
             // Nihai gün sayıları
+            // BTT (hakederek tahliye): kanunda çocuk yaş indirimi İSTİSNASIZ uygulanmaz, gerçek gün esastır.
             const bttDays = Math.max(0, effectiveRawDays - grandTotalMahsupDays);
-            // Küsüratlı yatar gün, kanunda açık hüküm olmadığı için HÜKÜMLÜ LEHİNE aşağı yuvarlanır (Math.floor)
-            const sttDays = Math.max(0, Math.floor(effectiveYatarGun) - grandTotalMahsupDays);
+
+            // STT (koşullu salıverilme): çocuk yaş indirimi SADECE burada devreye girer.
+            // Küsüratlı yatar gün, kanunda açık hüküm olmadığı için HÜKÜMLÜ LEHİNE aşağı yuvarlanır (Math.floor).
+            let sttDays;
+            let sttCocukSimDetay = { gun3: 0, gun2: 0, gun1: 0 };
+            if (cocukYasKurali) {
+                const kalanYatarGunHedefi = Math.max(0, Math.floor(effectiveYatarGun) - grandTotalMahsupAgirlikli);
+                const simSonuc = simulateSTTGercekGun(D0, kalanYatarGunHedefi, cocukYasKurali, yas15Tarihi, yas18Tarihi);
+                sttDays = simSonuc.gun;
+                sttCocukSimDetay = simSonuc.agirlikliGunDetay;
+            } else {
+                sttDays = Math.max(0, Math.floor(effectiveYatarGun) - grandTotalMahsupDays);
+            }
 
             // BTT / STT - infaz başlangıcına gerçek gün sayısı eklenerek bulunur
             // (JS'in gün ekleme işlemi her zaman doğru takvim/artık yıl geçişi yapar)
@@ -1238,6 +1410,14 @@
             document.getElementById('repTc').innerText = document.getElementById('hukumluTc').value || "-";
             document.getElementById('repDosyaNo').innerText = document.getElementById('dosyaRef').value || "-";
             document.getElementById('repCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
+
+            // Hükümlü Kimlik Bilgileri (Baba/Ana Adı, Doğum Tarihi/Yeri, Nüfus Kaydı, İkametgah)
+            document.getElementById('repBabaAd').innerText = document.getElementById('hukumluBabaAdi').value || "-";
+            document.getElementById('repAnaAd').innerText = document.getElementById('hukumluAnaAdi').value || "-";
+            document.getElementById('repDogumTarihi').innerText = dogumTarihi ? formatDate(dogumTarihi) : "-";
+            document.getElementById('repDogumYeri').innerText = document.getElementById('hukumluDogumYeri').value || "-";
+            document.getElementById('repNufusKayit').innerText = document.getElementById('hukumluNufusKayit').value || "-";
+            document.getElementById('repIkamet').innerText = document.getElementById('hukumluIkamet').value || "-";
 
             // Her ceza satırını raporda ayrı ayrı göster
             const repRowsBody = document.getElementById('repCezaRows');
@@ -1269,12 +1449,14 @@
                     const eVal = row.querySelector('.mahsup-end').value;
                     const gun = row.querySelector('.mahsup-row-total').innerText;
                     if (sVal && eVal) {
+                        const cocukTag = row.dataset.cocukYasEtkisi === '1'
+                            ? ' <span class="text-[8px] font-bold text-rose-600">(Çocuk Yaş)</span>' : '';
                         rows.push(`
                             <tr class="border-b border-slate-300">
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
-                                <td class="py-0.5 px-1.5 leading-tight font-semibold text-emerald-700">${gun} Gün</td>
+                                <td class="py-0.5 px-1.5 leading-tight font-semibold text-emerald-700">${gun} Gün${cocukTag}</td>
                             </tr>
                         `);
                     }
@@ -1284,11 +1466,36 @@
             const repMahsupToplamEl = document.getElementById('repMahsupToplam');
             if (repMahsupToplamEl) repMahsupToplamEl.innerText = `${grandTotalMahsupDays} Gün`;
 
-            // Açıklama: otomatik üretilen kanuni uyarı metni + kullanıcının yazdığı manuel not
+            // Çocuk yaş indirimi uygulandıysa, hangi tarih aralıklarının kaç gün olarak
+            // hesaba katıldığını açıklayan metni oluştur.
+            let cocukYasAciklamaMetni = "";
+            if (cocukYasKurali) {
+                const parcalarCocuk = [];
+                const kuralMetni = cocukYasKurali === 'A'
+                    ? "5275 sayılı Kanun Geçici 9. Madde uyarınca (30/3/2020'den önce işlenen suçlar): 15 yaşını dolduruncaya kadar geçirilen 1 gün 3 gün, 18 yaşını dolduruncaya kadar geçirilen 1 gün 2 gün olarak hesaba katılmıştır."
+                    : "5275 sayılı Kanun m.107/5 uyarınca (30/3/2020'den sonra işlenen suçlar): 15 yaşını dolduruncaya kadar geçirilen 1 gün 2 gün olarak hesaba katılmıştır.";
+                parcalarCocuk.push(`Çocuk yaş indirimi uygulanmıştır. ${kuralMetni}`);
+
+                cocukYasMahsupNotlari.forEach(n => {
+                    parcalarCocuk.push(`${formatDate(n.sDate)} - ${formatDate(n.eDate)} tarihleri arasındaki ${n.gercekGun} günlük mahsup süresi, çocuk yaş indirimi nedeniyle koşullu salıverilme hesabında ${n.agirlikliGun} gün olarak değerlendirilmiştir.`);
+                });
+
+                const cocukGercekServisGun = sttCocukSimDetay.gun3 + sttCocukSimDetay.gun2;
+                if (cocukGercekServisGun > 0) {
+                    const cocukAgirlikliServisGun = (sttCocukSimDetay.gun3 * 3) + (sttCocukSimDetay.gun2 * 2);
+                    const esikTarihMetni = cocukYasKurali === 'A' && sttCocukSimDetay.gun3 > 0 && sttCocukSimDetay.gun2 > 0
+                        ? `${formatDate(yas15Tarihi)} ve ${formatDate(yas18Tarihi)} tarihlerine göre`
+                        : `${formatDate(yas15Tarihi)} tarihine göre`;
+                    parcalarCocuk.push(`İnfaz başlangıcı (${formatDate(D0)}) itibarıyla hükümlü çocuk yaşta olduğundan, cezaevinde geçirdiği ${cocukGercekServisGun} günlük süre (${esikTarihMetni}), koşullu salıverilme hesabında ${cocukAgirlikliServisGun} gün olarak değerlendirilmiştir.`);
+                }
+                cocukYasAciklamaMetni = parcalarCocuk.join('\n');
+            }
+
+            // Açıklama: otomatik üretilen kanuni uyarı metni + çocuk yaş notu + kullanıcının yazdığı manuel not
             const manuelNot = (document.getElementById('aciklamaManuel') || {}).value || "";
             const repAciklamaEl = document.getElementById('repAciklama');
             if (repAciklamaEl) {
-                const parcalar = [capWarningText.trim(), manuelNot.trim()].filter(Boolean);
+                const parcalar = [capWarningText.trim(), cocukYasAciklamaMetni.trim(), manuelNot.trim()].filter(Boolean);
                 repAciklamaEl.innerText = parcalar.length ? parcalar.join('\n\n') : "—";
             }
 
@@ -1310,6 +1517,12 @@
             document.getElementById('hukumluAd').value = 'Ali Veli KONYA';
             document.getElementById('hukumluTc').value = '11111111111';
             document.getElementById('dosyaRef').value = 'INF-2024/7821';
+            document.getElementById('hukumluBabaAdi').value = '';
+            document.getElementById('hukumluAnaAdi').value = '';
+            document.getElementById('hukumluDogumTarihi').value = '';
+            document.getElementById('hukumluDogumYeri').value = '';
+            document.getElementById('hukumluNufusKayit').value = '';
+            document.getElementById('hukumluIkamet').value = '';
             document.getElementById('penaltyTableBody').innerHTML = '';
             document.getElementById('mahsupTableBody').innerHTML = '';
             const aciklamaEl = document.getElementById('aciklamaManuel');
@@ -1358,6 +1571,12 @@
                 hukumluAd: document.getElementById('hukumluAd').value,
                 hukumluTc: document.getElementById('hukumluTc').value,
                 dosyaRef: document.getElementById('dosyaRef').value,
+                hukumluBabaAdi: document.getElementById('hukumluBabaAdi').value,
+                hukumluAnaAdi: document.getElementById('hukumluAnaAdi').value,
+                hukumluDogumTarihi: document.getElementById('hukumluDogumTarihi').value,
+                hukumluDogumYeri: document.getElementById('hukumluDogumYeri').value,
+                hukumluNufusKayit: document.getElementById('hukumluNufusKayit').value,
+                hukumluIkamet: document.getElementById('hukumluIkamet').value,
                 infazBaslangic: document.getElementById('infazBaslangic').value,
                 aciklamaManuel: (document.getElementById('aciklamaManuel') || {}).value || "",
                 penalties: penalties,
@@ -1390,6 +1609,12 @@
                     if (data.hukumluAd !== undefined) document.getElementById('hukumluAd').value = data.hukumluAd;
                     if (data.hukumluTc !== undefined) document.getElementById('hukumluTc').value = data.hukumluTc;
                     if (data.dosyaRef !== undefined) document.getElementById('dosyaRef').value = data.dosyaRef;
+                    if (data.hukumluBabaAdi !== undefined) document.getElementById('hukumluBabaAdi').value = data.hukumluBabaAdi;
+                    if (data.hukumluAnaAdi !== undefined) document.getElementById('hukumluAnaAdi').value = data.hukumluAnaAdi;
+                    if (data.hukumluDogumTarihi !== undefined) document.getElementById('hukumluDogumTarihi').value = data.hukumluDogumTarihi;
+                    if (data.hukumluDogumYeri !== undefined) document.getElementById('hukumluDogumYeri').value = data.hukumluDogumYeri;
+                    if (data.hukumluNufusKayit !== undefined) document.getElementById('hukumluNufusKayit').value = data.hukumluNufusKayit;
+                    if (data.hukumluIkamet !== undefined) document.getElementById('hukumluIkamet').value = data.hukumluIkamet;
                     if (data.infazBaslangic) document.getElementById('infazBaslangic').value = data.infazBaslangic;
                     if (data.aciklamaManuel !== undefined) {
                         const aciklamaEl = document.getElementById('aciklamaManuel');
