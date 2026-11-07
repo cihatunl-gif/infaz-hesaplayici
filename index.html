@@ -1663,12 +1663,12 @@
                 const dsKalaGun = 1 * 365;
                 acikAyrilmaMetin = sttDays > acikKalaGun
                     ? formatDate(addDays(sttDate, -acikKalaGun))
-                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan açığa hak kazanma - STT süresi 5 yıldan az olduğundan, kapalı kalma şartı tamamlanınca açığa ayrılabilir)`;
+                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
                 dsAyrilmaMetin = sttDays > dsKalaGun
                     ? formatDate(addDays(sttDate, -dsKalaGun))
-                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan denetime hak kazanma - STT süresi 1 yıldan az olduğundan, kapalı kalma şartı tamamlanınca denetime ayrılabilir)`;
-                acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
-                dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
+                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
+                acikAyrilmaMetin += ` (Müebbet nedeniyle STT'den 5 yıl kala açığa ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
+                dsAyrilmaMetin += ` (Müebbet nedeniyle STT'den 1 yıl kala denetimli serbestliğe ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
             } else if (acikDsAdaylar.length > 0) {
                 const temelAcikKala = Math.min(...acikDsAdaylar.map(r => r.acik));
                 const anyIstisna106 = acikDsAdaylar.some(r => r.istisna106);
@@ -1686,15 +1686,19 @@
                 const dsKalaTemelYil = allBefore30032020 ? 3 : 1;
                 const esik30032020Ek = allBefore30032020 ? 3 : 0;
 
-                const acikKalaGun = (temelAcikKala + esik30032020Ek + gecici106Ek) * 365;
-                const dsKalaGun = (dsKalaTemelYil + gecici106Ek) * 365;
+                const acikKalaYilToplam = temelAcikKala + esik30032020Ek + gecici106Ek;
+                const dsKalaYilToplam = dsKalaTemelYil + gecici106Ek;
+                const acikKalaGun = acikKalaYilToplam * 365;
+                const dsKalaGun = dsKalaYilToplam * 365;
 
                 acikAyrilmaMetin = sttDays > acikKalaGun
                     ? formatDate(addDays(sttDate, -acikKalaGun))
-                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan açığa hak kazanma - madde bazlı açık kala süresi STT süresinden uzun olduğundan, kapalı kalma şartı tamamlanınca açığa ayrılabilir)`;
+                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
                 dsAyrilmaMetin = sttDays > dsKalaGun
                     ? formatDate(addDays(sttDate, -dsKalaGun))
-                    : `${formatDate(addDays(D0, kapaliKalmaGerekliGun))} (Doğrudan denetime hak kazanma - madde bazlı DS kala süresi STT süresinden uzun olduğundan, kapalı kalma şartı tamamlanınca denetime ayrılabilir)`;
+                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
+                acikAyrilmaMetin += ` (Bu suça ve suç tarihine göre STT'den ${acikKalaYilToplam} yıl kala açığa ayrılma hakkı vardır.)`;
+                dsAyrilmaMetin += ` (Bu suça ve suç tarihine göre STT'den ${dsKalaYilToplam} yıl kala denetimli serbestliğe ayrılma hakkı vardır.)`;
 
                 const notParcalari = [];
                 if (anyTarihsiz) {
