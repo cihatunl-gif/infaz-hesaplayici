@@ -910,6 +910,7 @@
             const sucMaddeInput = tr.querySelector('.penalty-suc-madde');
             const oranSelect = tr.querySelector('.penalty-oran');
             const orgutluCheckbox = tr.querySelector('.penalty-orgutlu');
+            const sucTuruSelect = tr.querySelector('.penalty-suc-turu');
 
             const isSuresiz = (selectEl.value === 'muebbet' || selectEl.value === 'agirlastirilmis_muebbet');
             const isAdliPara = (selectEl.value === 'adli_para');
@@ -951,6 +952,16 @@
                 sucMaddeInput.classList.toggle('opacity-40', isAdliPara || isOzelInfaz);
             }
 
+            // Suç türü (kasıtlı/taksirli) sadece olağan süreli hapiste anlamlıdır:
+            // doğrudan açık ceza infaz kurumuna alınma şartı kasıtlı suçlarda toplam
+            // 3 yıl, taksirli suçlarda toplam 5 yıl eşiğine bağlıdır. Müebbet,
+            // ağırlaştırılmış müebbet, adli para cezası ve özel infaz rejiminde bu
+            // ayrımın bir karşılığı/etkisi yoktur.
+            if (sucTuruSelect) {
+                sucTuruSelect.disabled = (isSuresiz || isAdliPara || isOzelInfaz);
+                sucTuruSelect.classList.toggle('opacity-40', isSuresiz || isAdliPara || isOzelInfaz);
+            }
+
             // Müebbet / Ağırlaştırılmış müebbette koşullu salıverilme süresi artık ORANLA değil,
             // 5275 s.K. m.107/2 ve m.107/4 ile m.108/1 gereğince SABİT yıl sayısıyla belirleniyor
             // (bkz. getSuresizSTTYil / getSuresizBTTYil). Bu nedenle mükerrirlik seçimi müebbet/
@@ -971,7 +982,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0) {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, sucTuru = 'kasitli') {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -1012,6 +1023,13 @@
                     </div>
                     <div class="flex items-center gap-1">
                         <input type="text" value="${(sucMadde || '').replace(/"/g, '&quot;')}" placeholder="Suç maddesini yazın" autocomplete="off" class="penalty-suc-madde w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-slate-800 font-medium" oninput="onSucMaddeInput(this)" onfocus="onSucMaddeInput(this)" onclick="onSucMaddeInput(this)" onblur="hideSucMaddeSuggestionsLater(this)">
+                    </div>
+                    <div class="flex items-center gap-1 penalty-suctur-wrap">
+                        <span class="text-[10px] text-slate-500">Suç Türü:</span>
+                        <select class="penalty-suc-turu w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold" title="Doğrudan açık ceza infaz kurumuna alınma şartı (kasıtlıda 3 yıl, taksirlide 5 yıl) için gereklidir">
+                            <option value="kasitli" ${sucTuru === 'kasitli' ? 'selected' : ''}>Kasıtlı Suç</option>
+                            <option value="taksirli" ${sucTuru === 'taksirli' ? 'selected' : ''}>Taksirli Suç</option>
+                        </select>
                     </div>
                     <div class="flex items-center gap-1 penalty-oran-wrap ${manuelOran ? '' : 'hidden'}">
                         <span class="text-[10px] text-slate-500">Oran:</span>
@@ -1340,11 +1358,23 @@
                     // kala-yıl) ve istisna106/teyitli bilgisi için kullanılır.
                     const acikDsBilgi = getAcikDsBilgi(sucMadde);
                     const sucTarihiDate = sTarih ? new Date(sTarih) : null;
+                    const sucTuruEl = row.querySelector('.penalty-suc-turu');
+                    // Doğrudan açık ceza infaz kurumuna alınma şartındaki "toplam ceza"
+                    // bu satırın HÜKMEDİLEN (ham, oran uygulanmamış) gün sayısıdır —
+                    // adli para cezası ve diğer rejimler bu toplama hiç girmez, çünkü
+                    // onlar zaten acikDsAdaylar'a dahil edilmiyor.
+                    const rowYilM = parseInt(row.querySelector('.penalty-yil').value) || 0;
+                    const rowAyM = parseInt(row.querySelector('.penalty-ay').value) || 0;
+                    const rowGunM = parseInt(row.querySelector('.penalty-gun').value) || 0;
+                    const rowHamGun = (rowYilM * 365) + (rowAyM * 30) + rowGunM;
                     acikDsAdaylar.push({
                         acik: acikDsBilgi.acik,
                         istisna106: acikDsBilgi.istisna106,
                         teyitli: acikDsBilgi.teyitli,
-                        sucTarihiDate: sucTarihiDate
+                        sucTarihiDate: sucTarihiDate,
+                        mukerrir: mukerrir,
+                        sucTuru: sucTuruEl ? sucTuruEl.value : 'kasitli',
+                        hamGun: rowHamGun
                     });
                 }
 
@@ -1739,6 +1769,36 @@
                 const anyIstisna106 = acikDsAdaylar.some(r => r.istisna106);
                 const anyTarihsiz = acikDsAdaylar.some(r => !r.sucTarihiDate);
 
+                /* ====================================================================
+                   DOĞRUDAN AÇIK CEZA İNFAZ KURUMUNA ALINMA (hiç kapalıya girmeden):
+                   - a) Kasıtlı suçlardan toplam 3 yıl veya daha az süreli hapis cezası,
+                   - b) Taksirli suçlardan toplam 5 yıl veya daha az süreli hapis cezası,
+                   alan hükümlüler, istisna suç işlememiş ve 2. kez mükerrir olmamak
+                   şartıyla doğrudan açık ceza infaz kurumuna alınabilirler (kullanıcı
+                   onayıyla eklenmiştir). İçtimada bu şartları bozan TEK bir satır (istisna
+                   suç ya da 2. tekerrür) varsa, içtimanın tamamı için bu hak uygulanmaz.
+                   Kasıtlı ve taksirli suçlar AYNI içtimada karışıksa (biri kasıtlı biri
+                   taksirli), kanun bu karma durumu ayrıca düzenlemediğinden otomatik
+                   karar verilmez; "belirsiz" olarak işaretlenip elle incelemeye bırakılır.
+                   ==================================================================== */
+                const anyIkinciMukerrir = acikDsAdaylar.some(r => r.mukerrir === '2');
+                const hepsiKasitli = acikDsAdaylar.every(r => r.sucTuru === 'kasitli');
+                const hepsiTaksirli = acikDsAdaylar.every(r => r.sucTuru === 'taksirli');
+                const toplamSureliHapisGun = acikDsAdaylar.reduce((s, r) => s + (r.hamGun || 0), 0);
+
+                let dogrudanAcikDurum = 'kapali_baslar'; // 'dogrudan_acik' | 'kapali_baslar' | 'karma_belirsiz'
+                if (anyIstisna106 || anyIkinciMukerrir) {
+                    dogrudanAcikDurum = 'kapali_baslar';
+                } else if (hepsiKasitli) {
+                    dogrudanAcikDurum = (toplamSureliHapisGun <= 3 * 365) ? 'dogrudan_acik' : 'kapali_baslar';
+                } else if (hepsiTaksirli) {
+                    dogrudanAcikDurum = (toplamSureliHapisGun <= 5 * 365) ? 'dogrudan_acik' : 'kapali_baslar';
+                } else {
+                    // İçtimada hem kasıtlı hem taksirli suç karışık: kanun bu karma
+                    // durumu ayrı düzenlemediğinden otomatik karar verilmez.
+                    dogrudanAcikDurum = 'karma_belirsiz';
+                }
+
                 // --- 30/03/2020 eşiği kuralı: denetim süresinin kendisini belirler +
                 // açığa ayrılmaya ayrıca +3 yıl eklenir. İçtimadaki suçlardan biri bile
                 // 30/03/2020'den SONRA ise tüm içtima için 1 yıla düşer. İstisna suç
@@ -1793,9 +1853,30 @@
                 if (acikDsAdaylar.some(r => !r.teyitli)) {
                     notParcalari.push(`UYARI: İçtimadaki bazı suç maddeleri için açık süresi, bu sohbette madde madde teyit edilmemiş olup "Diğer Suçlar" genel kuralına (7 yıl açık) göre varsayılan atanmıştır; lütfen madde madde kontrol ediniz.`);
                 }
+
+                if (dogrudanAcikDurum === 'dogrudan_acik') {
+                    const esasGerekce = hepsiKasitli
+                        ? `kasıtlı suçlardan toplam ${toplamSureliHapisGun} gün (3 yıl veya altı) hapis cezasına`
+                        : `taksirli suçlardan toplam ${toplamSureliHapisGun} gün (5 yıl veya altı) hapis cezasına`;
+                    notParcalari.unshift(`HÜKÜMLÜ DOĞRUDAN AÇIK CEZA İNFAZ KURUMUNA ALINIR: ${esasGerekce} mahkûm olunmuş, istisna suç işlenmemiş ve 2. kez mükerrirlik bulunmadığından, hükümlü hiç kapalı ceza infaz kurumuna girmeden doğrudan açık ceza infaz kurumuna alınabilir.`);
+                } else if (dogrudanAcikDurum === 'karma_belirsiz') {
+                    notParcalari.unshift(`UYARI: İçtimada hem kasıtlı hem taksirli suç birlikte bulunduğundan, doğrudan açık ceza infaz kurumuna alınma şartı (kasıtlıda 3 yıl, taksirlide 5 yıl) otomatik değerlendirilememiştir; lütfen elle inceleyiniz.`);
+                }
+
                 acikDsNot = notParcalari.join(' ');
-                acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
-                dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
+
+                if (dogrudanAcikDurum === 'dogrudan_acik') {
+                    // Hiç kapalıya girmediğinden "açığa ayrılma" diye bir geçiş yok;
+                    // hükümlü zaten en baştan (D0) açık ceza infaz kurumunda. Kapalı
+                    // kalma şartı (1 ay / 1-10 oranı) da bu kişi için uygulanmaz, çünkü
+                    // bu şart kapalıdan açığa GEÇİŞ için aranır; doğrudan açığa alınan
+                    // hiç kapalıya girmez.
+                    acikAyrilmaMetin = `${formatDate(D0)} (Doğrudan - hiç kapalıya girmeden, infazın başladığı tarihten itibaren açık ceza infaz kurumunda)`;
+                    dsAyrilmaMetin += ` (Kapalı kalma şartı bu hükümlü için uygulanmaz; doğrudan açığa alınmıştır.)`;
+                } else {
+                    acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
+                    dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
+                }
             }
 
             // Resmi rapor alanları
@@ -1969,7 +2050,8 @@
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
-                    apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0
+                    apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0,
+                    sucTuru: row.querySelector('.penalty-suc-turu') ? row.querySelector('.penalty-suc-turu').value : 'kasitli'
                 });
             });
 
@@ -2023,7 +2105,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0);
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.sucTuru || 'kasitli');
                         });
                     }
 
