@@ -1674,11 +1674,6 @@
                 const anyIstisna106 = acikDsAdaylar.some(r => r.istisna106);
                 const anyTarihsiz = acikDsAdaylar.some(r => !r.sucTarihiDate);
 
-                // --- Geçici 10/6. madde (31/07/2023 eşiği, istisna suç listesi var) ---
-                const allBeforeGecici106 = !anyTarihsiz && acikDsAdaylar.every(r => r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
-                const gecici106Uygulanir = !anyIstisna106 && allBeforeGecici106;
-                const gecici106Ek = gecici106Uygulanir ? 3 : 0;
-
                 // --- 30/03/2020 eşiği kuralı: denetim süresinin kendisini belirler +
                 // açığa ayrılmaya ayrıca +3 yıl eklenir. İçtimadaki suçlardan biri bile
                 // 30/03/2020'den SONRA ise tüm içtima için 1 yıla düşer. İstisna suç
@@ -1687,6 +1682,17 @@
                 const allBefore30032020 = !anyTarihsiz && !anyIstisna106 && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYil = allBefore30032020 ? 3 : 1;
                 const esik30032020Ek = allBefore30032020 ? 3 : 0;
+
+                // --- Geçici 10/6. madde (31/07/2023 eşiği, istisna suç listesi var) ---
+                // ÖNEMLİ: 30/03/2020 ve öncesi bir suç tarihi HEM bu eşiğin HEM de
+                // 31/07/2023 eşiğinin altında kalır; bu iki hüküm aynı erken açık/DS
+                // hakkını farklı tarihlerden tanımlar ve ÜST ÜSTE (iki kere +3)
+                // UYGULANMAZ. 30/03/2020 kuralı zaten devredeyse (allBefore30032020),
+                // Geçici 10/6'nın +3'ü bir daha eklenmez (kullanıcı onayıyla düzeltildi -
+                // önceki sürümde ikisi birlikte +6 olarak hatalı toplanıyordu).
+                const allBeforeGecici106 = !anyTarihsiz && acikDsAdaylar.every(r => r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
+                const gecici106Uygulanir = !anyIstisna106 && allBeforeGecici106 && !allBefore30032020;
+                const gecici106Ek = gecici106Uygulanir ? 3 : 0;
 
                 const acikKalaYilToplam = temelAcikKala + esik30032020Ek + gecici106Ek;
                 const dsKalaYilToplam = dsKalaTemelYil + gecici106Ek;
