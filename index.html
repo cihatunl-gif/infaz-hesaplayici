@@ -342,8 +342,8 @@
                                     <table class="w-full border-collapse text-[10px]">
                                         <thead>
                                             <tr class="bg-slate-100 border-t border-b border-slate-400">
-                                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Ceza Süresi / Suç Maddesi</th>
                                                 <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
+                                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Suç Maddesi / Ceza Süresi</th>
                                                 <th class="py-0.5 px-1.5 leading-tight text-left font-bold">İnfaz Oranı</th>
                                             </tr>
                                         </thead>
@@ -737,7 +737,7 @@
             if (a > 0) parts.push(`${a} Ay`);
             if (g > 0) parts.push(`${g} Gün`);
             if (parts.length === 0) return "0 Gün";
-            return parts.join('<br>');
+            return parts.join(' ');
         }
 
         /* ======================================================
@@ -1442,8 +1442,8 @@
             if (repRowsBody) {
                 repRowsBody.innerHTML = rowReportData.map(r => `
                     <tr class="border-b border-slate-300">
-                        <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${r.metin}<br><span class="text-[9px] text-slate-500">${r.sucMetni}</span></td>
                         <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${r.tarih}</td>
+                        <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${r.sucMetni} <span class="text-slate-400">—</span> ${r.metin}</td>
                         <td class="py-0.5 px-1.5 leading-tight font-semibold text-amber-700">${r.oranMetni}</td>
                     </tr>
                 `).join('');
