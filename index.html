@@ -1570,7 +1570,27 @@
                  (DS'deki ek hak, en az 3 ay açık cezaevinde kalmış olma
                  şartına bağlıdır - bu şart otomatik doğrulanamaz, not
                  olarak düşülür).
+
+               AÇIK/DENETİME AYRILABİLMEK İÇİN ASGARİ KAPALI KURUMDA KALMA
+               ŞARTI: toplam ceza (totalRawDays, raporda gösterilen "toplam
+               ceza" ile aynı değer) 10 yıldan az ise en az 1 ay; 10 yıl ve
+               üzeri ise toplam cezanın 1/10'u kadar süre kapalı ceza infaz
+               kurumunda geçirilmiş olmalıdır. Bu şart, hem açık cezaevine
+               hem de denetimli serbestliğe ayrılma için GEÇERLİDİR; her iki
+               alanın yanına da (varsa) bu şart metni eklenir. Kullanıcı
+               tarafından onaylanan bir kuraldır; otomatik doğrulanamaz
+               (hükümlünün fiilen kapalıda ne kadar kaldığı ayrıca
+               izlenmelidir), sadece bilgi/uyarı notu olarak yazılır.
                ====================================================== */
+            const ON_YIL_GUN_ESIK = 10 * 365;
+            let kapaliKalmaSartMetni = "";
+            if (totalRawDays < ON_YIL_GUN_ESIK) {
+                kapaliKalmaSartMetni = "Şart: Açığa/denetime ayrılmadan önce en az 1 ay kapalı ceza infaz kurumunda kalınmış olması gerekir.";
+            } else {
+                const kapaliKalmaGunHesap = Math.ceil(totalRawDays / 10);
+                kapaliKalmaSartMetni = `Şart: Açığa/denetime ayrılmadan önce toplam cezanın 1/10'u olan ${kapaliKalmaGunHesap} gün kapalı ceza infaz kurumunda kalınmış olması gerekir.`;
+            }
+
             let acikAyrilmaMetin = "-";
             let dsAyrilmaMetin = "-";
             let acikDsNot = "";
@@ -1592,6 +1612,8 @@
                 dsAyrilmaMetin = sttDays > dsKalaGun
                     ? formatDate(addDays(sttDate, -dsKalaGun))
                     : "Hesaplanamadı (STT süresi 1 yıldan az)";
+                acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
+                dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
             } else if (acikDsAdaylar.length > 0) {
                 const temelAcikKala = Math.min(...acikDsAdaylar.map(r => r.acik));
                 const anyIstisna106 = acikDsAdaylar.some(r => r.istisna106);
@@ -1638,6 +1660,8 @@
                     notParcalari.push(`UYARI: İçtimadaki bazı suç maddeleri için açık süresi, bu sohbette madde madde teyit edilmemiş olup "Diğer Suçlar" genel kuralına (7 yıl açık) göre varsayılan atanmıştır; lütfen madde madde kontrol ediniz.`);
                 }
                 acikDsNot = notParcalari.join(' ');
+                acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
+                dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
             }
 
             // Resmi rapor alanları
@@ -1692,29 +1716,36 @@
             const repMahsupToplamEl = document.getElementById('repMahsupToplam');
             if (repMahsupToplamEl) repMahsupToplamEl.innerText = `${grandTotalMahsupDays} Gün`;
 
-            // Çocuk yaş indirimi uygulandıysa, hangi tarih aralıklarının kaç gün olarak
-            // hesaba katıldığını açıklayan metni oluştur.
+            // Çocuk yaş indirimi notu: SADECE hükümlü gerçekten çocuk/genç yaştayken
+            // bu indirimden fiilen yararlanmışsa (en az bir mahsup aralığı veya infazda
+            // geçirilen süre ağırlıklı sayılmışsa) yazılır. Doğum tarihi girilmiş olması
+            // veya kural (A/B) belirlenmiş olması tek başına yeterli değildir - hükümlü
+            // infaz sürecinde hiç çocuk/genç yaşta değilse (örn. infaz başlangıcında
+            // zaten 18 yaşını geçmişse) rapora bu nottan hiç yer verilmez.
             let cocukYasAciklamaMetni = "";
             if (cocukYasKurali) {
-                const parcalarCocuk = [];
-                const kuralMetni = cocukYasKurali === 'A'
-                    ? "5275 sayılı Kanun Geçici 9. Madde uyarınca (30/3/2020'den önce işlenen suçlar): 15 yaşını dolduruncaya kadar geçirilen 1 gün 3 gün, 18 yaşını dolduruncaya kadar geçirilen 1 gün 2 gün olarak hesaba katılmıştır."
-                    : "5275 sayılı Kanun m.107/5 uyarınca (30/3/2020'den sonra işlenen suçlar): 15 yaşını dolduruncaya kadar geçirilen 1 gün 2 gün olarak hesaba katılmıştır.";
-                parcalarCocuk.push(`Çocuk yaş indirimi uygulanmıştır. ${kuralMetni}`);
-
-                cocukYasMahsupNotlari.forEach(n => {
-                    parcalarCocuk.push(`${formatDate(n.sDate)} - ${formatDate(n.eDate)} tarihleri arasındaki ${n.gercekGun} günlük mahsup süresi, çocuk yaş indirimi nedeniyle koşullu salıverilme hesabında ${n.agirlikliGun} gün olarak değerlendirilmiştir.`);
-                });
-
                 const cocukGercekServisGun = sttCocukSimDetay.gun3 + sttCocukSimDetay.gun2;
-                if (cocukGercekServisGun > 0) {
-                    const cocukAgirlikliServisGun = (sttCocukSimDetay.gun3 * 3) + (sttCocukSimDetay.gun2 * 2);
-                    const esikTarihMetni = cocukYasKurali === 'A' && sttCocukSimDetay.gun3 > 0 && sttCocukSimDetay.gun2 > 0
-                        ? `${formatDate(yas15Tarihi)} ve ${formatDate(yas18Tarihi)} tarihlerine göre`
-                        : `${formatDate(yas15Tarihi)} tarihine göre`;
-                    parcalarCocuk.push(`İnfaz başlangıcı (${formatDate(D0)}) itibarıyla hükümlü çocuk yaşta olduğundan, cezaevinde geçirdiği ${cocukGercekServisGun} günlük süre (${esikTarihMetni}), koşullu salıverilme hesabında ${cocukAgirlikliServisGun} gün olarak değerlendirilmiştir.`);
+                const cocukIndirimindenYararlandiMi = cocukYasMahsupNotlari.length > 0 || cocukGercekServisGun > 0;
+                if (cocukIndirimindenYararlandiMi) {
+                    const parcalarCocuk = [];
+                    const kuralMetni = cocukYasKurali === 'A'
+                        ? "5275 sayılı Kanun Geçici 9. Madde uyarınca (30/3/2020'den önce işlenen suçlar): 15 yaşını dolduruncaya kadar geçirilen 1 gün 3 gün, 18 yaşını dolduruncaya kadar geçirilen 1 gün 2 gün olarak hesaba katılmıştır."
+                        : "5275 sayılı Kanun m.107/5 uyarınca (30/3/2020'den sonra işlenen suçlar): 15 yaşını dolduruncaya kadar geçirilen 1 gün 2 gün olarak hesaba katılmıştır.";
+                    parcalarCocuk.push(`Çocuk yaş indirimi uygulanmıştır. ${kuralMetni}`);
+
+                    cocukYasMahsupNotlari.forEach(n => {
+                        parcalarCocuk.push(`${formatDate(n.sDate)} - ${formatDate(n.eDate)} tarihleri arasındaki ${n.gercekGun} günlük mahsup süresi, çocuk yaş indirimi nedeniyle koşullu salıverilme hesabında ${n.agirlikliGun} gün olarak değerlendirilmiştir.`);
+                    });
+
+                    if (cocukGercekServisGun > 0) {
+                        const cocukAgirlikliServisGun = (sttCocukSimDetay.gun3 * 3) + (sttCocukSimDetay.gun2 * 2);
+                        const esikTarihMetni = cocukYasKurali === 'A' && sttCocukSimDetay.gun3 > 0 && sttCocukSimDetay.gun2 > 0
+                            ? `${formatDate(yas15Tarihi)} ve ${formatDate(yas18Tarihi)} tarihlerine göre`
+                            : `${formatDate(yas15Tarihi)} tarihine göre`;
+                        parcalarCocuk.push(`İnfaz başlangıcı (${formatDate(D0)}) itibarıyla hükümlü çocuk yaşta olduğundan, cezaevinde geçirdiği ${cocukGercekServisGun} günlük süre (${esikTarihMetni}), koşullu salıverilme hesabında ${cocukAgirlikliServisGun} gün olarak değerlendirilmiştir.`);
+                    }
+                    cocukYasAciklamaMetni = parcalarCocuk.join('\n');
                 }
-                cocukYasAciklamaMetni = parcalarCocuk.join('\n');
             }
 
             // Özel infaz rejimi (tazyik/disiplin/zorlama hapsi, İİK tazyik hapsi, koşullu
