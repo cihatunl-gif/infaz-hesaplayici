@@ -686,6 +686,64 @@
         const BTT_CAP_E_YIL = { normal: 42, mukerrer: 48 };
 
         /* ======================================================
+           ÖZEL İNFAZ REJİMİ TÜRLERİ (4/4 - Koşullu Salıverilmesi Yok)
+           Kullanıcı talebiyle eklendi (2026-11-07):
+             - Koşullu salıverilme kararı geri alınan süreli hapis cezası
+             - Tazyik hapsi, disiplin hapsi, zorlama hapsi (TCK/CMK kaynaklı,
+               mahkumiyet hapis cezası değildir; 4/4 tam infaz edilir)
+             - İİK tazyik hapsi (2004 s. İcra ve İflas Kanunu m.344 vb.)
+           Bu türlerin tümünde infaz oranı sabit 4/4'tür (indirim/koşullu
+           salıverilme uygulanmaz) ve bu nedenle içtima (m.107/3-4) süreli
+           hapis tavanı sayaçlarına ve mükerrerlik/örgütlü suç işaretleyici
+           bayraklarına dahil edilmezler (bunlar mahkumiyete bağlı olağan
+           hapis cezası değil, kendine özgü/idari nitelikli infaz halleridir).
+           Hangi ceza infaz kurumunda (açık/kapalı) infaz edildiği bilgisi,
+           kullanıcı talebiyle müddetname Açıklama bölümünde KIRMIZI renkte
+           otomatik not olarak gösterilir. NOT: "Koşullu salıverilme kararının
+           geri alınması" için kesin kanun madde numarası bu oturumda
+           doğrulanmadı — açıklama metni kasıtlı olarak madde numarası
+           belirtmeden yazıldı; kullanıcı netleştirirse eklenmelidir.
+           ====================================================== */
+        const OZEL_INFAZ_TIPLERI = ['kosullu_geri_alinan', 'tazyik_hapsi', 'disiplin_hapsi', 'zorlama_hapsi', 'iik_tazyik_hapsi'];
+        const OZEL_INFAZ_BILGI = {
+            kosullu_geri_alinan: {
+                etiket: 'Koşullu Salıverilme Kararı Geri Alınan (Süreli Hapis)',
+                kurum: 'kapali',
+                aciklama: 'Koşullu salıverilme kararı geri alınan hükümlü, kalan cezasını 4/4 (tamamen) infaz eder; bu ceza için yeniden koşullu salıverilme tarihi hesaplanmaz.'
+            },
+            tazyik_hapsi: {
+                etiket: 'Tazyik Hapsi',
+                kurum: 'kapali',
+                aciklama: 'Tazyik hapsi cezası 4/4 (tamamen) infaz edilir, koşullu salıverilme hükmü uygulanmaz.'
+            },
+            disiplin_hapsi: {
+                etiket: 'Disiplin Hapsi',
+                kurum: 'kapali',
+                aciklama: 'Disiplin hapsi cezası 4/4 (tamamen) infaz edilir, koşullu salıverilme hükmü uygulanmaz.'
+            },
+            zorlama_hapsi: {
+                etiket: 'Zorlama Hapsi',
+                kurum: 'kapali',
+                aciklama: 'Zorlama hapsi cezası 4/4 (tamamen) infaz edilir, koşullu salıverilme hükmü uygulanmaz.'
+            },
+            iik_tazyik_hapsi: {
+                etiket: 'İİK Tazyik Hapsi (2004 s. İcra ve İflas Kanunu)',
+                kurum: 'acik',
+                aciklama: '2004 sayılı İcra ve İflas Kanunu gereğince verilen tazyik hapsi cezası 4/4 (tamamen) infaz edilir, koşullu salıverilme hükmü uygulanmaz.'
+            }
+        };
+        function ozelInfazKurumHtml(kurum) {
+            const metin = kurum === 'acik' ? 'AÇIK CEZA İNFAZ KURUMUNDA' : 'KAPALI CEZA İNFAZ KURUMUNDA';
+            return `<span style="color:#dc2626;font-weight:700;">${metin}</span>`;
+        }
+        // Serbest metni (kullanıcı girişi) güvenli biçimde HTML'e kaçışlar (innerHTML'de kullanılmak üzere)
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str == null ? '' : str;
+            return div.innerHTML;
+        }
+
+        /* ======================================================
            MÜEBBET / AĞIRLAŞTIRILMIŞ MÜEBBETTE SABİT YIL TABLOSU
            (kullanıcı onayıyla, kanun metni + gerçek müddetname
            örneğiyle doğrulandı — 5275 s.K. m.107/2, m.107/4, m.108/1)
@@ -737,9 +795,14 @@
             const mukerrirSelect = tr.querySelector('.penalty-mukerrir');
             const sucMaddeInput = tr.querySelector('.penalty-suc-madde');
             const oranSelect = tr.querySelector('.penalty-oran');
+            const orgutluCheckbox = tr.querySelector('.penalty-orgutlu');
 
             const isSuresiz = (selectEl.value === 'muebbet' || selectEl.value === 'agirlastirilmis_muebbet');
             const isAdliPara = (selectEl.value === 'adli_para');
+            // Özel infaz rejimi (tazyik/disiplin/zorlama hapsi, İİK tazyik hapsi,
+            // koşullu salıverilme kararı geri alınan): süreli (Yıl/Ay/Gün) ama
+            // oranı sabit 4/4'tür; suç maddesi/oran/mükerrir/örgütlü anlamsızdır.
+            const isOzelInfaz = OZEL_INFAZ_TIPLERI.includes(selectEl.value);
 
             // Yıl/Ay/Gün alanları sadece "Süreli Hapis" seçiminde kullanılır.
             [yilInput, ayInput, gunInput].forEach(el => {
@@ -756,22 +819,30 @@
             if (apcFieldsEl) apcFieldsEl.classList.toggle('hidden', !isAdliPara);
             if (apcGunInput) apcGunInput.disabled = !isAdliPara;
 
-            // Suç maddesi ve infaz oranı süreli hapiste anlamlıdır; süresiz ve adli para cezasında anlamsızdır.
+            // Suç maddesi ve infaz oranı süreli hapiste anlamlıdır; süresiz, adli para
+            // cezası ve özel infaz rejiminde (4/4 sabit) anlamsızdır.
             [sucMaddeInput, oranSelect].forEach(el => {
                 if (!el) return;
-                el.disabled = (isSuresiz || isAdliPara);
-                el.classList.toggle('opacity-40', isSuresiz || isAdliPara);
+                el.disabled = (isSuresiz || isAdliPara || isOzelInfaz);
+                el.classList.toggle('opacity-40', isSuresiz || isAdliPara || isOzelInfaz);
             });
 
             // Müebbet / Ağırlaştırılmış müebbette koşullu salıverilme süresi artık ORANLA değil,
             // 5275 s.K. m.107/2 ve m.107/4 ile m.108/1 gereğince SABİT yıl sayısıyla belirleniyor
             // (bkz. getSuresizSTTYil / getSuresizBTTYil). Bu nedenle mükerrirlik seçimi müebbet/
             // ağırlaştırılmış müebbette de anlamlıdır ve artık kilitlenmiyor.
-            // Adli para cezası indirimsiz (tam) infaz edildiğinden mükerrirlik onu etkilemez.
+            // Adli para cezası ve özel infaz rejimi (4/4, koşullusu yok) indirimsiz/sabit
+            // infaz edildiğinden mükerrirlik/örgütlü suç bunları etkilemez.
             if (mukerrirSelect) {
-                mukerrirSelect.disabled = isAdliPara;
-                mukerrirSelect.classList.toggle('opacity-40', isAdliPara);
-                if (isAdliPara) mukerrirSelect.value = 'yok';
+                mukerrirSelect.disabled = (isAdliPara || isOzelInfaz);
+                mukerrirSelect.classList.toggle('opacity-40', isAdliPara || isOzelInfaz);
+                if (isAdliPara || isOzelInfaz) mukerrirSelect.value = 'yok';
+            }
+            if (orgutluCheckbox) {
+                orgutluCheckbox.disabled = isOzelInfaz;
+                if (isOzelInfaz) orgutluCheckbox.checked = false;
+                const orgutluLabel = orgutluCheckbox.closest('label');
+                if (orgutluLabel) orgutluLabel.classList.toggle('opacity-40', isOzelInfaz);
             }
         }
 
@@ -791,6 +862,13 @@
                     <div class="flex items-center gap-1">
                         <select class="penalty-sure-tip w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-bold" onchange="toggleSuresiTip(this)">
                             <option value="sureli" ${sureTip === 'sureli' ? 'selected' : ''}>Süreli Hapis Cezası</option>
+                            <optgroup label="Süreli Hapis — Özel İnfaz Rejimi (4/4, Koşullusu Yok)">
+                                <option value="kosullu_geri_alinan" ${sureTip === 'kosullu_geri_alinan' ? 'selected' : ''}>Koşullu Salıverilme Kararı Geri Alınan</option>
+                                <option value="tazyik_hapsi" ${sureTip === 'tazyik_hapsi' ? 'selected' : ''}>Tazyik Hapsi</option>
+                                <option value="disiplin_hapsi" ${sureTip === 'disiplin_hapsi' ? 'selected' : ''}>Disiplin Hapsi</option>
+                                <option value="zorlama_hapsi" ${sureTip === 'zorlama_hapsi' ? 'selected' : ''}>Zorlama Hapsi</option>
+                                <option value="iik_tazyik_hapsi" ${sureTip === 'iik_tazyik_hapsi' ? 'selected' : ''}>İİK Tazyik Hapsi (2004 s.K.)</option>
+                            </optgroup>
                             <option value="adli_para" ${sureTip === 'adli_para' ? 'selected' : ''}>Adli Para Cezası (TCK m.52)</option>
                             <option value="muebbet" ${sureTip === 'muebbet' ? 'selected' : ''}>Süresiz: Müebbet Hapis</option>
                             <option value="agirlastirilmis_muebbet" ${sureTip === 'agirlastirilmis_muebbet' ? 'selected' : ''}>Süresiz: Ağırlaştırılmış Müebbet</option>
@@ -1086,6 +1164,11 @@
             // her satırın suç tarihi/maddesi burada toplanır.
             const cocukYasRowData = [];
 
+            // Hesaplamada kullanılan özel infaz rejimi (tazyik/disiplin/zorlama hapsi,
+            // İİK tazyik hapsi, koşullu geri alınan) türleri — Açıklama bölümünde
+            // kurum (açık/kapalı) notu üretmek için toplanır.
+            const ozelInfazTipleriKullanilan = new Set();
+
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
             penaltyRows.forEach((row) => {
@@ -1096,9 +1179,15 @@
                 const sTarih = row.querySelector('.penalty-suc-tarihi').value;
                 const orgutluEl = row.querySelector('.penalty-orgutlu');
                 const orgutlu = orgutluEl ? orgutluEl.checked : false;
+                const isOzelInfazRow = OZEL_INFAZ_TIPLERI.includes(sureTip);
 
-                if (mukerrir !== 'yok') hasMukerrer = true;
-                if (orgutlu) hasOrgutlu = true;
+                // Özel infaz rejimi satırları (4/4, koşullusu yok) mahkumiyete bağlı olağan
+                // süreli hapis cezası olmadığından, mükerrerlik/örgütlü suç bayraklarını ve
+                // içtima (m.107/3-4) süreli hapis sayacını ETKİLEMEZ.
+                if (!isOzelInfazRow) {
+                    if (mukerrir !== 'yok') hasMukerrer = true;
+                    if (orgutlu) hasOrgutlu = true;
+                }
                 cocukYasRowData.push({ sucTarihi: sTarih ? new Date(sTarih) : null, sucMadde: sucMadde });
 
                 let nextDate;
@@ -1109,8 +1198,24 @@
                 let rowDays = 0;       // BTT'ye (hakederek tahliye) katkı veren ham gün
                 let rowYatarGun = 0;   // STT'ye (koşullu salıverilme) katkı veren yatar gün
                 let rowOranMetni = ""; // Rapordaki "oran" sütununda gösterilecek kısa metin
+                let ozelInfazBilgi = null; // Özel infaz rejimi ise OZEL_INFAZ_BILGI kaydı
 
-                if (sureTip === 'muebbet' || sureTip === 'agirlastirilmis_muebbet') {
+                if (isOzelInfazRow) {
+                    ozelInfazBilgi = OZEL_INFAZ_BILGI[sureTip];
+                    ozelInfazTipleriKullanilan.add(sureTip);
+                    const y = parseInt(row.querySelector('.penalty-yil').value) || 0;
+                    const a = parseInt(row.querySelector('.penalty-ay').value) || 0;
+                    const g = parseInt(row.querySelector('.penalty-gun').value) || 0;
+                    // Kanuni sabit çevrim: 1 yıl = 365 gün, 1 ay = 30 gün (artık yıl gün KAZANDIRMAZ)
+                    const rowGunSabit = (y * 365) + (a * 30) + g;
+                    nextDate = addDays(cumulative, rowGunSabit);
+                    sureMetinYAG = `${yagMetinVertical(y, a, g)} (${ozelInfazBilgi.etiket})`;
+
+                    // 4/4: indirimsiz, tam infaz; koşullu salıverilme hesaplanmaz (yatar = ham gün).
+                    rowDays = diffDaysCalendar(cumulative, nextDate);
+                    rowYatarGun = rowDays;
+                    rowOranMetni = "4/4 (Koşullu Yok)";
+                } else if (sureTip === 'muebbet' || sureTip === 'agirlastirilmis_muebbet') {
                     isSuresiz = true;
                     suresizText = (sureTip === 'muebbet') ? "Müebbet Hapis" : "Ağırlaştırılmış Müebbet Hapis";
                     if (sureTip === 'muebbet') mCount++; else amCount++;
@@ -1198,6 +1303,8 @@
                         oranLabel.innerText = `STT: ${Math.round(rowYatarGun / 365)} Yıl • BTT: ${Math.round(rowDays / 365)} Yıl`;
                     } else if (isAdliPara) {
                         oranLabel.innerText = `İndirimsiz • Yatar: ${Math.floor(rowYatarGun)}g`;
+                    } else if (ozelInfazBilgi) {
+                        oranLabel.innerText = `4/4 (Koşullu Yok) • ${ozelInfazBilgi.kurum === 'acik' ? 'Açık' : 'Kapalı'} CİK`;
                     } else {
                         oranLabel.innerText = `Oran: ${oranToText(rowDays ? rowYatarGun / rowDays : 0)} • Yatar: ${Math.floor(rowYatarGun)}g`;
                     }
@@ -1205,7 +1312,7 @@
 
                 rowReportData.push({
                     metin: isSuresiz ? suresizText : sureMetinYAG,
-                    sucMetni: isAdliPara ? "Adli Para Cezası (TCK m.52)" : (sucMadde || 'Diğer Adli Suçlar'),
+                    sucMetni: isAdliPara ? "Adli Para Cezası (TCK m.52)" : (ozelInfazBilgi ? ozelInfazBilgi.etiket : (sucMadde || 'Diğer Adli Suçlar')),
                     tarih: sTarih ? formatDate(new Date(sTarih)) : "-",
                     oranMetni: rowOranMetni
                 });
@@ -1397,12 +1504,29 @@
                 cocukYasAciklamaMetni = parcalarCocuk.join('\n');
             }
 
-            // Açıklama: otomatik üretilen kanuni uyarı metni + çocuk yaş notu + kullanıcının yazdığı manuel not
+            // Özel infaz rejimi (tazyik/disiplin/zorlama hapsi, İİK tazyik hapsi, koşullu
+            // geri alınan) notları: hangi ceza infaz kurumunda (açık/kapalı) infaz edildiği
+            // bilgisi kullanıcı talebiyle KIRMIZI renkte vurgulanır.
+            const ozelInfazAciklamaParcalari = Array.from(ozelInfazTipleriKullanilan).map(tip => {
+                const bilgi = OZEL_INFAZ_BILGI[tip];
+                return `${bilgi.etiket}: ${bilgi.aciklama} Hükümlü bu cezasını ${ozelInfazKurumHtml(bilgi.kurum)} infaz eder.`;
+            });
+
+            // Açıklama: otomatik üretilen kanuni uyarı metni + çocuk yaş notu + özel infaz
+            // rejimi notları + kullanıcının yazdığı manuel not
             const manuelNot = (document.getElementById('aciklamaManuel') || {}).value || "";
             const repAciklamaEl = document.getElementById('repAciklama');
             if (repAciklamaEl) {
-                const parcalar = [capWarningText.trim(), cocukYasAciklamaMetni.trim(), manuelNot.trim()].filter(Boolean);
-                repAciklamaEl.innerText = parcalar.length ? parcalar.join('\n\n') : "—";
+                const parcalar = [
+                    capWarningText.trim(),
+                    cocukYasAciklamaMetni.trim(),
+                    ...ozelInfazAciklamaParcalari,
+                    manuelNot.trim() ? escapeHtml(manuelNot.trim()) : ""
+                ].filter(Boolean);
+                // NOT: özel infaz notları kırmızı <span> işaretlemesi içerdiğinden burada
+                // innerHTML kullanılır (önceden innerText idi); manuel not ayrıca escapeHtml
+                // ile kaçışlanarak HTML enjeksiyonuna karşı güvenceye alınmıştır.
+                repAciklamaEl.innerHTML = parcalar.length ? parcalar.join('\n\n') : "—";
             }
 
             // Ekrandaki uyarı kutusu (Hesapla anında görünür)
