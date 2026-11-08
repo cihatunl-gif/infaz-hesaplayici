@@ -278,9 +278,10 @@
                                 <td colspan="2" class="p-0">
                                     <table class="w-full border-collapse text-[10px]">
                                         <thead>
-                                            <tr class="bg-slate-100 border-t border-b border-slate-400">
-                                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
-                                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Suç Maddesi / Ceza Süresi</th>
+                                            <tr class="bg-slate-100">
+                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Suç Tarihi</th>
+                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Suç Maddesi</th>
+                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Ceza Süresi</th>
                                                 <th class="py-0.5 px-1.5 leading-tight text-left font-bold">İnfaz Türü</th>
                                             </tr>
                                         </thead>
@@ -395,92 +396,92 @@
         // Bu alan verilmeyen/eşleşmeyen her madde varsayılan olarak kasıtlı sayılır.
         const SUC_MADDE_LISTESI = [
             { madde: 'Diğer Diğer', aciklama: 'Diğer', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 58/9', aciklama: 'Örgüt', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 81/1', aciklama: 'Öldürme', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 82/1.a', aciklama: 'Öldürme', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 82/1-d', aciklama: 'Öldürme', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 82/1-d.3', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 82/1-d.3.1', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 82/1-d.3.2', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 83', aciklama: 'Öldürme', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 86/3-a', aciklama: 'Yakın akrabayı yaralama', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 86/3-a.1', aciklama: 'Üst soya karşı yaralama', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 86/3-a.2', aciklama: 'Alt soya karşı yaralama', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 86/3-a.3', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 86/3-a.3.1', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 86/3-a.3.2', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 86/3-a.4', aciklama: 'Kardeşe karşı yaralama', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 87/2.d', aciklama: 'Ağır Yaralama', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 94', aciklama: 'İşkence', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 95', aciklama: 'İşkence', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 96', aciklama: 'Eziyet', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 96/2-b', aciklama: '', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 102', aciklama: 'Cinsel', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 102/1', aciklama: 'Cinsel', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 102/2', aciklama: 'Cinsel', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 103', aciklama: 'Cinsel', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 104', aciklama: 'Cinsel Taciz', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 104/1', aciklama: 'Cinsel Taciz', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 104/2', aciklama: 'Cinsel', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 104/3', aciklama: 'Cinsel', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 105', aciklama: 'Cinsel Taciz', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 109', aciklama: 'Kişiyi Hürriyetinden Yoksun Kılma', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 132', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 133', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 134', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 135', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 136', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 137', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 138', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 142', aciklama: 'Hırsızlık', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 148', aciklama: 'Yağma', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 149', aciklama: 'Yağma', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 149/1-f', aciklama: 'Örgütlü Yağma', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 149/1-g', aciklama: 'Örgütlü Yağma', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 149/1-f-g', aciklama: 'Örgütlü Yağma', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 188/5-b', aciklama: 'Uyuşturucu', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 188', aciklama: 'Uyuşturucu', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 190', aciklama: 'Uyuşturucu', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 220', aciklama: 'Örgüt', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 221', aciklama: 'Örgüt', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 302', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 303', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 304', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 305', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 306', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 307', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 308', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 309', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 310', aciklama: 'Terör', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 311', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 312', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 313', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 314', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 315', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 316', aciklama: 'Terör', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 317', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 318', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 319', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 320', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/4' },
-            { madde: 'Türk Ceza Kanunu 321', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 322', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 323', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 324', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 325', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
-            { madde: 'Türk Ceza Kanunu 326', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 327', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 328', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 329', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 330', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 331', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 332', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 333', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 334', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 335', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 336', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 337', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 338', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
-            { madde: 'Türk Ceza Kanunu 339', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 58/9', aciklama: 'Örgüt', oran: '1/3' },
+            { madde: 'TCK 81/1', aciklama: 'Öldürme', oran: '1/3' },
+            { madde: 'TCK 82/1.a', aciklama: 'Öldürme', oran: '1/3' },
+            { madde: 'TCK 82/1-d', aciklama: 'Öldürme', oran: '1/3' },
+            { madde: 'TCK 82/1-d.3', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
+            { madde: 'TCK 82/1-d.3.1', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
+            { madde: 'TCK 82/1-d.3.2', aciklama: 'Eşe karşı öldürme', oran: '1/2' },
+            { madde: 'TCK 83', aciklama: 'Öldürme', oran: '1/2' },
+            { madde: 'TCK 86/3-a', aciklama: 'Yakın akrabayı yaralama', oran: '1/2' },
+            { madde: 'TCK 86/3-a.1', aciklama: 'Üst soya karşı yaralama', oran: '1/2' },
+            { madde: 'TCK 86/3-a.2', aciklama: 'Alt soya karşı yaralama', oran: '1/2' },
+            { madde: 'TCK 86/3-a.3', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
+            { madde: 'TCK 86/3-a.3.1', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
+            { madde: 'TCK 86/3-a.3.2', aciklama: 'Eşe karşı yaralama', oran: '1/2' },
+            { madde: 'TCK 86/3-a.4', aciklama: 'Kardeşe karşı yaralama', oran: '1/2' },
+            { madde: 'TCK 87/2.d', aciklama: 'Ağır Yaralama', oran: '1/3' },
+            { madde: 'TCK 94', aciklama: 'İşkence', oran: '1/3' },
+            { madde: 'TCK 95', aciklama: 'İşkence', oran: '1/3' },
+            { madde: 'TCK 96', aciklama: 'Eziyet', oran: '1/3' },
+            { madde: 'TCK 96/2-b', aciklama: '', oran: '1/3' },
+            { madde: 'TCK 102', aciklama: 'Cinsel', oran: '1/3' },
+            { madde: 'TCK 102/1', aciklama: 'Cinsel', oran: '1/3' },
+            { madde: 'TCK 102/2', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'TCK 103', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'TCK 104', aciklama: 'Cinsel Taciz', oran: '1/3' },
+            { madde: 'TCK 104/1', aciklama: 'Cinsel Taciz', oran: '1/3' },
+            { madde: 'TCK 104/2', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'TCK 104/3', aciklama: 'Cinsel', oran: '1/4' },
+            { madde: 'TCK 105', aciklama: 'Cinsel Taciz', oran: '1/3' },
+            { madde: 'TCK 109', aciklama: 'Kişiyi Hürriyetinden Yoksun Kılma', oran: '1/2' },
+            { madde: 'TCK 132', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'TCK 133', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'TCK 134', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'TCK 135', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'TCK 136', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'TCK 137', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'TCK 138', aciklama: 'Özel Hayatın Gizliliği', oran: '1/3' },
+            { madde: 'TCK 142', aciklama: 'Hırsızlık', oran: '1/2' },
+            { madde: 'TCK 148', aciklama: 'Yağma', oran: '1/2' },
+            { madde: 'TCK 149', aciklama: 'Yağma', oran: '1/2' },
+            { madde: 'TCK 149/1-f', aciklama: 'Örgütlü Yağma', oran: '1/3' },
+            { madde: 'TCK 149/1-g', aciklama: 'Örgütlü Yağma', oran: '1/3' },
+            { madde: 'TCK 149/1-f-g', aciklama: 'Örgütlü Yağma', oran: '1/3' },
+            { madde: 'TCK 188/5-b', aciklama: 'Uyuşturucu', oran: '1/4' },
+            { madde: 'TCK 188', aciklama: 'Uyuşturucu', oran: '1/4' },
+            { madde: 'TCK 190', aciklama: 'Uyuşturucu', oran: '1/2' },
+            { madde: 'TCK 220', aciklama: 'Örgüt', oran: '1/3' },
+            { madde: 'TCK 221', aciklama: 'Örgüt', oran: '1/3' },
+            { madde: 'TCK 302', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 303', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 304', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 305', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 306', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 307', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 308', aciklama: 'Devletin Güvenliğine Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 309', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 310', aciklama: 'Terör', oran: '1/2' },
+            { madde: 'TCK 311', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 312', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 313', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 314', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 315', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 316', aciklama: 'Terör', oran: '1/4' },
+            { madde: 'TCK 317', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 318', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 319', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 320', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/4' },
+            { madde: 'TCK 321', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 322', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 323', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 324', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 325', aciklama: 'Milli Savunmaya Karşı Suç', oran: '1/2' },
+            { madde: 'TCK 326', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 327', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 328', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 329', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 330', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 331', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 332', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 333', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 334', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 335', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 336', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 337', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 338', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
+            { madde: 'TCK 339', aciklama: 'Devlet sırlarına karşı suç', oran: '1/3' },
             { madde: 'Terörle Mücadele Kanunu Tüm Maddeler', aciklama: 'Terör', oran: '1/3' },
             { madde: 'Devlet İstihbarat Hizmetleri ve Milli İstihbarat Teşkilatı Kanunu Tüm Maddeler', aciklama: '-', oran: '1/3' },
         ];
@@ -539,46 +540,46 @@
 
         // Sıra ÖNEMLİDİR: en spesifik anahtar en üstte olmalı (startsWith ile eşleştirilir).
         const ACIK_DS_TABLOSU = [
-            { key: 'Türk Ceza Kanunu 141', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 142', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 148', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 149/1-f-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'Türk Ceza Kanunu 149/1-f', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'Türk Ceza Kanunu 149/1-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'Türk Ceza Kanunu 149', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 188', acik: 5, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 190', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 102', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'Türk Ceza Kanunu 103', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'Türk Ceza Kanunu 104/2', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'Türk Ceza Kanunu 104/3', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'Türk Ceza Kanunu 104', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 105', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 82/1-d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'Türk Ceza Kanunu 81', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 82', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 83', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'Türk Ceza Kanunu 86/3-a', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 87/2.d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 94', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 95', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 96/2-b', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 96', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 220', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'Türk Ceza Kanunu 221', acik: 2, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'TCK 141', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 142', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 148', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 149/1-f-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'TCK 149/1-f', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'TCK 149/1-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'TCK 149', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 188', acik: 5, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 190', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 102', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'TCK 103', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'TCK 104/2', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'TCK 104/3', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'TCK 104', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 105', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 82/1-d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false },
+            { key: 'TCK 81', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 82', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 83', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
+            { key: 'TCK 86/3-a', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 87/2.d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 94', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 95', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 96/2-b', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 96', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 220', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: true },
+            { key: 'TCK 221', acik: 2, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
             { key: 'Terörle Mücadele Kanunu', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'Türk Ceza Kanunu 132', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 133', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 134', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 135', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 136', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 137', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'Türk Ceza Kanunu 138', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 132', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 133', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 134', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 135', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 136', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 137', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 138', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
         ];
         // TCK 302-339 (2.Kitap 4.Kısım 4,5,6,7.Bölüm: Devletin güvenliği / Anayasal düzen /
         // Milli savunma / Devlet sırları-casusluk) -> Geçici 10/6 istisna listesine girer.
         for (let m = 302; m <= 339; m++) {
-            ACIK_DS_TABLOSU.push({ key: `Türk Ceza Kanunu ${m}`, acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false });
+            ACIK_DS_TABLOSU.push({ key: `TCK ${m}`, acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false });
         }
 
         function getAcikDsBilgi(sucMadde) {
@@ -635,9 +636,9 @@
         // m.107/4 anlamında örgütlü suç niteliğindedir. Bu maddelerden biri seçildiğinde
         // "Örgütlü Suç" kutucuğu kullanıcıdan beklemeden otomatik işaretlenir.
         const ORGUTLU_OTOMATIK_MADDELER = [
-            'türk ceza kanunu 149/1-f',
-            'türk ceza kanunu 149/1-g',
-            'türk ceza kanunu 149/1-f-g'
+            'tck 149/1-f',
+            'tck 149/1-g',
+            'tck 149/1-f-g'
         ];
         function applyAutoOrgutlu(tr, maddeText) {
             if (!tr || !maddeText) return;
@@ -870,13 +871,13 @@
             return /2\.\s*(KEZ\s*)?TEKERR[ÜU]R|108\/3/.test(satirMetniUpper) ? '2' : '1';
         }
 
-        // Bir satırdaki "TCK 149/1.h" / "Türk Ceza Kanunu 82/1-d" gibi madde ibaresini
-        // yakalar; bulursa, listedeki TCK maddeleriyle aynı "Türk Ceza Kanunu ..." ön
+        // Bir satırdaki "TCK 149/1.h" / "TCK 82/1-d" gibi madde ibaresini
+        // yakalar; bulursa, listedeki TCK maddeleriyle aynı "TCK ..." ön
         // ekine normalize eder (tam eşleşirse oran/örgütlü otomatik gelir, eşleşmezse
         // satır yine de eklenir ve kullanıcı elle düzeltir).
         const PDF_MADDE_RE = /((?:TCK|T\.?C\.?K\.?|Türk Ceza Kanunu)\s*\d+[\w.\-]*(?:[\/][\w.\-]+)*)/i;
         function normalizeEdilmisMadde(maddeRaw) {
-            return maddeRaw.replace(/^(TCK|T\.?C\.?K\.?)\s*/i, 'Türk Ceza Kanunu ').trim();
+            return maddeRaw.replace(/^(TCK|T\.?C\.?K\.?|Türk Ceza Kanunu)\s*/i, 'TCK ').trim();
         }
 
         function parseCezaSatirlari(lines) {
@@ -2370,9 +2371,10 @@
             const repRowsBody = document.getElementById('repCezaRows');
             if (repRowsBody) {
                 repRowsBody.innerHTML = rowReportData.map(r => `
-                    <tr class="border-b border-slate-300">
-                        <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${r.tarih}</td>
-                        <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${r.sucMetni} <span class="text-slate-400">—</span> ${r.metin}</td>
+                    <tr>
+                        <td class="py-0.5 px-1.5 leading-tight text-sky-800">${r.tarih}</td>
+                        <td class="py-0.5 px-1.5 leading-tight">${r.sucMetni}</td>
+                        <td class="py-0.5 px-1.5 leading-tight">${r.metin}</td>
                         <td class="py-0.5 px-1.5 leading-tight font-semibold text-amber-700">${r.oranMetni}</td>
                     </tr>
                 `).join('');
@@ -2538,7 +2540,28 @@
             const printSheet = document.getElementById('printSheet');
             if (!printSheet) return;
             calculateAll();
-            let metin = printSheet.innerText || printSheet.textContent || '';
+            // "printSheet" normalde sadece yazdırma anında (@media print) görünür olur
+            // ("print-only": display:none). Ekranda gizliyken innerText tarayıcıda BOŞ
+            // döner (satır/sütun ayrımı kaybolur, metinler birbirine yapışık çıkar — bu
+            // yüzden UDF'te "hiç ayıraç yok" sorunu oluşuyordu); bu yüzden metni almadan
+            // önce, kullanıcıya görünmeyecek şekilde (ekran dışına, visibility:hidden ile)
+            // geçici olarak gösterilir, metin alınır alınmaz eski haline döndürülür.
+            const eskiStil = { display: printSheet.style.display, position: printSheet.style.position, visibility: printSheet.style.visibility, left: printSheet.style.left, top: printSheet.style.top };
+            printSheet.style.display = 'block';
+            printSheet.style.position = 'fixed';
+            printSheet.style.visibility = 'hidden';
+            printSheet.style.left = '-99999px';
+            printSheet.style.top = '0';
+            let metin;
+            try {
+                metin = printSheet.innerText || printSheet.textContent || '';
+            } finally {
+                printSheet.style.display = eskiStil.display;
+                printSheet.style.position = eskiStil.position;
+                printSheet.style.visibility = eskiStil.visibility;
+                printSheet.style.left = eskiStil.left;
+                printSheet.style.top = eskiStil.top;
+            }
             metin = metin.replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
             if (!metin) {
                 alert('Rapor içeriği boş görünüyor; lütfen önce hesaplama alanlarını doldurun.');
