@@ -726,15 +726,28 @@
             const arrayBuffer = await dosya.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             const allLines = [];
+            // Satır gruplama toleransı (punto): aynı görsel satırdaki hücreler (örn. kalın
+            // etiket + normal kalınlıkta değer) birkaç punto farklı taban çizgisinde
+            // olabiliyor; sabit "bucket" yerine, bir önceki öğeye yakınlığa göre kümeleme
+            // yapılır ki küçük baskı farkları satırı ikiye bölmesin.
+            const Y_TOLERANS = 3.5;
             for (let p = 1; p <= pdf.numPages; p++) {
                 const page = await pdf.getPage(p);
                 const content = await page.getTextContent();
+                const items = content.items
+                    .filter(it => it.str && it.str.trim())
+                    .map(it => ({ x: it.transform[4], y: it.transform[5], str: it.str }))
+                    .sort((a, b) => b.y - a.y);
                 const rows = {};
-                content.items.forEach(item => {
-                    if (!item.str || !item.str.trim()) return;
-                    const yKey = Math.round(item.transform[5] / 2) * 2;
-                    if (!rows[yKey]) rows[yKey] = [];
-                    rows[yKey].push({ x: item.transform[4], str: item.str });
+                let refY = null;
+                let currentKey = null;
+                items.forEach(item => {
+                    if (refY === null || Math.abs(item.y - refY) > Y_TOLERANS) {
+                        refY = item.y;
+                        currentKey = item.y;
+                        rows[currentKey] = [];
+                    }
+                    rows[currentKey].push({ x: item.x, str: item.str });
                 });
                 const sortedY = Object.keys(rows).map(Number).sort((a, b) => b - a);
                 sortedY.forEach(y => {
@@ -807,7 +820,12 @@
             { re: /G[ÖO]ZALTI/, tur: 'gozalti' },
         ];
         function parseMahsupSatirlari(lines) {
-            const rangeRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})\s*-\s*(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
+            // Gerçek UYAP evrakında başlangıç/bitiş aynı hücrede tire ile ("01/08/2023 -
+            // 21/02/2024") yazılırken, bizim programımızın bastığı raporda bu iki tarih
+            // AYRI sütunlarda (tire YOK) yer alıyor — satır birleştirildiğinde araya sadece
+            // boşluk/metin giriyor. Bu yüzden iki tarih arasına en fazla 10 karakterlik
+            // (tire, boşluk vb.) esnek bir boşluk bırakılıyor; tire şartı KALDIRILDI.
+            const rangeRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4}).{0,10}?(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
             const satirlar = [];
             lines.forEach(line => {
                 const m = line.match(rangeRe);
@@ -845,7 +863,15 @@
                 let girisTarihiBulundu = null;
                 for (let i = 0; i < lines.length; i++) {
                     if (lines[i].toLocaleUpperCase('tr-TR').includes('CEZAEVİNE GİRİŞ TARİHİ')) {
-                        const kaynakSatir = lines[i].match(/\d{1,2}[\/.]\d{1,2}[\/.]\d{4}/) ? lines[i] : (lines[i + 1] || '');
+                        // Etiket (kalın) ile tarih değeri (normal), satır birleştirmede bazen
+                        // ayrı satırlara düşebiliyor (farklı yazı kalınlığı/konum nedeniyle) —
+                        // bu yüzden sadece bir sonraki değil, aynı satır dahil birkaç satır
+                        // ileri taranır.
+                        let kaynakSatir = '';
+                        for (let k = 0; k <= 2; k++) {
+                            const aday = lines[i + k] || '';
+                            if (/\d{1,2}[\/.]\d{1,2}[\/.]\d{4}/.test(aday)) { kaynakSatir = aday; break; }
+                        }
                         const m = kaynakSatir.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
                         if (m) girisTarihiBulundu = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
                         break;
@@ -891,6 +917,7 @@
                 const tekerrurEkli = cezaSatirlari.filter(s => s.ekTekerrurGunVar).length;
                 if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+ek gün tekerrür" ibaresi görüldü; bu ek günün hesaplamaya nasıl ekleneceği henüz netleşmediği için ceza süresine YANSITILMADI — "Mükerrir Gün" alanına elle eklemeniz gerekebilir.`);
                 uyarilar.push('Her ceza satırındaki suç maddesini ve infaz oranını, madde listesiyle eşleşip eşleşmediğini kontrol ederek gözden geçirin (eşleşmeyen maddelerde oran varsayılan olarak 1/2 atanmıştır).');
+                uyarilar.push('TEKERRÜR/MÜKERRİRLİK: Bizim programımızın bastığı müddetnamede mükerrirlik sadece sonuç orana (1/2, 2/3, 3/4) yansıdığından, bu oran tek başına 1./2. tekerrür olup olmadığını güvenilir şekilde göstermez (örn. örgütlü suç veya maddenin kendi oranı da aynı sonucu verebilir); metinde açıkça "tekerrür"/"108/1-2" geçmeyen satırlarda Mükerrir alanı "Tekerrür Yok" olarak eklenmiştir — tekerrür olan satırları lütfen elle işaretleyin.');
                 if (!girisTarihiBulundu) uyarilar.push('Cezaevine giriş tarihi PDF\'te bulunamadı, elle girilmesi gerekiyor.');
 
                 goster(
