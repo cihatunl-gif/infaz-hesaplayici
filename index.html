@@ -230,7 +230,7 @@
             </div>
 
             <!-- Kanuni Üst Sınır Uyarısı (STT/BTT 28/32/42/48 yıl vb. - m.107/3, m.107/4, m.108/1-c) -->
-            <div id="capWarningBanner" class="hidden bg-amber-50 border border-amber-300 text-amber-800 text-xs rounded-xl p-3 flex items-start gap-2">
+            <div id="capWarningBanner" class="hidden bg-red-50 border border-red-300 text-red-800 text-xs rounded-xl p-3 flex items-start gap-2">
                 <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
                 <span></span>
             </div>
@@ -1398,8 +1398,9 @@
                 if (dogumTarihiBulundu) document.getElementById('hukumluDogumTarihi').value = dogumTarihiBulundu;
 
                 const uyarilar = [];
-                const mukerrirSupheli = cezaSatirlari.filter(s => s.mukerrirTahmin !== 'yok').length;
-                if (mukerrirSupheli > 0) uyarilar.push(`${mukerrirSupheli} ceza satırında tekerrür ibaresi görüldü, 1./2. tekerrür tahmini otomatik yapıldı — lütfen kontrol edin.`);
+                // Not: tekerrür/mükerrirlik tespit uyarısı kullanıcı talebiyle KALDIRILDI
+                // (2026-11-09) — otomatik tespit edilen 1./2. mükerrer durumu doğrudan
+                // kabul ediliyor, ayrıca "kontrol edin" uyarısı gösterilmiyor.
                 const turEslesmeyen = mahsupSatirlari.filter(s => s.turEslesmedi).length;
                 if (turEslesmeyen > 0) uyarilar.push(`${turEslesmeyen} mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi, geçici olarak "Tutukluluk" ile eklendi — lütfen doğru türü seçin.`);
                 const tekerrurEkli = cezaSatirlari.filter(s => s.ekGun > 0).length;
@@ -1414,7 +1415,7 @@
                     if (beklenenOran === null) return;
                     const belgedekiOran = oranStrToNum(s.oranParsed);
                     if (Math.abs(beklenenOran - belgedekiOran) > 0.01) {
-                        uyarilar.push(`${idx + 1}. ceza satırı (${s.maddeRaw}): belgede yazılı oran ${s.oranParsed} iken, suç maddesi listesine göre olması gereken oran ${oranToTextPlain(beklenenOran)} — lütfen kontrol edin.`);
+                        uyarilar.push(`<span class="text-red-700 font-semibold">${idx + 1}. ceza satırı (${s.maddeRaw}): belgede yazılı oran ${s.oranParsed} iken, suç maddesi listesine göre olması gereken oran ${oranToTextPlain(beklenenOran)} — lütfen kontrol edin.</span>`);
                         // Hatanın bulunduğu satırı VE içindeki oran alanını kırmızı,
                         // belirgin bir çerçeveyle işaretle — kullanıcı kolayca bulsun.
                         const hataliTr = eklenenCezaSatirElemanlari[idx];
