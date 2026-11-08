@@ -736,7 +736,7 @@
                 const content = await page.getTextContent();
                 const items = content.items
                     .filter(it => it.str && it.str.trim())
-                    .map(it => ({ x: it.transform[4], y: it.transform[5], str: it.str }))
+                    .map(it => ({ x: it.transform[4], y: it.transform[5], w: it.width || 0, str: it.str }))
                     .sort((a, b) => b.y - a.y);
                 const rows = {};
                 let refY = null;
@@ -747,11 +747,27 @@
                         currentKey = item.y;
                         rows[currentKey] = [];
                     }
-                    rows[currentKey].push({ x: item.x, str: item.str });
+                    rows[currentKey].push({ x: item.x, w: item.w, str: item.str });
                 });
                 const sortedY = Object.keys(rows).map(Number).sort((a, b) => b - a);
                 sortedY.forEach(y => {
-                    const line = rows[y].sort((a, b) => a.x - b.x).map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+                    // Bir kelime, Türkçe noktalı "İ" gibi karakterler yüzünden PDF'te
+                    // birden fazla metin parçasına bölünebiliyor; bu parçalar arasında
+                    // GERÇEK bir boşluk yoktur (bir önceki parçanın bittiği yerde biter).
+                    // Bu yüzden parçalar arasına körlemesine boşluk koymak yerine, sadece
+                    // aradaki X mesafesi gerçekten boşsa (örn. tablo hücresi arası) boşluk
+                    // eklenir; bitişikse doğrudan birleştirilir (örn. "CEZAEV" + "İ" + "NE
+                    // G" + "İ" + ... -> "CEZAEVİNE G..." doğru birleşir, "CEZAEV İ NE G İ
+                    // ..." gibi hatalı aralı birleşmez).
+                    const sirali = rows[y].sort((a, b) => a.x - b.x);
+                    let line = '';
+                    let prevEnd = null;
+                    sirali.forEach(it => {
+                        if (prevEnd !== null && (it.x - prevEnd) > 0.6) line += ' ';
+                        line += it.str;
+                        prevEnd = it.x + it.w;
+                    });
+                    line = line.replace(/\s+/g, ' ').trim();
                     if (line) allLines.push(line);
                 });
             }
@@ -779,17 +795,23 @@
             const satirlar = [];
             lines.forEach(line => {
                 const dateMatch = line.match(dateRe);
-                const maddeMatch = line.match(PDF_MADDE_RE);
-                if (!dateMatch || !maddeMatch) return;
+                if (!dateMatch) return;
                 const upper = line.toLocaleUpperCase('tr-TR');
                 // "CEZASI :" ile başlayan özet satırı (tek satırda toplam yıl/ay/gün) bir
                 // ceza kalemi değil, müddetnamenin genel özetidir — atlanır.
                 if (upper.includes('CEZASI') && upper.includes(':')) return;
+                const kesmeIdx = upper.indexOf('5275');
+                const maddeMatch = line.match(PDF_MADDE_RE);
+                // Bir satırın ceza satırı olduğunu anlamak için TCK madde ibaresi VEYA
+                // "5275 S.K." infaz türü ibaresi gerekir (Manuel Ekle ile, TCK maddesi
+                // yazılmadan eklenen satırlar — örn. "Diğer Diğer" — için madde yoktur
+                // ama rapor her zaman "5275 S.K. ..." ibaresini basar; bu yeterli kabul
+                // edilir, satır atlanmaz).
+                if (!maddeMatch && kesmeIdx === -1) return;
                 // Ceza süresi (Yıl/Ay/Gün), satırın "5275 S.K. ..." ile başlayan infaz
                 // türü/açıklama kısmından ÖNCEKİ bölümde yer alır; o kısımda geçebilecek
                 // "+112 gün" gibi ek ibareler süre olarak YANLIŞ okunmasın diye sadece
                 // bu bölümden önceki metin taranır.
-                const kesmeIdx = upper.indexOf('5275');
                 const sureBolumu = kesmeIdx > -1 ? upper.slice(0, kesmeIdx) : upper;
                 const yilM = sureBolumu.match(/(\d+)\s*YIL/);
                 const ayM = sureBolumu.match(/(\d+)\s*AY/);
@@ -798,14 +820,22 @@
 
                 // İnfaz türü bölümü ("5275 S.K. 108/1-2 md 1/2+112 gün" gibi): buradan
                 // YATAR oranı (1/2, 2/3, 3/4, 4/4) ve varsa "+N gün" ek gününü (5275 s.K.
-                // 108/2 md — mükerrirlik nedeniyle eklenen sabit gün) ayıklıyoruz.
-                const infazTuruBolumu = kesmeIdx > -1 ? upper.slice(kesmeIdx) : '';
-                const oranM = infazTuruBolumu.match(/([1-4])\s*\/\s*([2-4])/);
-                const ekGunM = infazTuruBolumu.match(/\+\s*(\d+)\s*G[ÜU]N/);
+                // 108/2 md — mükerrirlik nedeniyle eklenen sabit gün) ayıklıyoruz. Ek gün
+                // için "gün" kelimesi şart koşulmuyor ("+" işaretinden sonraki sayı
+                // yeterli kabul ediliyor), çünkü bu ibare raporun sürümüne göre farklı
+                // yazılabiliyor.
+                // Oran/ek-gün ibaresi "5275 S.K. ..." citation'ı olmadan da (eski format
+                // raporlarda bare "3/4" gibi) satırın sonunda yer alabilir; bu yüzden
+                // tüm satırda aranır ve SON eşleşme kullanılır (satırda birden fazla
+                // "N/N" görünse bile oran her zaman en sonda yazılır).
+                const oranMatches = [...upper.matchAll(/([1-4])\s*\/\s*([2-4])/g)];
+                const oranM = oranMatches.length ? oranMatches[oranMatches.length - 1] : null;
+                const ekGunMatches = [...upper.matchAll(/\+\s*(\d+)/g)];
+                const ekGunM = ekGunMatches.length ? ekGunMatches[ekGunMatches.length - 1] : null;
 
                 satirlar.push({
                     sucTarihi: `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`,
-                    maddeRaw: normalizeEdilmisMadde(maddeMatch[1].trim()),
+                    maddeRaw: maddeMatch ? normalizeEdilmisMadde(maddeMatch[1].trim()) : '',
                     yil: yilM ? parseInt(yilM[1]) : 0,
                     ay: ayM ? parseInt(ayM[1]) : 0,
                     gun: gunM ? parseInt(gunM[1]) : 0,
@@ -911,15 +941,15 @@
 
                 cezaSatirlari.forEach(s => {
                     const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
-                    if (s.ekGun > 0) {
-                        // Mükerrirlik nedeniyle "+N gün" eklenen satırlar: oran elle (manuel)
-                        // girilmiş gibi eklenir ki "Mükerrir Gün" alanı görünür olsun ve
-                        // PDF'te yazan yatar oranı (1/2, 2/3, 3/4...) doğrudan kullanılsın.
-                        const oranFallback = s.mukerrirTahmin === '2' ? '3/4' : (s.mukerrirTahmin === '1' ? '2/3' : '1/2');
-                        addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
-                    } else {
-                        addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto);
-                    }
+                    // Her satır "manuel oran" olarak eklenir: PDF'te zaten yazan YATAR
+                    // oranı (1/2, 2/3, 3/4...) doğrudan kullanılır — programın kendi suç
+                    // maddesi listesinden tahmin etmesi beklenmez (liste eksik/hatalı
+                    // olabilir, ama PDF'teki rakam zaten kesinleşmiş gerçek değerdir).
+                    // Bu ayrıca madde yazmayan ("Diğer Diğer" gibi) Manuel Ekle satırlarının
+                    // da doğru oranla eklenmesini sağlar. "Mükerrir Gün" alanı da bu sayede
+                    // her zaman görünür/düzenlenebilir olur.
+                    const oranFallback = s.mukerrirTahmin === '2' ? '3/4' : (s.mukerrirTahmin === '1' ? '2/3' : '1/2');
+                    addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
                 });
                 mahsupSatirlari.forEach(s => addMahsupRow(s.tur, s.start, s.end));
                 if (document.querySelectorAll('#penaltyTableBody tr').length === 0) addPenaltyRow();
@@ -932,8 +962,8 @@
                 if (turEslesmeyen > 0) uyarilar.push(`${turEslesmeyen} mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi, geçici olarak "Tutukluluk" ile eklendi — lütfen doğru türü seçin.`);
                 const tekerrurEkli = cezaSatirlari.filter(s => s.ekGun > 0).length;
                 if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+N gün" (mükerrirlik ek günü) ibaresi görüldü; bu değer otomatik olarak "Mükerrir Gün" alanına ve yatar hesabına eklendi — lütfen doğruluğunu kontrol edin.`);
-                uyarilar.push('Her ceza satırındaki suç maddesini ve infaz oranını, madde listesiyle eşleşip eşleşmediğini kontrol ederek gözden geçirin (eşleşmeyen maddelerde oran varsayılan olarak 1/2 atanmıştır).');
-                uyarilar.push('TEKERRÜR/MÜKERRİRLİK: Bizim programımızın bastığı müddetnamede mükerrirlik sadece sonuç orana (1/2, 2/3, 3/4) yansıdığından, bu oran tek başına 1./2. tekerrür olup olmadığını güvenilir şekilde göstermez (örn. örgütlü suç veya maddenin kendi oranı da aynı sonucu verebilir); metinde açıkça "tekerrür"/"108/1-2" geçmeyen satırlarda Mükerrir alanı "Tekerrür Yok" olarak eklenmiştir — tekerrür olan satırları lütfen elle işaretleyin.');
+                uyarilar.push('Her ceza satırındaki suç maddesini ve infaz oranını (PDF\'te yazan değer doğrudan kullanıldı) gözden geçirin; oran bulunamayan satırlarda varsayılan olarak 1/2 atanmıştır.');
+                uyarilar.push('TEKERRÜR/MÜKERRİRLİK: mükerrirlik tespiti satırdaki madde referansına (107/2 = yok, 108/1-2 = 1. mükerrer, 108/3 = 2. mükerrer) dayanır. Eski formatta basılmış bir müddetnamede bu referans yoksa tahmin güvenilir olmayabilir — metinde açıkça "tekerrür"/"108/1-2"/"108/3" geçmeyen satırlarda Mükerrir alanı "Tekerrür Yok" olarak eklenmiştir, lütfen kontrol edin.');
                 if (!girisTarihiBulundu) uyarilar.push('Cezaevine giriş tarihi PDF\'te bulunamadı, elle girilmesi gerekiyor.');
 
                 goster(
