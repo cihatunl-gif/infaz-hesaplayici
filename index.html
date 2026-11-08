@@ -973,14 +973,19 @@
            CDATA bölümünde belgenin TÜM metni hazır, düz yazı olarak bulunur — PDF'teki
            gibi koordinat bazlı satır birleştirmeye gerek yoktur.
 
-           ÖNEMLİ FARK: UYAP'ın ürettiği UDF'lerde ceza tablosu SATIR SATIR değil,
-           SÜTUN SÜTUN dizilir (önce tüm satırların Suç Tarihi değerleri arka arkaya,
-           sonra tüm Ceza Maddesi değerleri, sonra tüm Ceza Süresi değerleri, sonra tüm
-           İnfaz Türü değerleri). realignUdfCezaTablosu bu sütunları tekrar satır
-           hâline getirip, PDF ayrıştırıcısıyla AYNI biçimde ("tarih madde süre
-           infaz-türü" tek satırda) sentetik satırlar üretir; orijinal parça satırlar
-           silinmez (tarih+madde/5275 ibaresi birlikte olmadığından ayrıştırıcılar
-           bunları zaten eşleştirmez, çakışma olmaz).
+           ÖNEMLİ FARK: UYAP'ın ürettiği UDF'lerde ceza tablosu PDF gibi düzgün tek
+           satır halinde gelmez; parçalanmış satırlar olarak gelir, AMA düzen her
+           UDF'de aynı değildir — bazılarında SÜTUN SÜTUN dizilir (önce tüm Suç
+           Tarihi değerleri arka arkaya, sonra tüm Ceza Maddesi değerleri, sonra tüm
+           Ceza Süresi değerleri, sonra tüm İnfaz Türü değerleri), bazılarında ise
+           zaten SATIR SATIR dizilir (tarih, madde, süre, infaz-türü dörtlüsü art
+           arda, satır satır — sadece İlam No tekrarlanmadan tek seferde yazılmış
+           olabilir). realignUdfCezaTablosu önce satır-bazlı düzeni dener, uymazsa
+           sütun-bazlı düzene düşer; her iki durumda da PDF ayrıştırıcısıyla AYNI
+           biçimde ("tarih madde süre infaz-türü" tek satırda) sentetik satırlar
+           üretir; orijinal parça satırlar silinmez (tarih+madde/5275 ibaresi
+           birlikte olmadığından ayrıştırıcılar bunları zaten eşleştirmez, çakışma
+           olmaz).
            ============================================================================ */
 
         // "İnfaz Türü" başlığından sonra gelen, tamamı tarihten ibaret olan ardışık
@@ -998,6 +1003,41 @@
                 i++;
             }
             const tarihStart = i;
+
+            // UYAP'ın ürettiği UDF'lerde ceza tablosu her zaman SÜTUN BAZLI
+            // (önce tüm tarihler, sonra tüm maddeler, ...) dizilmeyebilir; bazı
+            // müddetnamelerde tablo zaten SATIR BAZLI (tarih,madde,süre,infaz-türü
+            // dörtlüsü art arda, satır satır) yazılmış olabilir. Önce satır bazlı
+            // düzeni dene, uymazsa sütun bazlı düzene (eski davranış) düş.
+            const stopRe = /^(CEZAEV[İI]NE\s+G[İI]R[İI][ŞS]\s+TAR[İI]H[İI]|HAKEDEREK\s+TAHL[İI]YE\s+TAR[İI]H[İI]|KO[ŞS]ULLU\s+SAL[İI]VER[İI]LME\s+TAR[İI]H[İI]|MAHSUP)/i;
+            let stopIdx = lines.length;
+            for (let k = tarihStart; k < lines.length; k++) {
+                if (stopRe.test(lines[k])) { stopIdx = k; break; }
+            }
+            const tableLines = lines.slice(tarihStart, stopIdx);
+            if (tableLines.length > 0 && tableLines.length % 4 === 0) {
+                const nSatir = tableLines.length / 4;
+                let satirBazliUyumlu = true;
+                for (let r = 0; r < nSatir; r++) {
+                    const tarihSatiri = tableLines[r * 4];
+                    const digerUcSatir = tableLines.slice(r * 4 + 1, r * 4 + 4);
+                    if (!tamTarihRe.test(tarihSatiri) || digerUcSatir.some(l => tamTarihRe.test(l))) {
+                        satirBazliUyumlu = false;
+                        break;
+                    }
+                }
+                if (satirBazliUyumlu) {
+                    const sentetikSatirlar = [];
+                    for (let r = 0; r < nSatir; r++) {
+                        sentetikSatirlar.push(tableLines.slice(r * 4, r * 4 + 4).join(' '));
+                    }
+                    return [...lines, ...sentetikSatirlar];
+                }
+            }
+
+            // SÜTUN BAZLI düzen (eski davranış): önce tüm tarihler art arda,
+            // sonra tüm maddeler, sonra tüm süreler, sonra tüm infaz türleri.
+            i = tarihStart;
             while (i < lines.length && tamTarihRe.test(lines[i])) i++;
             const n = i - tarihStart;
             if (n === 0) return lines;
@@ -2259,10 +2299,11 @@
             // --- CEZAEVİNE GİRİŞ TARİHİ / MAHSUP TARİH ÇAKIŞMASI UYARISI ---
             // Bilgi amaçlı bir uyarıdır, hesaplamayı durdurmaz: (1) iki mahsup aralığı
             // birbiriyle kesişiyorsa, (2) Gözaltı/Tutukluluk bitişi giriş tarihinden
-            // SONRAYA sarkıyorsa (bu süreler girişten ÖNCE tamamlanmış olmalıdır), ya da
-            // (3) Açık Çık/Denetimli Serbestlik başlangıcı giriş tarihinden ÖNCEYE
-            // düşüyorsa (bu süreler hükümlü infaza girdikten SONRA başlar) kullanıcıya
-            // bildirilir.
+            // SONRAYA sarkıyorsa (bu süreler girişten ÖNCE tamamlanmış olmalıdır)
+            // kullanıcıya bildirilir. Açık Çık/Denetimli Serbestlik başlangıcının giriş
+            // tarihinden önce olması KASITLI OLARAK uyarılmaz — hükümlü önceden
+            // denetimli serbestliğe çıkmış, arada yeni bir ilam gelmiş ve tekrar kapalı
+            // cezaevine alınmış olabilir; bu meşru bir senaryodur, çakışma değildir.
             const MAHSUP_TUR_ETIKET = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', ds: 'Denetimli Serbestlik' };
             const cakismaMesajlari = [];
             for (let a = 0; a < mahsupAraliklari.length; a++) {
@@ -2279,9 +2320,6 @@
                 const m = mahsupAraliklari[a];
                 if ((m.tur === 'gozalti' || m.tur === 'tutukluluk') && m.eDate > D0) {
                     cakismaMesajlari.push(`${m.no}. mahsup satırı (${MAHSUP_TUR_ETIKET[m.tur]}) bitiş tarihi, cezaevine giriş tarihinden SONRA — kontrol edin.`);
-                }
-                if ((m.tur === 'acik_cik' || m.tur === 'ds') && m.sDate < D0) {
-                    cakismaMesajlari.push(`${m.no}. mahsup satırı (${MAHSUP_TUR_ETIKET[m.tur]}) başlangıç tarihi, cezaevine giriş tarihinden ÖNCE — kontrol edin.`);
                 }
             }
             const cakismaBanner = document.getElementById('mahsupCakismaUyariBanner');
