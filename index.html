@@ -502,6 +502,26 @@
             return !!(info && info.taksirli);
         }
 
+        // 5275 sayılı Kanun m.108/9: TCK 102/2 (Nitelikli Cinsel Saldırı), TCK 103
+        // (Çocuğun Cinsel İstismarı - tüm fıkraları), TCK 104/2-3 (Reşit Olmayanla
+        // Cinsel İlişki - nitelikli hal) ve TCK 188 (Uyuşturucu/Uyarıcı Madde İmal ve
+        // Ticareti - tüm fıkraları) suçlarında, mükerrerlik durumuna bakılmaksızın
+        // oran sabit 3/4'tür (bu, SUC_MADDE_LISTESI'ndeki bu maddelerin indirim
+        // değeriyle -1/4- zaten yansıtılmıştır). Hükümlü SUÇ TARİHİNDE 18 yaşını henüz
+        // doldurmamışsa (çocuk/genç) bu sabit oran 3/4 DEĞİL, 2/3 olarak uygulanır
+        // (bkz. calculateAll içindeki çocuk kontrolü). Bu fonksiyon, girilen madde
+        // metninin bu dört maddeden birine ait olup olmadığını (alt fıkra/cümle
+        // varyasyonları dahil) belirler.
+        function is108_9Maddesi(maddeText) {
+            if (!maddeText) return false;
+            const m = maddeText.trim().toLocaleLowerCase('tr-TR');
+            return /^tck\s*102\/2\b/.test(m) ||
+                   /^tck\s*103\b/.test(m) ||
+                   /^tck\s*104\/2\b/.test(m) ||
+                   /^tck\s*104\/3\b/.test(m) ||
+                   /^tck\s*188\b/.test(m);
+        }
+
         /* ======================================================
            AÇIK CEZA İNFAZ KURUMUNA / DENETİMLİ SERBESTLİĞE AYRILMA
            ------------------------------------------------------
@@ -1761,6 +1781,15 @@
             // zaten yoktur, bu nedenle bu diziye dahil edilmez.
             const muebbetAdaylar = [];
 
+            // 108/9 madde çocuk indirimi (TCK 102/2, 103, 104/2-3, 188): doğum tarihi,
+            // satır döngüsünden ÖNCE burada okunur ki her satırın kendi suç tarihiyle
+            // karşılaştırılabilsin. Hükümlü suç tarihinde 18 yaşını doldurmamışsa bu
+            // maddelerdeki sabit 3/4 oranı yerine 2/3 uygulanır (bkz. is108_9Maddesi).
+            const dogumTarihiStr1089 = document.getElementById('hukumluDogumTarihi') ? document.getElementById('hukumluDogumTarihi').value : '';
+            const dogumTarihi1089 = dogumTarihiStr1089 ? new Date(dogumTarihiStr1089) : null;
+            const yas18Tarihi1089 = dogumTarihi1089 ? yilEkleGercek(dogumTarihi1089, 18) : null;
+            const cocuk1089Notlari = []; // Açıklamada listelenecek, bu indirimden etkilenen satırlar
+
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
             penaltyRows.forEach((row) => {
@@ -1897,6 +1926,21 @@
                     let baseOran = manuelOranMi
                         ? oranStrToNum(oranSecimiVal)
                         : (1 - oranStrToNum((findMaddeInfo(sucMadde) || {}).oran || '1/2'));
+
+                    // 5275 s.K. m.108/9 çocuk istisnası: TCK 102/2, 103, 104/2-3, 188
+                    // maddelerinde YETİŞKİNDE oran sabit 3/4'tür; hükümlü SUÇ TARİHİNDE
+                    // 18 yaşını henüz doldurmamışsa (çocuk/genç) bu sabit oran 2/3 olarak
+                    // uygulanır. Doğum tarihi girilmemişse bu kontrol hiç yapılamaz ve
+                    // varsayılan (yetişkin/3-4) oran geçerli kalır.
+                    let cocuk1089Uygulandi = false;
+                    if (is108_9Maddesi(sucMadde) && yas18Tarihi1089 && sTarih) {
+                        const sucTarihiDate1089 = new Date(sTarih);
+                        if (sucTarihiDate1089 < yas18Tarihi1089) {
+                            baseOran = 2 / 3;
+                            cocuk1089Uygulandi = true;
+                        }
+                    }
+
                     // Örgütlü suç (m.107/4): süreli cezada oran en az 2/3 olur;
                     // zaten tabi olduğu oran bundan fazlaysa o oran uygulanır.
                     if (orgutlu) baseOran = Math.max(baseOran, 2 / 3);
@@ -1925,7 +1969,12 @@
                     if (mukerrir === '1') infazMaddesi = '5275 S.K. 108/1-2 md.';
                     else if (mukerrir === '2') infazMaddesi = '5275 S.K. 108/3 md.';
                     else if (orgutlu) infazMaddesi = '5275 S.K. 107/4 md.';
+                    else if (is108_9Maddesi(sucMadde)) infazMaddesi = '5275 S.K. 108/9 md.';
                     rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}`;
+
+                    if (cocuk1089Uygulandi) {
+                        cocuk1089Notlari.push(`${sucMadde || 'ilgili ceza kalemi'} (suç tarihi ${formatDate(new Date(sTarih))}) kapsamında hükümlü suç tarihinde 18 yaşını doldurmadığından, 5275 s.K. m.108/9 gereği normalde yetişkinde uygulanan 3/4 oranı yerine 2/3 oranı uygulanmıştır.`);
+                    }
 
                     // Ek Gün (5275 s.K. 108/2 md): kullanıcının girdiği gün sayısı, yatar günün
                     // üzerine DOĞRUDAN eklenir (oranla çarpılmaz); raporda "oran+N gün" olarak gösterilir.
@@ -2457,6 +2506,10 @@
                 return `${bilgi.etiket}: ${bilgi.aciklama} Hükümlü bu cezasını ${ozelInfazKurumHtml(bilgi.kurum)} infaz eder.`;
             });
 
+            // 108/9 madde çocuk indirimi notu: SADECE bu indirim en az bir ceza kaleminde
+            // fiilen uygulanmışsa yazılır (cocuk1089Notlari boşsa hiç eklenmez).
+            const cocuk1089AciklamaMetni = cocuk1089Notlari.length ? cocuk1089Notlari.join('\n') : "";
+
             // Açıklama: otomatik üretilen kanuni uyarı metni + çocuk yaş notu + özel infaz
             // rejimi notları + kullanıcının yazdığı manuel not
             const manuelNot = (document.getElementById('aciklamaManuel') || {}).value || "";
@@ -2466,6 +2519,7 @@
                     capWarningText.trim(),
                     acikDsNot.trim(),
                     cocukYasAciklamaMetni.trim(),
+                    cocuk1089AciklamaMetni.trim(),
                     ...ozelInfazAciklamaParcalari,
                     manuelNot.trim() ? escapeHtml(manuelNot.trim()) : ""
                 ].filter(Boolean);
