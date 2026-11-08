@@ -273,7 +273,7 @@
                                             <tr class="bg-slate-100 border-t border-b border-slate-400">
                                                 <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Suç Tarihi</th>
                                                 <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Suç Maddesi / Ceza Süresi</th>
-                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">İnfaz Oranı</th>
+                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">İnfaz Türü</th>
                                             </tr>
                                         </thead>
                                         <tbody id="repCezaRows">
@@ -787,15 +787,22 @@
                 if (upper.includes('CEZASI') && upper.includes(':')) return;
                 // Ceza süresi (Yıl/Ay/Gün), satırın "5275 S.K. ..." ile başlayan infaz
                 // türü/açıklama kısmından ÖNCEKİ bölümde yer alır; o kısımda geçebilecek
-                // "+30 gün tekerrür" gibi ek ibareler süre olarak YANLIŞ okunmasın diye
-                // sadece bu bölümden önceki metin taranır (bkz. "+30 gün tekerrür"
-                // formülü henüz çözülmemiş açık madde — burada otomatik eklenmiyor).
+                // "+112 gün" gibi ek ibareler süre olarak YANLIŞ okunmasın diye sadece
+                // bu bölümden önceki metin taranır.
                 const kesmeIdx = upper.indexOf('5275');
                 const sureBolumu = kesmeIdx > -1 ? upper.slice(0, kesmeIdx) : upper;
                 const yilM = sureBolumu.match(/(\d+)\s*YIL/);
                 const ayM = sureBolumu.match(/(\d+)\s*AY/);
                 const gunM = sureBolumu.match(/(\d+)\s*G[ÜU]N/);
                 if (!yilM && !ayM && !gunM) return; // süre bilgisi yoksa bu bir ceza satırı değildir
+
+                // İnfaz türü bölümü ("5275 S.K. 108/1-2 md 1/2+112 gün" gibi): buradan
+                // YATAR oranı (1/2, 2/3, 3/4, 4/4) ve varsa "+N gün" ek gününü (5275 s.K.
+                // 108/2 md — mükerrirlik nedeniyle eklenen sabit gün) ayıklıyoruz.
+                const infazTuruBolumu = kesmeIdx > -1 ? upper.slice(kesmeIdx) : '';
+                const oranM = infazTuruBolumu.match(/([1-4])\s*\/\s*([2-4])/);
+                const ekGunM = infazTuruBolumu.match(/\+\s*(\d+)\s*G[ÜU]N/);
+
                 satirlar.push({
                     sucTarihi: `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`,
                     maddeRaw: normalizeEdilmisMadde(maddeMatch[1].trim()),
@@ -803,7 +810,8 @@
                     ay: ayM ? parseInt(ayM[1]) : 0,
                     gun: gunM ? parseInt(gunM[1]) : 0,
                     mukerrirTahmin: tahminEtMukerrirlik(upper),
-                    ekTekerrurGunVar: /\d+\s*G[ÜU]N\s*TEKERR[ÜU]R/.test(upper)
+                    oranParsed: oranM ? `${oranM[1]}/${oranM[2]}` : '',
+                    ekGun: ekGunM ? parseInt(ekGunM[1]) : 0
                 });
             });
             return satirlar;
@@ -903,7 +911,15 @@
 
                 cezaSatirlari.forEach(s => {
                     const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
-                    addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto);
+                    if (s.ekGun > 0) {
+                        // Mükerrirlik nedeniyle "+N gün" eklenen satırlar: oran elle (manuel)
+                        // girilmiş gibi eklenir ki "Mükerrir Gün" alanı görünür olsun ve
+                        // PDF'te yazan yatar oranı (1/2, 2/3, 3/4...) doğrudan kullanılsın.
+                        const oranFallback = s.mukerrirTahmin === '2' ? '3/4' : (s.mukerrirTahmin === '1' ? '2/3' : '1/2');
+                        addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
+                    } else {
+                        addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto);
+                    }
                 });
                 mahsupSatirlari.forEach(s => addMahsupRow(s.tur, s.start, s.end));
                 if (document.querySelectorAll('#penaltyTableBody tr').length === 0) addPenaltyRow();
@@ -914,8 +930,8 @@
                 if (mukerrirSupheli > 0) uyarilar.push(`${mukerrirSupheli} ceza satırında tekerrür ibaresi görüldü, 1./2. tekerrür tahmini otomatik yapıldı — lütfen kontrol edin.`);
                 const turEslesmeyen = mahsupSatirlari.filter(s => s.turEslesmedi).length;
                 if (turEslesmeyen > 0) uyarilar.push(`${turEslesmeyen} mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi, geçici olarak "Tutukluluk" ile eklendi — lütfen doğru türü seçin.`);
-                const tekerrurEkli = cezaSatirlari.filter(s => s.ekTekerrurGunVar).length;
-                if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+ek gün tekerrür" ibaresi görüldü; bu ek günün hesaplamaya nasıl ekleneceği henüz netleşmediği için ceza süresine YANSITILMADI — "Mükerrir Gün" alanına elle eklemeniz gerekebilir.`);
+                const tekerrurEkli = cezaSatirlari.filter(s => s.ekGun > 0).length;
+                if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+N gün" (mükerrirlik ek günü) ibaresi görüldü; bu değer otomatik olarak "Mükerrir Gün" alanına ve yatar hesabına eklendi — lütfen doğruluğunu kontrol edin.`);
                 uyarilar.push('Her ceza satırındaki suç maddesini ve infaz oranını, madde listesiyle eşleşip eşleşmediğini kontrol ederek gözden geçirin (eşleşmeyen maddelerde oran varsayılan olarak 1/2 atanmıştır).');
                 uyarilar.push('TEKERRÜR/MÜKERRİRLİK: Bizim programımızın bastığı müddetnamede mükerrirlik sadece sonuç orana (1/2, 2/3, 3/4) yansıdığından, bu oran tek başına 1./2. tekerrür olup olmadığını güvenilir şekilde göstermez (örn. örgütlü suç veya maddenin kendi oranı da aynı sonucu verebilir); metinde açıkça "tekerrür"/"108/1-2" geçmeyen satırlarda Mükerrir alanı "Tekerrür Yok" olarak eklenmiştir — tekerrür olan satırları lütfen elle işaretleyin.');
                 if (!girisTarihiBulundu) uyarilar.push('Cezaevine giriş tarihi PDF\'te bulunamadı, elle girilmesi gerekiyor.');
@@ -1720,15 +1736,24 @@
                     }
 
                     rowYatarGun = rowDays * rowOran;
-                    rowOranMetni = oranToTextPlain(rowOran);
 
-                    // Ek Gün (5275 s.K. 108/1-2 md): kullanıcının girdiği gün sayısı, yatar günün
-                    // üzerine DOĞRUDAN eklenir (oranla çarpılmaz); raporda "oran+gün" olarak gösterilir.
+                    // Raporda "İnfaz Türü" olarak gösterilecek metin: gerçek müddetname
+                    // örneğindeki gibi, hangi madde gereği infaz edildiği (mükerrirlik
+                    // durumu dahil) madde numarasıyla birlikte yazılır:
+                    // 107/2 = mükerrir yok, 108/1-2 = 1. kez mükerrer, 108/3 = 2. kez mükerrer.
+                    let infazMaddesi = '5275 S.K. 107/2 md.';
+                    if (mukerrir === '1') infazMaddesi = '5275 S.K. 108/1-2 md.';
+                    else if (mukerrir === '2') infazMaddesi = '5275 S.K. 108/3 md.';
+                    else if (orgutlu) infazMaddesi = '5275 S.K. 107/4 md.';
+                    rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}`;
+
+                    // Ek Gün (5275 s.K. 108/2 md): kullanıcının girdiği gün sayısı, yatar günün
+                    // üzerine DOĞRUDAN eklenir (oranla çarpılmaz); raporda "oran+N gün" olarak gösterilir.
                     const ekGunInput = row.querySelector('.penalty-ek-gun');
                     const ekGun = ekGunInput ? (parseInt(ekGunInput.value) || 0) : 0;
                     if (ekGun > 0) {
                         rowYatarGun += ekGun;
-                        rowOranMetni = `5275 S.K. 108/1-2 md. ${oranToTextPlain(rowOran)}+${ekGun}`;
+                        rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}+${ekGun} gün`;
                     }
                 }
 
