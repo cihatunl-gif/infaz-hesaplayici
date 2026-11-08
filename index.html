@@ -1156,9 +1156,17 @@
 
         // TCK 149/1-f, 149/1-g, 149/1-f-g dışındaki bentler listede yoksa bile, bu
         // fonksiyon sadece zaten örgütlü-otomatik işaretli maddeleri kontrol eder.
+        // Mükerrirlik tespiti: metinde "TEKERRÜR" kelimesi veya 108'inci maddenin
+        // 1., 2. veya 3. fıkrasına yapılan bir atıf geçiyorsa mükerrer kabul edilir.
+        // "108/1" ve "108/2" atıfları HER ALT BENDİYLE (108/1-2, 108/1-d, 108/1-c
+        // vb.) 1. kez mükerrerliği gösterir — kullanıcı onayıyla, madde numarasının
+        // ardından gelen alt bent harfi/rakamı önemli değildir, "108/1" veya "108/2"
+        // ile BAŞLAYAN her ibare mükerrer kabul edilir. "108/9" gibi farklı bir
+        // fıkraya yanlışlıkla eşleşmemesi için ardından başka bir rakam gelmemesi
+        // şartı (negatif lookahead) aranır.
         function tahminEtMukerrirlik(satirMetniUpper) {
-            if (!/TEKERR[ÜU]R|108\/1-2|108\/3/.test(satirMetniUpper)) return 'yok';
-            return /2\.\s*(KEZ\s*)?TEKERR[ÜU]R|108\/3/.test(satirMetniUpper) ? '2' : '1';
+            if (!/TEKERR[ÜU]R|108\/1(?!\d)|108\/2(?!\d)|108\/3(?!\d)/.test(satirMetniUpper)) return 'yok';
+            return /2\.\s*(KEZ\s*)?TEKERR[ÜU]R|108\/3(?!\d)/.test(satirMetniUpper) ? '2' : '1';
         }
 
         // Bir satırdaki "TCK 149/1.h" / "TCK 82/1-d" gibi madde ibaresini
@@ -1561,8 +1569,42 @@
             orgutlu: { a: "m.107/4-a", b: "m.107/4-b", c: "m.107/4-c", d: "m.107/4-d", e: "m.107/4-e" },
             mukerrer_e: "m.108/1-c"
         };
-        const COMBINATION_CAP_MUKERRER_E_YIL = 32;
+        const COMBINATION_CAP_MUKERRER_E_YIL = 32; // 108/1'in kendi tavanı — mükerrer "tekerrür farkı" toplamı bu tavanı aşamaz
         const BTT_CAP_E_YIL = { normal: 42, mukerrer: 48 };
+
+        /* ======================================================
+           "TEKERRÜR FARKI" (Yargıtay uygulaması — kullanıcı onaylı,
+           gerçek müddetname örneğiyle doğrulandı)
+
+           Mükerrerlikte hükümlünün LEHİNE olan uygulanır: içtima
+           (m.107/3-e) sayılan süreli hapislerde, mükerrer kalem
+           olsa da STT tavanı direkt 32 yıl'a ÇIKMAZ. Bunun yerine
+           ADİ tavan (28 yıl) temel alınır ve HER mükerrer kaleme,
+           kendi ham (hükmedilen) gün sayısının belirli bir kesri
+           "tekerrür farkı" olarak eklenir:
+             - 1. kez mükerrer, suç tarihi 14/04/2020 (7242 s.K.
+               değişikliği) ÖNCESİ: fark = ham gün × (3/4 - 2/3) = ham/12
+             - 1. kez mükerrer, suç tarihi 14/04/2020 SONRASI:
+               fark = ham gün × (2/3 - 1/2) = ham/6
+             - 2. kez mükerrer (108/3): fark = ham gün × (3/4 - 1/2) = ham/4
+           Toplam (28 yıl + toplam fark), 108/1'in kendi tavanı olan
+           32 yılı aşamaz.
+
+           BTT (hakederek tahliye) tavanı ise mükerrerlikten HİÇ
+           etkilenmez, her zaman adi (42 yıl) tavanda sabit kalır —
+           gerçek müddetname örneğinde BTT tam 42 yıl çıkmış, 48
+           yıla hiç çıkarılmamıştır.
+           ====================================================== */
+        const TEKERRUR_7242_ESIK_TARIHI = new Date('2020-04-14T23:59:59');
+        function tekerrurFarkiHesapla(mukerrirDerece, hamGun, sucTarihiStr) {
+            if (mukerrirDerece === '2') return hamGun * (3 / 4 - 1 / 2); // 108/3: ham/4
+            if (mukerrirDerece === '1') {
+                const sucTarihiDate = sucTarihiStr ? new Date(sucTarihiStr) : null;
+                const oncesiMi = sucTarihiDate ? (sucTarihiDate <= TEKERRUR_7242_ESIK_TARIHI) : true; // tarih yoksa lehe kabul (daha düşük fark veren 1/12 YERİNE 1/6 riskini önlemek için: aslında 1/12 LEHE'dir, o yüzden belirsizlikte 1/12 varsayılır)
+                return oncesiMi ? hamGun * (3 / 4 - 2 / 3) /* ham/12 */ : hamGun * (2 / 3 - 1 / 2) /* ham/6 */;
+            }
+            return 0;
+        }
 
         /* ======================================================
            ÖZEL İNFAZ REJİMİ TÜRLERİ (4/4 - Koşullu Salıverilmesi Yok)
@@ -2059,6 +2101,10 @@
             // Kombinasyon (içtima) tavanı için sayaçlar
             let amCount = 0, mCount = 0, sCount = 0;
             let hasMukerrer = false, hasOrgutlu = false;
+            // İçtima (m.107/3-e) STT tavanında kullanılacak toplam "tekerrür farkı"
+            // (bkz. tekerrurFarkiHesapla) — her mükerrer süreli hapis kaleminden
+            // bu döngü içinde eklenir.
+            let tekerrurFarkiToplamGun = 0;
 
             // Çocuk yaş indirimi hangi kuralın (A/B) uygulanacağını belirlemek için
             // her satırın suç tarihi/maddesi burada toplanır.
@@ -2282,6 +2328,12 @@
                         rowOran = 0.75;
                     }
 
+                    // İçtima (m.107/3-e) STT tavanında kullanılacak "tekerrür farkı"
+                    // (bkz. tekerrurFarkiHesapla) — sadece bu satır mükerrer ise katkı verir.
+                    if (mukerrir === '1' || mukerrir === '2') {
+                        tekerrurFarkiToplamGun += tekerrurFarkiHesapla(mukerrir, rowDays, sTarih);
+                    }
+
                     rowYatarGun = rowDays * rowOran;
 
                     // Raporda "İnfaz Türü" olarak gösterilecek metin: gerçek müddetname
@@ -2443,23 +2495,40 @@
                 const tier = hasOrgutlu ? 'orgutlu' : 'normal';
                 let ceilingYil = COMBINATION_CAP_YIL[tier][combinationCategory];
                 let maddeRef = COMBINATION_CAP_MADDE[tier][combinationCategory];
+                let sttCapDays = ceilingYil * 365; // Kanuni sabit çevrim
 
-                // Mükerrerlik sadece 'e' kategorisinde farklı bir tavana karşılık gelir (zaten örgütlü tablosundaki 32 ile aynı değerdir)
-                if (combinationCategory === 'e' && hasMukerrer) {
+                // Mükerrerlik + 'e' kategorisi (örgütlü OLMAYAN, yani adi süreli hapis
+                // içtiması): hükümlünün LEHİNE olan uygulanır — tavan direkt 32 yıl'a
+                // ÇIKARILMAZ; ADİ tavan (28 yıl) temel alınır ve her mükerrer kalemin
+                // kendi "tekerrür farkı" bunun üzerine eklenir (bkz. tekerrurFarkiHesapla
+                // yorumu). Toplam, 108/1'in kendi tavanı olan 32 yılı aşamaz.
+                // Örgütlü suç ('orgutlu' tier) zaten kendi (daha yüksek) tavanına sahip
+                // olduğundan bu fark mantığı SADECE normal (örgütsüz) tier'de uygulanır.
+                if (combinationCategory === 'e' && hasMukerrer && tier === 'normal') {
+                    maddeRef = `${COMBINATION_CAP_MADDE.normal.e} + ${COMBINATION_CAP_MADDE.mukerrer_e} (tekerrür farkı)`;
+                    const adiTavanGun = COMBINATION_CAP_YIL.normal.e * 365; // 28 yıl
+                    const mukerrerUstSinirGun = COMBINATION_CAP_MUKERRER_E_YIL * 365; // 32 yıl — aşılamaz
+                    sttCapDays = Math.min(adiTavanGun + Math.round(tekerrurFarkiToplamGun), mukerrerUstSinirGun);
+                    ceilingYil = +(sttCapDays / 365).toFixed(2);
+                } else if (combinationCategory === 'e' && hasMukerrer) {
+                    // Örgütlü + mükerrer: mevcut (kullanıcı onaylı) örgütlü tavanı değişmeden kalır.
                     ceilingYil = COMBINATION_CAP_MUKERRER_E_YIL;
                     maddeRef = COMBINATION_CAP_MADDE.mukerrer_e;
+                    sttCapDays = ceilingYil * 365;
                 }
-
-                const sttCapDays = ceilingYil * 365; // Kanuni sabit çevrim
 
                 if (Math.floor(totalYatarGun) > sttCapDays) {
                     effectiveYatarGun = sttCapDays;
-                    capWarningText += `Hükümlünün koşullu salıverilme için infaz kurumunda geçirmesi gereken süre, hesaplanan tutar bu sınırı aştığından, 5275 sayılı Kanun ${maddeRef} maddesi gereğince en fazla ${ceilingYil} yıl olarak hesaplanmıştır. `;
+                    capWarningText += `Hükümlünün koşullu salıverilme için infaz kurumunda geçirmesi gereken süre, hesaplanan tutar bu sınırı aştığından, 5275 sayılı Kanun ${maddeRef} maddesi gereğince en fazla ${sttCapDays} gün (${ceilingYil} yıl) olarak hesaplanmıştır. `;
                 }
 
-                // BTT (hakederek tahliye) tavanı: kanunda sadece 'e' kategorisi (birden fazla süreli ceza) için, kullanıcı onaylı pratik bilgiye göre uygulanır.
+                // BTT (hakederek tahliye) tavanı: kanunda sadece 'e' kategorisi (birden
+                // fazla süreli ceza) için, kullanıcı onaylı pratik bilgiye göre uygulanır.
+                // ÖNEMLİ: BTT tavanı mükerrerlikten ETKİLENMEZ, her zaman ADİ (42 yıl)
+                // tavanda sabit kalır — gerçek müddetname örneğinde mükerrer kalemler
+                // olsa da BTT tam 42 yıl çıkmıştır, 48 yıl'a hiç çıkarılmamıştır.
                 if (combinationCategory === 'e') {
-                    const bttCeilingYil = hasMukerrer ? BTT_CAP_E_YIL.mukerrer : BTT_CAP_E_YIL.normal;
+                    const bttCeilingYil = BTT_CAP_E_YIL.normal;
                     const bttCapDays = bttCeilingYil * 365; // Kanuni sabit çevrim
 
                     if (totalRawDays > bttCapDays) {
