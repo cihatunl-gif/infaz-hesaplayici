@@ -49,6 +49,26 @@
             .print-only { display: block !important; }
             .print-card { border: 1px solid #111 !important; box-shadow: none !important; background: white !important; color: black !important; }
         }
+
+        /* PDF/UDF'den aktarırken bulunan tutarsızlıkları (örn. belgedeki oran, madde
+           listesinin beklediğiyle uyuşmuyor) ilgili ceza satırında VE alanında kırmızı,
+           belirgin bir çerçeveyle işaretler — kullanıcı o satırı/alanı kolayca bulsun. */
+        @keyframes cezaHataNabiz {
+            0%, 100% { outline-color: #dc2626; }
+            50% { outline-color: #f87171; }
+        }
+        .ceza-hata-satiri {
+            outline: 3px solid #dc2626 !important;
+            outline-offset: -2px;
+            background-color: #fef2f2 !important;
+            animation: cezaHataNabiz 1.6s ease-in-out infinite;
+        }
+        .ceza-hata-alani {
+            outline: 3px solid #dc2626 !important;
+            outline-offset: 2px;
+            border-radius: 8px;
+            animation: cezaHataNabiz 1.6s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="h-full font-sans antialiased bg-slate-100 text-slate-900 flex flex-col min-h-screen selection:bg-amber-500 selection:text-slate-950">
@@ -1350,6 +1370,7 @@
                 document.getElementById('penaltyTableBody').innerHTML = '';
                 document.getElementById('mahsupTableBody').innerHTML = '';
 
+                const eklenenCezaSatirElemanlari = [];
                 cezaSatirlari.forEach(s => {
                     const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
                     // Her satır "manuel oran" olarak eklenir: PDF'te zaten yazan YATAR
@@ -1360,7 +1381,8 @@
                     // da doğru oranla eklenmesini sağlar. "Mükerrir Gün" alanı da bu sayede
                     // her zaman görünür/düzenlenebilir olur.
                     const oranFallback = s.mukerrirTahmin === '2' ? '3/4' : (s.mukerrirTahmin === '1' ? '2/3' : '1/2');
-                    addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
+                    const eklenenTr = addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
+                    eklenenCezaSatirElemanlari.push(eklenenTr);
                 });
                 mahsupSatirlari.forEach(s => addMahsupRow(s.tur, s.start, s.end));
                 if (document.querySelectorAll('#penaltyTableBody tr').length === 0) addPenaltyRow();
@@ -1385,6 +1407,22 @@
                     const belgedekiOran = oranStrToNum(s.oranParsed);
                     if (Math.abs(beklenenOran - belgedekiOran) > 0.01) {
                         uyarilar.push(`${idx + 1}. ceza satırı (${s.maddeRaw}): belgede yazılı oran ${s.oranParsed} iken, suç maddesi listesine göre olması gereken oran ${oranToTextPlain(beklenenOran)} — lütfen kontrol edin.`);
+                        // Hatanın bulunduğu satırı VE içindeki oran alanını kırmızı,
+                        // belirgin bir çerçeveyle işaretle — kullanıcı kolayca bulsun.
+                        const hataliTr = eklenenCezaSatirElemanlari[idx];
+                        if (hataliTr) {
+                            hataliTr.classList.add('ceza-hata-satiri');
+                            const oranAlani = hataliTr.querySelector('.penalty-oran');
+                            if (oranAlani) oranAlani.classList.add('ceza-hata-alani');
+                            // Kullanıcı bu satırdaki herhangi bir alanı düzeltince (yazınca/
+                            // seçim değiştirince) kırmızı işaret otomatik kaldırılır.
+                            const isaretiTemizle = () => {
+                                hataliTr.classList.remove('ceza-hata-satiri');
+                                if (oranAlani) oranAlani.classList.remove('ceza-hata-alani');
+                            };
+                            hataliTr.addEventListener('input', isaretiTemizle, { once: true });
+                            hataliTr.addEventListener('change', isaretiTemizle, { once: true });
+                        }
                     }
                 });
                 uyarilar.push(`Her ceza satırındaki suç maddesini ve infaz oranını (${turEtiket}\'te yazan değer doğrudan kullanıldı) gözden geçirin; oran bulunamayan satırlarda varsayılan olarak 1/2 atanmıştır.`);
@@ -1789,6 +1827,7 @@
             tbody.appendChild(tr);
             toggleSuresiTip(tr.querySelector('.penalty-sure-tip'));
             renumberPenaltyRows();
+            return tr;
         }
 
         // Her ceza satırının sol üstündeki numara rozetini günceller (1, 2, 3...)
