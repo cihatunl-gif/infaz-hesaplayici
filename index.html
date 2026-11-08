@@ -973,6 +973,40 @@
             return satirlar;
         }
 
+        // Bir etiketin (örn. "Doğum Tarihi") değerini satır listesinde arar. Üç biçimi
+        // de destekler: (1) etiket ve değer AYNI satırda ("Doğum Tarihi : 04/10/1988" —
+        // PDF'te sık görülür), (2) UDF'teki gibi sütun-bazlı bir başlık bloğu (ardışık
+        // "Etiket :" satırları) + ardından gelen AYNI SAYIDA değer satırı (etiketin
+        // bloktaki sırasına karşılık gelen değer alınır), (3) etiketten sonraki birkaç
+        // satır içinde değer (PDF'te satır birleştirmede etiket/değer ayrı satırlara
+        // düşebilir).
+        function etiketDegeriBul(lines, etiketRegex, degerRegex) {
+            const idx = lines.findIndex(l => etiketRegex.test(l));
+            if (idx === -1) return null;
+            const inlineM = lines[idx].match(degerRegex);
+            if (inlineM) return inlineM[0];
+            const etiketSatirRe = /:\s*$/;
+            if (etiketSatirRe.test(lines[idx])) {
+                let start = idx;
+                while (start > 0 && etiketSatirRe.test(lines[start - 1])) start--;
+                let end = idx;
+                while (end + 1 < lines.length && etiketSatirRe.test(lines[end + 1])) end++;
+                const pozisyon = idx - start;
+                const degerSatiri = lines[end + 1 + pozisyon];
+                if (degerSatiri) {
+                    const m = degerSatiri.match(degerRegex);
+                    if (m) return m[0];
+                }
+            }
+            for (let k = 1; k <= 3; k++) {
+                const aday = lines[idx + k];
+                if (!aday) break;
+                const m = aday.match(degerRegex);
+                if (m) return m[0];
+            }
+            return null;
+        }
+
         async function muddetnameDosyasindanDoldur(inputEl) {
             const sonucBox = document.getElementById('pdfFillSonuc');
             const dosya = inputEl.files && inputEl.files[0];
@@ -1012,10 +1046,20 @@
                     }
                 }
 
+                // Doğum tarihi (çocuk yaş indirimi hesabı için kullanılır) — evrakta varsa
+                // otomatik alınır; HÜKÜMLÜ KİMLİK BİLGİLERİ gibi sütun-bazlı bir blokta
+                // olabileceğinden etiketDegeriBul'un blok-çözümleme desteği kullanılır.
+                let dogumTarihiBulundu = null;
+                const dogumTarihiRaw = etiketDegeriBul(lines, /Do[ğg]um\s*Tarihi/i, /\d{1,2}[\/.]\d{1,2}[\/.]\d{4}/);
+                if (dogumTarihiRaw) {
+                    const dm = dogumTarihiRaw.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+                    if (dm) dogumTarihiBulundu = `${dm[3]}-${dm[2].padStart(2, '0')}-${dm[1].padStart(2, '0')}`;
+                }
+
                 const cezaSatirlari = parseCezaSatirlari(lines);
                 const mahsupSatirlari = parseMahsupSatirlari(lines);
 
-                if (cezaSatirlari.length === 0 && mahsupSatirlari.length === 0 && !girisTarihiBulundu) {
+                if (cezaSatirlari.length === 0 && mahsupSatirlari.length === 0 && !girisTarihiBulundu && !dogumTarihiBulundu) {
                     goster(`<i class="fa-solid fa-circle-exclamation"></i> Bu ${turEtiket}'ten tanıdık bir müddetname alanı bulunamadı; format desteklenmiyor olabilir.`, 'text-red-600 font-semibold');
                     inputEl.value = '';
                     return;
@@ -1023,7 +1067,7 @@
 
                 const onay = confirm(
                     `${turEtiket}'ten ${cezaSatirlari.length} ceza satırı, ${mahsupSatirlari.length} mahsup satırı` +
-                    `${girisTarihiBulundu ? ' ve cezaevine giriş tarihi' : ''} bulundu.\n\n` +
+                    `${girisTarihiBulundu ? ' ve cezaevine giriş tarihi' : ''}${dogumTarihiBulundu ? ' ve doğum tarihi' : ''} bulundu.\n\n` +
                     `Mevcut ceza ve mahsup satırları SİLİNİP bunlarla değiştirilecek. Devam edilsin mi?`
                 );
                 if (!onay) {
@@ -1050,6 +1094,7 @@
                 mahsupSatirlari.forEach(s => addMahsupRow(s.tur, s.start, s.end));
                 if (document.querySelectorAll('#penaltyTableBody tr').length === 0) addPenaltyRow();
                 if (girisTarihiBulundu) document.getElementById('infazBaslangic').value = girisTarihiBulundu;
+                if (dogumTarihiBulundu) document.getElementById('hukumluDogumTarihi').value = dogumTarihiBulundu;
 
                 const uyarilar = [];
                 const mukerrirSupheli = cezaSatirlari.filter(s => s.mukerrirTahmin !== 'yok').length;
@@ -1064,7 +1109,7 @@
                 if (!girisTarihiBulundu) uyarilar.push(`Cezaevine giriş tarihi ${turEtiket}\'te bulunamadı, elle girilmesi gerekiyor.`);
 
                 goster(
-                    `<div class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check"></i> ${cezaSatirlari.length} ceza satırı, ${mahsupSatirlari.length} mahsup satırı eklendi${girisTarihiBulundu ? ', cezaevine giriş tarihi dolduruldu' : ''}.</div>` +
+                    `<div class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check"></i> ${cezaSatirlari.length} ceza satırı, ${mahsupSatirlari.length} mahsup satırı eklendi${girisTarihiBulundu ? ', cezaevine giriş tarihi dolduruldu' : ''}${dogumTarihiBulundu ? ', doğum tarihi dolduruldu' : ''}.</div>` +
                     `<ul class="mt-1.5 list-disc list-inside text-amber-700">${uyarilar.map(u => `<li>${u}</li>`).join('')}</ul>`
                 );
                 calculateAll();
@@ -1681,6 +1726,11 @@
             let cumulative = new Date(D0.getTime());
             let totalRawDays = 0;
             let totalYatarGun = 0;
+            // CEZASI (TOPLAM) alanı için: kullanıcı talebiyle, günleri aya/ayları yıla
+            // ÇEVİRMEDEN (gerçek müddetname örneklerindeki gibi) sadece aynı birimleri
+            // kendi aralarında toplar (yıl+yıl, ay+ay, gün+gün). Süresiz cezalar (müebbet/
+            // ağırlaştırılmış müebbet) bu toplama girmez (yıl/ay/gün girişleri yoktur).
+            let toplamYilAyri = 0, toplamAyAyri = 0, toplamGunAyri = 0;
             const rowReportData = [];
 
             // Kombinasyon (içtima) tavanı için sayaçlar
@@ -1792,6 +1842,7 @@
                     const rowGunSabit = (y * 365) + (a * 30) + g;
                     nextDate = addDays(cumulative, rowGunSabit);
                     sureMetinYAG = `${yagMetinVertical(y, a, g)} (${ozelInfazBilgi.etiket})`;
+                    toplamYilAyri += y; toplamAyAyri += a; toplamGunAyri += g;
 
                     // 4/4: indirimsiz, tam infaz; koşullu salıverilme hesaplanmaz (yatar = ham gün).
                     rowDays = diffDaysCalendar(cumulative, nextDate);
@@ -1830,6 +1881,7 @@
                     const rowGunSabit = (y * 365) + (a * 30) + g;
                     nextDate = addDays(cumulative, rowGunSabit);
                     sureMetinYAG = yagMetinVertical(y, a, g);
+                    toplamYilAyri += y; toplamAyAyri += a; toplamGunAyri += g;
 
                     // "Ceza Ekle" ile eklenen satırlarda oran, suç maddesi listesinden
                     // otomatik alınır (vatandış oranı bilmez). "Manuel Ekle" ile eklenen
@@ -1918,10 +1970,11 @@
             const yas15Tarihi = dogumTarihi ? yilEkleGercek(dogumTarihi, 15) : null;
             const yas18Tarihi = dogumTarihi ? yilEkleGercek(dogumTarihi, 18) : null;
 
-            // Toplam ceza süresi - SABİT kanuni çevrimle (365 gün/yıl, 30 gün/ay) Y-A-G gösterimi
-            // (Ekrana ayrıca basılmıyor; resmi raporda CEZASI (TOPLAM) alanında kullanılır.)
-            const toplamYAG = gunSayisindanYAG(totalRawDays);
-            const cezaMetin = `${toplamYAG.y} Yıl ${toplamYAG.a} Ay ${toplamYAG.g} Gün`;
+            // Toplam ceza süresi (CEZASI (TOPLAM) alanı): kullanıcı talebiyle, günler aya
+            // veya aylar yıla ÇEVRİLMEDEN (gerçek müddetname örneklerindeki — örn. "3 YIL
+            // 41 AY 6 GÜN" — gösterimle aynı şekilde) her satırın kendi yıl/ay/gün girişi
+            // sadece kendi birimiyle toplanır (bkz. toplamYilAyri/toplamAyAyri/toplamGunAyri).
+            const cezaMetin = `${toplamYilAyri} Yıl ${toplamAyAyri} Ay ${toplamGunAyri} Gün`;
 
             // 2. Mahsup Hesabı (Gözaltı / Tutukluluk / Açık Çık / Denetimli Serbestlik)
             // grandTotalMahsupDays: GERÇEK gün toplamı (BTT ve ekrandaki toplam için - çocuk yaş uygulanmaz)
