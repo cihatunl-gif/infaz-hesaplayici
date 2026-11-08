@@ -686,6 +686,41 @@
             return info.oran;
         }
 
+        // PDF/UDF'den otomatik doldurma SIRASINDA, belgede yazılı YATAR oranının
+        // (oranParsed), suç maddesi listesine (SUC_MADDE_LISTESI) göre OLMASI GEREKEN
+        // oranla uyuşup uyuşmadığını kontrol eder — belgedeki rakam hesaplamada
+        // DEĞİŞTİRİLMEZ (calculateAll'da hep "manuel/belgeye sadık" oran kullanılır,
+        // bkz. yukarıdaki not), bu sadece kullanıcıya "bu satırı kontrol et" uyarısı
+        // vermek içindir (örn. belgede elle/hatalı değiştirilmiş bir oran farkedilsin).
+        // calculateAll içindeki GERÇEK hesaplama mantığının (mükerrerlik tabanı,
+        // tarih-eşikli lehe karşılaştırması, örgütlü min 2/3, 108/9 sabit 3/4 + çocuk
+        // istisnası) bire bir aynısını, ek gün hariç, tekrarlar. Madde listede
+        // bulunamazsa (eşleşme yoksa) kontrol edilemez, null döner.
+        function beklenenOranYatarHesapla(maddeRaw, sucTarihiStr, mukerrirTahmin, orgutluAuto, dogumTarihiStr) {
+            const info = findMaddeInfo(maddeRaw);
+            if (!info) return null;
+            let baseOran = 1 - oranStrToNum(getMaddeOranForDate(maddeRaw, sucTarihiStr));
+            let baseOranForMukerrer = 1 - oranStrToNum(info.oran);
+            if (is108_9Maddesi(maddeRaw)) {
+                baseOran = 0.75;
+                baseOranForMukerrer = 0.75;
+                if (dogumTarihiStr && sucTarihiStr) {
+                    const yas18 = yilEkleGercek(new Date(dogumTarihiStr), 18);
+                    if (new Date(sucTarihiStr) < yas18) {
+                        baseOran = 2 / 3;
+                        baseOranForMukerrer = 2 / 3;
+                    }
+                }
+            }
+            if (orgutluAuto) {
+                baseOran = Math.max(baseOran, 2 / 3);
+                baseOranForMukerrer = Math.max(baseOranForMukerrer, 2 / 3);
+            }
+            if (mukerrirTahmin === '1') return Math.max(baseOranForMukerrer, 2 / 3);
+            if (mukerrirTahmin === '2') return 0.75;
+            return baseOran;
+        }
+
         /* ======================================================
            AÇIK CEZA İNFAZ KURUMUNA / DENETİMLİ SERBESTLİĞE AYRILMA
            ------------------------------------------------------
@@ -1328,9 +1363,22 @@
                 if (turEslesmeyen > 0) uyarilar.push(`${turEslesmeyen} mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi, geçici olarak "Tutukluluk" ile eklendi — lütfen doğru türü seçin.`);
                 const tekerrurEkli = cezaSatirlari.filter(s => s.ekGun > 0).length;
                 if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+N gün" (mükerrirlik ek günü) ibaresi görüldü; bu değer otomatik olarak "Mükerrir Gün" alanına ve yatar hesabına eklendi — lütfen doğruluğunu kontrol edin.`);
+                // Belgede yazılı oranın (hesaplamada DEĞİŞTİRİLMEDEN kullanılan değer),
+                // suç maddesi listesine göre OLMASI GEREKEN oranla uyuşup uyuşmadığını
+                // kontrol et (örn. belgede elle/hatalı değiştirilmiş bir oran farkedilsin).
+                cezaSatirlari.forEach((s, idx) => {
+                    if (!s.oranParsed) return;
+                    const orgutluAutoChk = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
+                    const beklenenOran = beklenenOranYatarHesapla(s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAutoChk, dogumTarihiBulundu);
+                    if (beklenenOran === null) return;
+                    const belgedekiOran = oranStrToNum(s.oranParsed);
+                    if (Math.abs(beklenenOran - belgedekiOran) > 0.01) {
+                        uyarilar.push(`${idx + 1}. ceza satırı (${s.maddeRaw}): belgede yazılı oran ${s.oranParsed} iken, suç maddesi listesine göre olması gereken oran ${oranToTextPlain(beklenenOran)} — lütfen kontrol edin.`);
+                    }
+                });
                 uyarilar.push(`Her ceza satırındaki suç maddesini ve infaz oranını (${turEtiket}\'te yazan değer doğrudan kullanıldı) gözden geçirin; oran bulunamayan satırlarda varsayılan olarak 1/2 atanmıştır.`);
                 uyarilar.push('TEKERRÜR/MÜKERRİRLİK: mükerrirlik tespiti satırdaki madde referansına (107/2 = yok, 108/1-2 = 1. mükerrer, 108/3 = 2. mükerrer) dayanır. Eski formatta basılmış bir müddetnamede bu referans yoksa tahmin güvenilir olmayabilir — metinde açıkça "tekerrür"/"108/1-2"/"108/3" geçmeyen satırlarda Mükerrir alanı "Tekerrür Yok" olarak eklenmiştir, lütfen kontrol edin.');
-                if (isUdf) uyarilar.push('UDF\'teki ceza tablosu sütun bazlı bir yapıdan satır hâline otomatik olarak yeniden dizildi; satır sayısı ve eşleşmeler mutlaka kontrol edilmelidir.');
+                if (isUdf) uyarilar.push('UDF\'teki ceza tablosu, tespit edilen düzene (satır veya sütun bazlı) göre otomatik olarak yeniden dizildi; satır sayısı ve eşleşmeler mutlaka kontrol edilmelidir.');
                 if (!girisTarihiBulundu) uyarilar.push(`Cezaevine giriş tarihi ${turEtiket}\'te bulunamadı, elle girilmesi gerekiyor.`);
 
                 goster(
