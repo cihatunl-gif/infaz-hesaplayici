@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF.js: bilgisayardan hazırlanmış (metin tabanlı) müddetname PDF'lerinden otomatik
+         doldurma özelliği için; sadece PDF'in gömülü metnini okur, OCR/görüntü analizi yapmaz. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -85,6 +88,18 @@
 
         <!-- Left Input Controls (7 Columns - Alt Alta Sıralı) -->
         <div class="lg:col-span-7 space-y-6 no-print">
+
+            <!-- Müddetname PDF'inden Otomatik Doldurma -->
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-file-pdf text-amber-500"></i> Müddetname PDF'inden Otomatik Doldur
+                </h2>
+                <p class="text-[10px] text-slate-400 mb-2">
+                    <i class="fa-solid fa-circle-info"></i> Sadece bilgisayardan hazırlanmış (metin tabanlı) müddetname PDF'leri desteklenir; taranmış/fotoğraflanmış PDF'ler bu yöntemle okunamaz. Yüklendiğinde mevcut ceza ve mahsup satırları SİLİNİP PDF'den okunan bilgilerle değiştirilir — hesaplamadan önce tüm satırları kontrol edin.
+                </p>
+                <input type="file" accept="application/pdf" onchange="muddetnamePdfindenDoldur(this)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-700 hover:file:bg-amber-500/20 border border-slate-300 rounded-lg cursor-pointer">
+                <div id="pdfFillSonuc" class="hidden mt-2 text-[11px] leading-relaxed"></div>
+            </div>
 
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -366,6 +381,10 @@
            ve otomatik oran ön-doldurma için kullanılır. Kullanıcı
            dilediği oranı manuel olarak değiştirebilir.
            ====================================================== */
+        // Her kayıt isteğe bağlı olarak "taksirli: true" alanı taşıyabilir — bu,
+        // doğrudan açık ceza infaz kurumuna alınma şartını (kasıtlıda 3 yıl,
+        // taksirlide 5 yıl eşiği) belirlemek için kullanılır (bkz. isMaddeTaksirli).
+        // Bu alan verilmeyen/eşleşmeyen her madde varsayılan olarak kasıtlı sayılır.
         const SUC_MADDE_LISTESI = [
             { madde: 'Diğer Diğer', aciklama: 'Diğer', oran: '1/2' },
             { madde: 'Türk Ceza Kanunu 58/9', aciklama: 'Örgüt', oran: '1/3' },
@@ -463,6 +482,15 @@
             if (!maddeText) return null;
             const normalized = maddeText.trim().toLocaleLowerCase('tr-TR');
             return SUC_MADDE_LISTESI.find(it => it.madde.toLocaleLowerCase('tr-TR') === normalized) || null;
+        }
+
+        // Suç türü (kasıtlı/taksirli) artık elle seçilmiyor; SUC_MADDE_LISTESI'ndeki
+        // ilgili maddenin "taksirli: true" işaretine bakılarak otomatik belirlenir.
+        // Henüz hiçbir madde taksirli olarak işaretlenmedi (liste gelince eklenecek);
+        // işaretlenmemiş/eşleşmeyen her madde varsayılan olarak kasıtlı kabul edilir.
+        function isMaddeTaksirli(maddeText) {
+            const info = findMaddeInfo(maddeText);
+            return !!(info && info.taksirli);
         }
 
         /* ======================================================
@@ -676,6 +704,206 @@
             const dl = document.getElementById('sucMaddeDatalist');
             if (!dl) return;
             dl.innerHTML = SUC_MADDE_LISTESI.map(it => `<option value="${it.madde.replace(/"/g, '&quot;')}">${it.aciklama ? it.aciklama.replace(/</g, '&lt;') : ''}</option>`).join('');
+        }
+
+        /* ============================================================================
+           MÜDDETNAME PDF'İNDEN OTOMATİK DOLDURMA
+           Sadece bilgisayardan hazırlanmış (metin tabanlı) PDF'ler desteklenir — PDF'in
+           gömülü metni doğrudan okunur, hiçbir OCR/görüntü analizi/yapay zeka kullanılmaz.
+           Taranmış/fotoğraflanmış PDF'lerde (gömülü metin yok) işlem başarısız olur ve
+           kullanıcıya bu açıkça bildirilir.
+           ============================================================================ */
+
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // PDF'in her sayfasındaki metin öğelerini Y koordinatına göre satırlara
+        // gruplayıp, her satır içinde X koordinatına göre sıralayarak görsel satır
+        // düzenine yakın bir metin listesi üretir (tablo sütunları kaybolur, ama
+        // bir satırdaki bilgiler yan yana kalır).
+        async function extractPdfLines(dosya) {
+            const arrayBuffer = await dosya.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const allLines = [];
+            for (let p = 1; p <= pdf.numPages; p++) {
+                const page = await pdf.getPage(p);
+                const content = await page.getTextContent();
+                const rows = {};
+                content.items.forEach(item => {
+                    if (!item.str || !item.str.trim()) return;
+                    const yKey = Math.round(item.transform[5] / 2) * 2;
+                    if (!rows[yKey]) rows[yKey] = [];
+                    rows[yKey].push({ x: item.transform[4], str: item.str });
+                });
+                const sortedY = Object.keys(rows).map(Number).sort((a, b) => b - a);
+                sortedY.forEach(y => {
+                    const line = rows[y].sort((a, b) => a.x - b.x).map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+                    if (line) allLines.push(line);
+                });
+            }
+            return allLines;
+        }
+
+        // TCK 149/1-f, 149/1-g, 149/1-f-g dışındaki bentler listede yoksa bile, bu
+        // fonksiyon sadece zaten örgütlü-otomatik işaretli maddeleri kontrol eder.
+        function tahminEtMukerrirlik(satirMetniUpper) {
+            if (!/TEKERR[ÜU]R|108\/1-2|108\/3/.test(satirMetniUpper)) return 'yok';
+            return /2\.\s*(KEZ\s*)?TEKERR[ÜU]R|108\/3/.test(satirMetniUpper) ? '2' : '1';
+        }
+
+        // Bir satırdaki "TCK 149/1.h" / "Türk Ceza Kanunu 82/1-d" gibi madde ibaresini
+        // yakalar; bulursa, listedeki TCK maddeleriyle aynı "Türk Ceza Kanunu ..." ön
+        // ekine normalize eder (tam eşleşirse oran/örgütlü otomatik gelir, eşleşmezse
+        // satır yine de eklenir ve kullanıcı elle düzeltir).
+        const PDF_MADDE_RE = /((?:TCK|T\.?C\.?K\.?|Türk Ceza Kanunu)\s*\d+[\w.\-]*(?:[\/][\w.\-]+)*)/i;
+        function normalizeEdilmisMadde(maddeRaw) {
+            return maddeRaw.replace(/^(TCK|T\.?C\.?K\.?)\s*/i, 'Türk Ceza Kanunu ').trim();
+        }
+
+        function parseCezaSatirlari(lines) {
+            const dateRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
+            const satirlar = [];
+            lines.forEach(line => {
+                const dateMatch = line.match(dateRe);
+                const maddeMatch = line.match(PDF_MADDE_RE);
+                if (!dateMatch || !maddeMatch) return;
+                const upper = line.toLocaleUpperCase('tr-TR');
+                // "CEZASI :" ile başlayan özet satırı (tek satırda toplam yıl/ay/gün) bir
+                // ceza kalemi değil, müddetnamenin genel özetidir — atlanır.
+                if (upper.includes('CEZASI') && upper.includes(':')) return;
+                // Ceza süresi (Yıl/Ay/Gün), satırın "5275 S.K. ..." ile başlayan infaz
+                // türü/açıklama kısmından ÖNCEKİ bölümde yer alır; o kısımda geçebilecek
+                // "+30 gün tekerrür" gibi ek ibareler süre olarak YANLIŞ okunmasın diye
+                // sadece bu bölümden önceki metin taranır (bkz. "+30 gün tekerrür"
+                // formülü henüz çözülmemiş açık madde — burada otomatik eklenmiyor).
+                const kesmeIdx = upper.indexOf('5275');
+                const sureBolumu = kesmeIdx > -1 ? upper.slice(0, kesmeIdx) : upper;
+                const yilM = sureBolumu.match(/(\d+)\s*YIL/);
+                const ayM = sureBolumu.match(/(\d+)\s*AY/);
+                const gunM = sureBolumu.match(/(\d+)\s*G[ÜU]N/);
+                if (!yilM && !ayM && !gunM) return; // süre bilgisi yoksa bu bir ceza satırı değildir
+                satirlar.push({
+                    sucTarihi: `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`,
+                    maddeRaw: normalizeEdilmisMadde(maddeMatch[1].trim()),
+                    yil: yilM ? parseInt(yilM[1]) : 0,
+                    ay: ayM ? parseInt(ayM[1]) : 0,
+                    gun: gunM ? parseInt(gunM[1]) : 0,
+                    mukerrirTahmin: tahminEtMukerrirlik(upper),
+                    ekTekerrurGunVar: /\d+\s*G[ÜU]N\s*TEKERR[ÜU]R/.test(upper)
+                });
+            });
+            return satirlar;
+        }
+
+        // Mahsup satırı türü eşleştirme: müddetnamedeki etiketten, programın mahsup
+        // türü seçeneklerinden birine eşlenir. "Cezaevinde Geçen Süre" gibi programda
+        // karşılığı olmayan bir etiket görülürse, eşleşmedi olarak işaretlenip
+        // "Tutukluluk" ile eklenir — kullanıcı elle düzeltmesi için uyarılır.
+        const MAHSUP_TUR_ESLESME = [
+            { re: /DENET[İI]ML[İI] SERBEST|DENET[İI]MDE GE[CÇ]EN/, tur: 'ds' },
+            { re: /TUTUKLULUK/, tur: 'tutukluluk' },
+            { re: /A[CÇ]IK [CÇ]IK/, tur: 'acik_cik' },
+            { re: /G[ÖO]ZALTI/, tur: 'gozalti' },
+        ];
+        function parseMahsupSatirlari(lines) {
+            const rangeRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})\s*-\s*(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
+            const satirlar = [];
+            lines.forEach(line => {
+                const m = line.match(rangeRe);
+                if (!m) return;
+                const upper = line.toLocaleUpperCase('tr-TR');
+                const eslesen = MAHSUP_TUR_ESLESME.find(e => e.re.test(upper));
+                satirlar.push({
+                    tur: eslesen ? eslesen.tur : 'tutukluluk',
+                    turEslesmedi: !eslesen,
+                    start: `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`,
+                    end: `${m[6]}-${m[5].padStart(2, '0')}-${m[4].padStart(2, '0')}`
+                });
+            });
+            return satirlar;
+        }
+
+        async function muddetnamePdfindenDoldur(inputEl) {
+            const sonucBox = document.getElementById('pdfFillSonuc');
+            const dosya = inputEl.files && inputEl.files[0];
+            if (!dosya) return;
+            const goster = (html, renk) => {
+                if (!sonucBox) return;
+                sonucBox.classList.remove('hidden');
+                sonucBox.innerHTML = `<span class="${renk || 'text-slate-500'}">${html}</span>`;
+            };
+            goster('<i class="fa-solid fa-spinner fa-spin"></i> PDF okunuyor...');
+            try {
+                const lines = await extractPdfLines(dosya);
+                if (lines.length === 0) {
+                    goster('<i class="fa-solid fa-circle-exclamation"></i> Bu PDF\'ten hiç metin okunamadı. Bu özellik sadece bilgisayardan hazırlanmış (metin tabanlı) PDF\'lerde çalışır; taranmış/fotoğraflanmış PDF desteklenmiyor.', 'text-red-600 font-semibold');
+                    inputEl.value = '';
+                    return;
+                }
+
+                let girisTarihiBulundu = null;
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].toLocaleUpperCase('tr-TR').includes('CEZAEVİNE GİRİŞ TARİHİ')) {
+                        const kaynakSatir = lines[i].match(/\d{1,2}[\/.]\d{1,2}[\/.]\d{4}/) ? lines[i] : (lines[i + 1] || '');
+                        const m = kaynakSatir.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/);
+                        if (m) girisTarihiBulundu = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+                        break;
+                    }
+                }
+
+                const cezaSatirlari = parseCezaSatirlari(lines);
+                const mahsupSatirlari = parseMahsupSatirlari(lines);
+
+                if (cezaSatirlari.length === 0 && mahsupSatirlari.length === 0 && !girisTarihiBulundu) {
+                    goster('<i class="fa-solid fa-circle-exclamation"></i> Bu PDF\'ten tanıdık bir müddetname alanı bulunamadı; format desteklenmiyor olabilir.', 'text-red-600 font-semibold');
+                    inputEl.value = '';
+                    return;
+                }
+
+                const onay = confirm(
+                    `PDF'ten ${cezaSatirlari.length} ceza satırı, ${mahsupSatirlari.length} mahsup satırı` +
+                    `${girisTarihiBulundu ? ' ve cezaevine giriş tarihi' : ''} bulundu.\n\n` +
+                    `Mevcut ceza ve mahsup satırları SİLİNİP bunlarla değiştirilecek. Devam edilsin mi?`
+                );
+                if (!onay) {
+                    sonucBox.classList.add('hidden');
+                    inputEl.value = '';
+                    return;
+                }
+
+                document.getElementById('penaltyTableBody').innerHTML = '';
+                document.getElementById('mahsupTableBody').innerHTML = '';
+
+                cezaSatirlari.forEach(s => {
+                    const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
+                    addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto);
+                });
+                mahsupSatirlari.forEach(s => addMahsupRow(s.tur, s.start, s.end));
+                if (document.querySelectorAll('#penaltyTableBody tr').length === 0) addPenaltyRow();
+                if (girisTarihiBulundu) document.getElementById('infazBaslangic').value = girisTarihiBulundu;
+
+                const uyarilar = [];
+                const mukerrirSupheli = cezaSatirlari.filter(s => s.mukerrirTahmin !== 'yok').length;
+                if (mukerrirSupheli > 0) uyarilar.push(`${mukerrirSupheli} ceza satırında tekerrür ibaresi görüldü, 1./2. tekerrür tahmini otomatik yapıldı — lütfen kontrol edin.`);
+                const turEslesmeyen = mahsupSatirlari.filter(s => s.turEslesmedi).length;
+                if (turEslesmeyen > 0) uyarilar.push(`${turEslesmeyen} mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi, geçici olarak "Tutukluluk" ile eklendi — lütfen doğru türü seçin.`);
+                const tekerrurEkli = cezaSatirlari.filter(s => s.ekTekerrurGunVar).length;
+                if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+ek gün tekerrür" ibaresi görüldü; bu ek günün hesaplamaya nasıl ekleneceği henüz netleşmediği için ceza süresine YANSITILMADI — "Mükerrir Gün" alanına elle eklemeniz gerekebilir.`);
+                uyarilar.push('Her ceza satırındaki suç maddesini ve infaz oranını, madde listesiyle eşleşip eşleşmediğini kontrol ederek gözden geçirin (eşleşmeyen maddelerde oran varsayılan olarak 1/2 atanmıştır).');
+                if (!girisTarihiBulundu) uyarilar.push('Cezaevine giriş tarihi PDF\'te bulunamadı, elle girilmesi gerekiyor.');
+
+                goster(
+                    `<div class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check"></i> ${cezaSatirlari.length} ceza satırı, ${mahsupSatirlari.length} mahsup satırı eklendi${girisTarihiBulundu ? ', cezaevine giriş tarihi dolduruldu' : ''}.</div>` +
+                    `<ul class="mt-1.5 list-disc list-inside text-amber-700">${uyarilar.map(u => `<li>${u}</li>`).join('')}</ul>`
+                );
+                calculateAll();
+            } catch (err) {
+                console.error(err);
+                goster(`<i class="fa-solid fa-circle-exclamation"></i> PDF okunurken bir hata oluştu: ${(err && err.message) || err}`, 'text-red-600 font-semibold');
+            } finally {
+                inputEl.value = '';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -910,7 +1138,6 @@
             const sucMaddeInput = tr.querySelector('.penalty-suc-madde');
             const oranSelect = tr.querySelector('.penalty-oran');
             const orgutluCheckbox = tr.querySelector('.penalty-orgutlu');
-            const sucTuruSelect = tr.querySelector('.penalty-suc-turu');
 
             const isSuresiz = (selectEl.value === 'muebbet' || selectEl.value === 'agirlastirilmis_muebbet');
             const isAdliPara = (selectEl.value === 'adli_para');
@@ -952,15 +1179,8 @@
                 sucMaddeInput.classList.toggle('opacity-40', isAdliPara || isOzelInfaz);
             }
 
-            // Suç türü (kasıtlı/taksirli) sadece olağan süreli hapiste anlamlıdır:
-            // doğrudan açık ceza infaz kurumuna alınma şartı kasıtlı suçlarda toplam
-            // 3 yıl, taksirli suçlarda toplam 5 yıl eşiğine bağlıdır. Müebbet,
-            // ağırlaştırılmış müebbet, adli para cezası ve özel infaz rejiminde bu
-            // ayrımın bir karşılığı/etkisi yoktur.
-            if (sucTuruSelect) {
-                sucTuruSelect.disabled = (isSuresiz || isAdliPara || isOzelInfaz);
-                sucTuruSelect.classList.toggle('opacity-40', isSuresiz || isAdliPara || isOzelInfaz);
-            }
+            // Suç türü (kasıtlı/taksirli) artık bu satırda elle seçilmiyor; ilgili
+            // suç maddesinin kaydına göre isMaddeTaksirli() ile otomatik belirleniyor.
 
             // Müebbet / Ağırlaştırılmış müebbette koşullu salıverilme süresi artık ORANLA değil,
             // 5275 s.K. m.107/2 ve m.107/4 ile m.108/1 gereğince SABİT yıl sayısıyla belirleniyor
@@ -982,7 +1202,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, sucTuru = 'kasitli') {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0) {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -1023,13 +1243,6 @@
                     </div>
                     <div class="flex items-center gap-1">
                         <input type="text" value="${(sucMadde || '').replace(/"/g, '&quot;')}" placeholder="Suç maddesini yazın" autocomplete="off" class="penalty-suc-madde w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-slate-800 font-medium" oninput="onSucMaddeInput(this)" onfocus="onSucMaddeInput(this)" onclick="onSucMaddeInput(this)" onblur="hideSucMaddeSuggestionsLater(this)">
-                    </div>
-                    <div class="flex items-center gap-1 penalty-suctur-wrap">
-                        <span class="text-[10px] text-slate-500">Suç Türü:</span>
-                        <select class="penalty-suc-turu w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold" title="Doğrudan açık ceza infaz kurumuna alınma şartı (kasıtlıda 3 yıl, taksirlide 5 yıl) için gereklidir">
-                            <option value="kasitli" ${sucTuru === 'kasitli' ? 'selected' : ''}>Kasıtlı Suç</option>
-                            <option value="taksirli" ${sucTuru === 'taksirli' ? 'selected' : ''}>Taksirli Suç</option>
-                        </select>
                     </div>
                     <div class="flex items-center gap-1 penalty-oran-wrap ${manuelOran ? '' : 'hidden'}">
                         <span class="text-[10px] text-slate-500">Oran:</span>
@@ -1358,7 +1571,6 @@
                     // kala-yıl) ve istisna106/teyitli bilgisi için kullanılır.
                     const acikDsBilgi = getAcikDsBilgi(sucMadde);
                     const sucTarihiDate = sTarih ? new Date(sTarih) : null;
-                    const sucTuruEl = row.querySelector('.penalty-suc-turu');
                     // Doğrudan açık ceza infaz kurumuna alınma şartındaki "toplam ceza"
                     // bu satırın HÜKMEDİLEN (ham, oran uygulanmamış) gün sayısıdır —
                     // adli para cezası ve diğer rejimler bu toplama hiç girmez, çünkü
@@ -1373,7 +1585,7 @@
                         teyitli: acikDsBilgi.teyitli,
                         sucTarihiDate: sucTarihiDate,
                         mukerrir: mukerrir,
-                        sucTuru: sucTuruEl ? sucTuruEl.value : 'kasitli',
+                        sucTuru: isMaddeTaksirli(sucMadde) ? 'taksirli' : 'kasitli',
                         hamGun: rowHamGun
                     });
                 }
@@ -2050,8 +2262,7 @@
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
-                    apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0,
-                    sucTuru: row.querySelector('.penalty-suc-turu') ? row.querySelector('.penalty-suc-turu').value : 'kasitli'
+                    apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0
                 });
             });
 
@@ -2105,7 +2316,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.sucTuru || 'kasitli');
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0);
                         });
                     }
 
