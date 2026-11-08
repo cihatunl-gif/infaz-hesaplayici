@@ -2334,7 +2334,14 @@
                         tekerrurFarkiToplamGun += tekerrurFarkiHesapla(mukerrir, rowDays, sTarih);
                     }
 
-                    rowYatarGun = rowDays * rowOran;
+                    // Küsüratlı yatar gün HER KALEM için kendi içinde hükümlü lehine aşağı
+                    // yuvarlanır (Math.floor), sonra toplama eklenir. Önceden bu yuvarlama
+                    // sadece ekrandaki satır etiketinde yapılıyordu; toplam (totalYatarGun)
+                    // küsüratlı hali topluyor ve en sonda TEK SEFER yuvarlıyordu. Bu da birden
+                    // fazla kalemde küsürat varken (ör. 0,5 + 0,5 + 0,667 gün) toplamda daha az
+                    // gün kaybına yol açıp STT'yi gerçekte olması gerekenden ileri bir tarihe
+                    // kaydırıyordu (hükümlü aleyhine). Düzeltme: yuvarlama satır bazında yapılır.
+                    rowYatarGun = Math.floor(rowDays * rowOran);
 
                     // Raporda "İnfaz Türü" olarak gösterilecek metin: gerçek müddetname
                     // örneğindeki gibi, hangi madde gereği infaz edildiği (mükerrirlik
