@@ -2218,6 +2218,7 @@
             const dogumTarihi1089 = dogumTarihiStr1089 ? new Date(dogumTarihiStr1089) : null;
             const yas18Tarihi1089 = dogumTarihi1089 ? yilEkleGercek(dogumTarihi1089, 18) : null;
             const cocuk1089Notlari = []; // Açıklamada listelenecek, bu indirimden etkilenen satırlar
+            const terorSureliNotlari = []; // 3713 s.K. m.17 gereği 3/4 sabit oran uygulanan süreli hapis satırları
 
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
@@ -2440,6 +2441,17 @@
                         rowOran = 0.75;
                     }
 
+                    // 3713 s.K. m.17 (Ek cümle): terör suçu kapsamındaki maddelerden
+                    // SÜRELİ HAPİS cezası alanlarda koşullu salıverilme oranı, mükerrerlik/
+                    // örgütlü durumuna bakılmaksızın SABİT 3/4 olarak uygulanır (kullanıcı
+                    // onayı, 2026-11-09). Bu oran, yukarıdaki 107/2-108 hesaplamalarının
+                    // YERİNE geçer.
+                    const terorSureliHapis = isTerorSucuMaddesi(sucMadde);
+                    if (terorSureliHapis) {
+                        rowOran = 0.75;
+                        terorSureliNotlari.push(`${sucMadde || 'ilgili ceza kalemi'}, 3713 sayılı Terörle Mücadele Kanununun 2. maddesi kapsamında terör suçu sayıldığından, aynı Kanunun 17. maddesi (ek cümle) gereği bu süreli hapis cezasında koşullu salıverilme oranı mükerrerlik/örgütlü durumuna bakılmaksızın sabit 3/4 olarak uygulanmıştır.`);
+                    }
+
                     // İçtima (m.107/3-e) STT tavanında kullanılacak "tekerrür farkı"
                     // (bkz. tekerrurFarkiHesapla) — sadece bu satır mükerrer ise katkı verir.
                     if (mukerrir === '1' || mukerrir === '2') {
@@ -2468,6 +2480,10 @@
                     // oranı için özel bir atıf yazılmaz (varsayılan "107/2 md." kalır).
                     // Kullanıcı onayıyla düzeltildi, 2026-11-09 (önceki "108/9" hatalıydı).
                     else if (is108_9Maddesi(sucMadde) && cocuk1089Uygulandi) infazMaddesi = '5275 S.K. 107/2-g md.';
+                    // 3713 s.K. m.17: terör suçu süreli hapis cezasında infaz türü etiketi,
+                    // mükerrerlik/örgütlü etiketinin YERİNE bu şekilde gösterilir (kullanıcı
+                    // onayı, 2026-11-09).
+                    if (terorSureliHapis) infazMaddesi = '3713 S.K. 17. madde';
                     rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}`;
 
                     if (cocuk1089Uygulandi) {
@@ -3052,6 +3068,7 @@
             // 108/9 madde çocuk indirimi notu: SADECE bu indirim en az bir ceza kaleminde
             // fiilen uygulanmışsa yazılır (cocuk1089Notlari boşsa hiç eklenmez).
             const cocuk1089AciklamaMetni = cocuk1089Notlari.length ? cocuk1089Notlari.join('\n') : "";
+            const terorSureliAciklamaMetni = terorSureliNotlari.length ? terorSureliNotlari.join('\n') : "";
 
             // Açıklama: otomatik üretilen kanuni uyarı metni + çocuk yaş notu + özel infaz
             // rejimi notları + kullanıcının yazdığı manuel not
@@ -3063,6 +3080,7 @@
                     acikDsNot.trim(),
                     cocukYasAciklamaMetni.trim(),
                     cocuk1089AciklamaMetni.trim(),
+                    terorSureliAciklamaMetni.trim(),
                     ...ozelInfazAciklamaParcalari,
                     manuelNot.trim() ? escapeHtml(manuelNot.trim()) : ""
                 ].filter(Boolean);
