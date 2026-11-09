@@ -698,6 +698,26 @@
                    /^tck\s*31[0-5]\b/.test(m);
         }
 
+        // 3713 sayılı Terörle Mücadele Kanunu m.2/1 gereği TERÖR SUÇU sayılan maddeler:
+        // TCK 302 (Devletin Birliğini Bozma), 307 (Temel Milli Yararlara Karşı Faaliyet),
+        // 309, 311, 312, 313, 314, 315 (tüm fıkraları) ve 320 (tüm fıkraları); TCK 310'un
+        // İSE SADECE 1. fıkrası (diğer fıkraları terör suçu sayılmaz). Bu liste, kullanıcı
+        // onayıyla eklendi (2026-11-09) ve 5275 s.K. m.107/2-g'deki (çocuk suç oranı)
+        // listeden kasıtlı olarak AYRIDIR — ikisi farklı amaçlara hizmet eder, karıştırılmamalı.
+        // Kullanım yeri: terör suçundan AĞIRLAŞTIRILMIŞ MÜEBBET alanlarda 3713 s.K. m.17
+        // gereği koşullu salıverilme hiç uygulanmaz, ceza ÖLÜNCEYE KADAR devam eder.
+        function isTerorSucuMaddesi(maddeText) {
+            if (!maddeText) return false;
+            const m = maddeText.trim().toLocaleLowerCase('tr-TR');
+            if (/^tck\s*310\/1(?!\d)/.test(m)) return true;
+            if (/^tck\s*310\b/.test(m)) return false; // 310'un diğer fıkraları terör suçu DEĞİL
+            return /^tck\s*302\b/.test(m) ||
+                   /^tck\s*307\b/.test(m) ||
+                   /^tck\s*309\b/.test(m) ||
+                   /^tck\s*31[1-5]\b/.test(m) ||
+                   /^tck\s*320\b/.test(m);
+        }
+
         // Bazı maddelerde (SUC_MADDE_LISTESI'ndeki "tarihEsikli" alanı) infaz oranı,
         // suç tarihine göre LEHE KANUN karşılaştırmasına tabidir: suç, kayıtlı eşik
         // tarihinde veya ÖNCESİNDE işlenmişse (hükümlünün lehine olan) eski/düşük oran
@@ -2159,6 +2179,9 @@
             // Mükerrer/108-8 rejimindeki AM/müebbet kalemleri için (bkz. aşağıdaki
             // müebbet/AM dalındaki not ve combinationCategory a/b/c/d bloğu, 2026-11-09)
             let hasMukerrerSuresiz = false, maxMukerrerSuresizYatarGun = 0, maxMukerrerSuresizRawDays = 0;
+            // 3713 s.K. m.17 "ölünceye kadar" durumu (terör + AM) için (bkz. aşağıdaki
+            // müebbet/AM dalındaki not ve rapor sonu BTT/STT gösterim bloğu, 2026-11-09)
+            let hasOlunceyeKadarAM = false;
             // İçtima (m.107/3-e) STT tavanında kullanılacak toplam "tekerrür farkı"
             // (bkz. tekerrurFarkiHesapla) — her mükerrer süreli hapis kaleminden
             // bu döngü içinde eklenir.
@@ -2314,6 +2337,18 @@
                     }
 
                     rowOranMetni = `${sttYil} Yıl (Sabit)`;
+
+                    // 3713 s.K. (Terörle Mücadele Kanunu) m.17: terör suçundan AĞIRLAŞTIRILMIŞ
+                    // MÜEBBET alanlar koşullu salıverilmeden hiç yararlanamaz; cezaları
+                    // ÖLÜNCEYE KADAR devam eder (STT yok, BTT = Ölünceye Kadar, tarih
+                    // hesaplanmaz). Kullanıcı onayı, 2026-11-09. Terör suçu, 3713 s.K.
+                    // m.2/1 gereği TCK 302, 307, 309, 311, 312, 313, 314, 315, 320 (tüm
+                    // fıkraları) ve TCK 310'un SADECE 1. fıkrası ile sınırlıdır — bu liste,
+                    // 5275 s.K. m.107/2-g'deki (çocuk oranı) listeden AYRIDIR, karıştırılmamalı.
+                    if (sureTip === 'agirlastirilmis_muebbet' && isTerorSucuMaddesi(sucMadde)) {
+                        hasOlunceyeKadarAM = true;
+                        rowOranMetni = '3713 S.K. m.17 (Ölünceye Kadar)';
+                    }
                 } else if (sureTip === 'adli_para') {
                     isAdliPara = true;
                     const apcGunDeger = parseInt(row.querySelector('.penalty-apc-gun').value) || 0;
@@ -2577,6 +2612,12 @@
             let effectiveRawDays = totalRawDays;
             let effectiveYatarGun = totalYatarGun;
             let capWarningText = "";
+
+            // 3713 s.K. m.17: terör suçundan Ağırlaştırılmış Müebbet alan hükümlü için
+            // koşullu salıverilme hükümleri hiç uygulanmaz; ceza ölünceye kadar devam eder.
+            if (hasOlunceyeKadarAM) {
+                capWarningText += `Hükümlü, 3713 sayılı Terörle Mücadele Kanununun 2. maddesi kapsamındaki bir terör suçundan ağırlaştırılmış müebbet hapis cezasına mahkûm olduğundan, aynı Kanunun 17. maddesi gereğince koşullu salıverilme hükümlerinden yararlanamaz; cezası ölünceye kadar devam eder. `;
+            }
 
             const combinationCategory = getCombinationCategory(amCount, mCount, sCount);
             // Mükerrer/108-8 rejiminde AM/müebbet içeren a/b/c/d kategorisi içtimaları:
@@ -2923,8 +2964,17 @@
             }
 
             document.getElementById('repBaslangic').innerText = formatDate(D0);
-            document.getElementById('repBtt').innerText = formatDate(bttDate);
-            document.getElementById('repStt').innerText = formatDate(sttDate);
+            // 3713 s.K. m.17 gereği terör suçundan Ağırlaştırılmış Müebbet alanlarda
+            // koşullu salıverilme (STT) hiç uygulanmaz; hakederek tahliye (BTT) de
+            // bir tarih değil, "Ölünceye Kadar" olarak gösterilir (kullanıcı onayı,
+            // 2026-11-09).
+            if (hasOlunceyeKadarAM) {
+                document.getElementById('repBtt').innerText = 'Ölünceye Kadar';
+                document.getElementById('repStt').innerText = 'Uygulanmaz (3713 S.K. m.17)';
+            } else {
+                document.getElementById('repBtt').innerText = formatDate(bttDate);
+                document.getElementById('repStt').innerText = formatDate(sttDate);
+            }
             document.getElementById('repAcikAyrilma').innerText = acikAyrilmaMetin;
             document.getElementById('repDsAyrilma').innerText = dsAyrilmaMetin;
 
