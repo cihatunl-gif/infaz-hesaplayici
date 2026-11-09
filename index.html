@@ -1089,6 +1089,47 @@
             const headerIdx = lines.findIndex(l => /^[İI]nfaz\s*T[üu]r[üu]\s*:?\s*$/i.test(l.trim()));
             if (headerIdx === -1) return lines;
             const tamTarihRe = /^\d{1,2}[\/.]\d{1,2}[\/.]\d{4}$/;
+
+            const stopRe = /^(CEZAEV[İI]NE\s+G[İI]R[İI][ŞS]\s+TAR[İI]H[İI]|HAKEDEREK\s+TAHL[İI]YE\s+TAR[İI]H[İI]|KO[ŞS]ULLU\s+SAL[İI]VER[İI]LME\s+TAR[İI]H[İI]|MAHSUP)/i;
+            let stopIdx = lines.length;
+            for (let k = headerIdx + 1; k < lines.length; k++) {
+                if (stopRe.test(lines[k])) { stopIdx = k; break; }
+            }
+            const afterHeader = lines.slice(headerIdx + 1, stopIdx);
+
+            // YENİ DURUM — TEK SUÇ TARİHİ + ÇOK İNFAZ KALEMİ: aynı kararın cezası
+            // (örn. OHAL/671 s. KHK ile bir kısmı 1/2, kalanı 107/2 md ile 2/3
+            // oranında) birden fazla "Ceza Süresi ve Ceza Türü / İnfaz Türü"
+            // ikilisine bölünmüş olabilir; bu durumda suç tarihi SADECE karar
+            // başlığında bir kez yazılır, kalemler arasında hiç tekrarlanmaz.
+            // Başlıktan sonraki blokta hiç tam tarih yoksa, EN YAKIN önceki tam
+            // tarihi (paylaşılan suç tarihi) bulup her süre/infaz-türü ikilisine
+            // ortak olarak uygular.
+            if (afterHeader.length > 0 && !afterHeader.some(l => tamTarihRe.test(l))) {
+                let paylasilanTarihIdx = -1;
+                for (let k = headerIdx - 1; k >= 0 && headerIdx - k <= 15; k--) {
+                    if (tamTarihRe.test(lines[k])) { paylasilanTarihIdx = k; break; }
+                }
+                if (paylasilanTarihIdx !== -1) {
+                    const paylasilanTarih = lines[paylasilanTarihIdx];
+                    // Süre satırını tanımak için: YIL/AY/GÜN rakamı VEYA MÜEBBET
+                    // ibaresi; bu olmayan satırlar (İlam No değeri gibi paylaşılan
+                    // tekil değerler) atlanır.
+                    const sureSatiriRe = /\d+\s*(YIL|AY|G[ÜU]N)|M[ÜU]EBBET/i;
+                    const sentetikSatirlar = [];
+                    let k = 0;
+                    while (k < afterHeader.length) {
+                        if (!sureSatiriRe.test(afterHeader[k])) { k++; continue; }
+                        const sure = afterHeader[k];
+                        const infazTuru = afterHeader[k + 1] || '';
+                        sentetikSatirlar.push(`${paylasilanTarih} ${sure} ${infazTuru}`);
+                        k += 2;
+                    }
+                    if (sentetikSatirlar.length > 0) return [...lines, ...sentetikSatirlar];
+                }
+                return lines;
+            }
+
             let i = headerIdx + 1;
             // İlam No gibi paylaşılan, tarih olmayan tekil değer satırlarını atla
             // (yapı tahmin edilemiyorsa, çok uzaklaşınca vazgeç ve dokunma).
@@ -1103,11 +1144,6 @@
             // müddetnamelerde tablo zaten SATIR BAZLI (tarih,madde,süre,infaz-türü
             // dörtlüsü art arda, satır satır) yazılmış olabilir. Önce satır bazlı
             // düzeni dene, uymazsa sütun bazlı düzene (eski davranış) düş.
-            const stopRe = /^(CEZAEV[İI]NE\s+G[İI]R[İI][ŞS]\s+TAR[İI]H[İI]|HAKEDEREK\s+TAHL[İI]YE\s+TAR[İI]H[İI]|KO[ŞS]ULLU\s+SAL[İI]VER[İI]LME\s+TAR[İI]H[İI]|MAHSUP)/i;
-            let stopIdx = lines.length;
-            for (let k = tarihStart; k < lines.length; k++) {
-                if (stopRe.test(lines[k])) { stopIdx = k; break; }
-            }
             const tableLines = lines.slice(tarihStart, stopIdx);
             if (tableLines.length > 0 && tableLines.length % 4 === 0) {
                 const nSatir = tableLines.length / 4;
