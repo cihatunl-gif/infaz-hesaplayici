@@ -1204,7 +1204,21 @@
                 const yilM = sureBolumu.match(/(\d+)\s*YIL/);
                 const ayM = sureBolumu.match(/(\d+)\s*AY/);
                 const gunM = sureBolumu.match(/(\d+)\s*G[ÜU]N/);
-                if (!yilM && !ayM && !gunM) return; // süre bilgisi yoksa bu bir ceza satırı değildir
+
+                // Müebbet / Ağırlaştırılmış Müebbet: belgede süre YIL/AY/GÜN olarak değil,
+                // doğrudan "AĞIRLAŞTIRILMIŞ MÜEBBET (HAPİS)" / "AĞIR. MÜEBBET" veya (ağırlaştırılmamış)
+                // "MÜEBBET (HAPİS)" ibaresiyle yazılır — bu durumda rakam aranmaz, ibarenin
+                // kendisi süre bilgisi kabul edilir (kullanıcı talebiyle eklendi, 2026-11-09;
+                // önceden bu satırlar rakam bulunamadığı için "satır bulunamadı" hatasıyla atlanıyordu).
+                const isAgMuebbetSatiri = /A[ĞG]IR(LA[ŞS]TIRILMI[ŞS])?\.?\s*M[ÜU]EBBET/.test(sureBolumu);
+                const isMuebbetSatiri = !isAgMuebbetSatiri && /M[ÜU]EBBET/.test(sureBolumu);
+                // Adli Para Cezası: 5275 s.K. 106/9 md. atfı görülen satır (ödenmeyip
+                // hapse çevrilen adli para cezasının infaz şekli) — kullanıcı talebiyle
+                // eklendi, 2026-11-09. Bu satırlarda GÜN sayısı (gunM) adli para cezası
+                // gün sayısı olarak kullanılacaktır.
+                const isAdliPara1069 = /106\s*\/\s*9(?!\d)/.test(upper);
+
+                if (!yilM && !ayM && !gunM && !isAgMuebbetSatiri && !isMuebbetSatiri) return; // süre bilgisi yoksa bu bir ceza satırı değildir
 
                 // İnfaz türü bölümü ("5275 S.K. 108/1-2 md 1/2+112 gün" gibi): buradan
                 // YATAR oranı (1/2, 2/3, 3/4, 4/4) ve varsa "+N gün" ek gününü (5275 s.K.
@@ -1229,7 +1243,11 @@
                     gun: gunM ? parseInt(gunM[1]) : 0,
                     mukerrirTahmin: tahminEtMukerrirlik(upper),
                     oranParsed: oranM ? `${oranM[1]}/${oranM[2]}` : '',
-                    ekGun: ekGunM ? parseInt(ekGunM[1]) : 0
+                    ekGun: ekGunM ? parseInt(ekGunM[1]) : 0,
+                    // 'sureli' (varsayılan) | 'muebbet' | 'agirlastirilmis_muebbet' | 'adli_para'
+                    sureTip: isAgMuebbetSatiri ? 'agirlastirilmis_muebbet'
+                        : (isMuebbetSatiri ? 'muebbet'
+                        : (isAdliPara1069 ? 'adli_para' : 'sureli'))
                 });
             });
             return satirlar;
@@ -1389,7 +1407,17 @@
                     // da doğru oranla eklenmesini sağlar. "Mükerrir Gün" alanı da bu sayede
                     // her zaman görünür/düzenlenebilir olur.
                     const oranFallback = s.mukerrirTahmin === '2' ? '3/4' : (s.mukerrirTahmin === '1' ? '2/3' : '1/2');
-                    const eklenenTr = addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
+                    // Müebbet/Ağ.Müebbet ve Adli Para Cezası satırları, "Süreli Hapis"ten
+                    // farklı bir ceza türü seçimiyle (ve dolayısıyla farklı alanlarla)
+                    // eklenir — kullanıcı talebiyle eklendi, 2026-11-09.
+                    let eklenenTr;
+                    if (s.sureTip === 'adli_para') {
+                        eklenenTr = addPenaltyRow('adli_para', 0, 0, 0, s.maddeRaw, s.sucTarihi, 'yok', false, s.gun, '', false, 0);
+                    } else if (s.sureTip === 'muebbet' || s.sureTip === 'agirlastirilmis_muebbet') {
+                        eklenenTr = addPenaltyRow(s.sureTip, 0, 0, 0, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, '', false, 0);
+                    } else {
+                        eklenenTr = addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
+                    }
                     eklenenCezaSatirElemanlari.push(eklenenTr);
                 });
                 mahsupSatirlari.forEach(s => addMahsupRow(s.tur, s.start, s.end));
@@ -1688,9 +1716,19 @@
              - Adi suç Ağ.Müebbet: 60 yıl — referans belgeden (Osman Atalay),
                gerçek örnekle henüz doğrulanmadı
              - Örgütlü Ağ.Müebbet: 72 yıl — referans belgeden, henüz doğrulanmadı
-             - Mükerrir müebbet/Ağ.müebbet BTT: KESİN KANUN/ÖRNEK VERİSİ YOK.
-               Şimdilik örgütlü suç değerleriyle aynı (48 / 72 yıl) varsayıldı;
-               gerçek bir müddetname örneğiyle teyit edilmesi gerekiyor.
+             - Mükerrir/108-8 Ağ.Müebbet: 78 yıl — 3 FARKLI GERÇEK UYAP MÜDDETNAMESİYLE
+               DOĞRULANDI (2026-11-09): (a) 22/07/2026 giriş, 957 gün mahsup, STT
+               28/11/2062 (=39 yıl) ve BTT 18/11/2101 (=78 yıl, ±1 gün artık yılı
+               mahsubu); (b) 05/06/2024 giriş, 1094 gün mahsup, AM+Müebbet içtimalı,
+               STT 28/05/2060 ve BTT 19/05/2099 — belgede açıkça "108/1.a maddesi
+               uyarınca 39 yıl... 78 yıl üzerinden hesaplanmıştır" yazıyor; (c) 11/03/2022
+               giriş, 457 gün mahsup — belgede açıkça "108/1-a maddesi gereğince...
+               39 yıl, ... bihakkın tahliye süresi de 78 yıl" yazıyor. 72 değeri hatalıydı.
+             - Mükerrir müebbet (108/1.b, 33 yıl STT) BTT: HÂLÂ KESİN TEK BAŞINA ÖRNEK
+               YOK (yukarıdaki (b) örneğinde müebbet+AM içtimalıydı ve içtima tavanı
+               AM'nin 78 yılına göre belirlenmiş olabilir). Şimdilik örgütlü suç
+               değeriyle aynı (48 yıl) varsayıldı; tek başına mükerrir müebbet örneğiyle
+               teyit edilmesi gerekiyor.
            ====================================================== */
         function getSuresizSTTYil(sureTip, mukerrir, orgutlu) {
             const isAgMuebbet = (sureTip === 'agirlastirilmis_muebbet');
@@ -1700,7 +1738,9 @@
         }
         function getSuresizBTTYil(sureTip, mukerrir, orgutlu) {
             const isAgMuebbet = (sureTip === 'agirlastirilmis_muebbet');
-            if (mukerrir !== 'yok') return isAgMuebbet ? 72 : 48; // *** TEYİT GEREKİYOR ***
+            // AM: 78 yıl 3 gerçek örnekle doğrulandı. Müebbet (33 yıl STT) için hâlâ
+            // teyit yok, örgütlü değeriyle (48) aynı varsayılıyor — bkz. yukarıdaki not.
+            if (mukerrir !== 'yok') return isAgMuebbet ? 78 : 48; // AM: DOĞRULANDI. Müebbet: *** TEYİT GEREKİYOR ***
             if (orgutlu) return isAgMuebbet ? 72 : 48;
             return isAgMuebbet ? 60 : 36;
         }
@@ -1752,11 +1792,12 @@
             // Suç maddesi müebbet/ağırlaştırılmış müebbette de anlamlıdır: işlenen suçun
             // istisna suç kapsamında olup olmadığı (30/03/2020 ve Geçici 10/6 eşikli +3
             // yıllık açık/denetimli serbestlik haklarını etkiler) suç maddesinden
-            // belirlenir. Bu nedenle sadece adli para cezası ve özel infaz rejiminde
-            // kapatılır, müebbette AÇIK bırakılır.
+            // belirlenir. Adli para cezasında da hangi suçtan verildiğinin raporda/kayıtta
+            // görünmesi istendiğinden (kullanıcı talebi, 2026-11-09) bu alan artık SADECE
+            // özel infaz rejiminde kapatılır; adli para cezasında AÇIK bırakılır.
             if (sucMaddeInput) {
-                sucMaddeInput.disabled = (isAdliPara || isOzelInfaz);
-                sucMaddeInput.classList.toggle('opacity-40', isAdliPara || isOzelInfaz);
+                sucMaddeInput.disabled = isOzelInfaz;
+                sucMaddeInput.classList.toggle('opacity-40', isOzelInfaz);
             }
 
             // Suç türü (kasıtlı/taksirli) artık bu satırda elle seçilmiyor; ilgili
@@ -2251,7 +2292,11 @@
                     rowYatarGun = apcGunDeger;
                     nextDate = addDays(cumulative, rowDays);
                     sureMetinYAG = `${apcGunDeger} Gün (Adli Para Cezası)`;
-                    rowOranMetni = "İndirimsiz (Tam)";
+                    // Raporda İnfaz Türü sütunu, gerçek müddetnamelerdeki gibi madde
+                    // atfıyla gösterilir (kullanıcı onayı, 2026-11-09): adli para
+                    // cezasının (ödenmeyip hapse çevrilen) infazı 5275 s.K. 106/9 md.
+                    // kapsamındadır.
+                    rowOranMetni = "5275 S.K. 106/9 Md. (İndirimsiz)";
                 } else {
                     sCount++;
                     const y = parseInt(row.querySelector('.penalty-yil').value) || 0;
