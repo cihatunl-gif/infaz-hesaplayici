@@ -1240,6 +1240,53 @@
         // "İnfaz Türü" başlığından sonra gelen, tamamı tarihten ibaret olan ardışık
         // satırları (Suç Tarihi sütunu) bulup, bunu takip eden aynı sayıda madde /
         // süre / infaz-türü satırını eşleştirir.
+        // GENEL (son çare) yeniden dizme: satır-bazlı (4'e tam bölünen, hep tek
+        // tarihli) ve klasik sütun-bazlı (TEK blok; önce N tarih, sonra N madde...)
+        // denemeleri uymadığında devreye girer. "İlam No" gibi satır arasına
+        // SIKIŞMIŞ, tarih OLMAYAN tekil değer satırlarını yok sayarak, ardışık
+        // tarih sayısını (o anki "blok genişliği") tespit eder ve hemen ardından
+        // gelen (yine İlam No gibi tarih-olmayan satırları atlayarak) o genişlikte
+        // 3 bloğu (madde/süre/infaz-türü) eşleştirir. Böylece aynı tablo içinde
+        // bazı satırlar SATIR BAZLI, bazıları (örn. sayfa/sütun taşması nedeniyle)
+        // SÜTUN BAZLI yazılmış olsa bile (kullanıcı örneği, 2026-11-10) doğru
+        // eşleşir — eski kod tüm tabloyu TEK bir düzenin (ya hep satır ya hep
+        // sütun) izlediğini varsayıyordu.
+        function genelDateAnchoredRealign(tableLines) {
+            const tamTarihRe = /^\d{1,2}[\/.]\d{1,2}[\/.]\d{4}$/;
+            const n = tableLines.length;
+            const sentetikSatirlar = [];
+            let i = 0;
+            while (i < n) {
+                if (!tamTarihRe.test(tableLines[i])) { i++; continue; }
+                let j = i;
+                while (j < n && tamTarihRe.test(tableLines[j])) j++;
+                const blokGenisligi = j - i;
+                const tarihler = tableLines.slice(i, j);
+                const hedefSayisi = blokGenisligi * 3; // madde + süre + infaz-türü, her biri blokGenisligi adet
+                const kalanlar = [];
+                let k = j;
+                while (k < n && kalanlar.length < hedefSayisi && !tamTarihRe.test(tableLines[k])) {
+                    kalanlar.push(tableLines[k]);
+                    k++;
+                }
+                if (kalanlar.length === hedefSayisi) {
+                    const maddeBlok = kalanlar.slice(0, blokGenisligi);
+                    const sureBlok = kalanlar.slice(blokGenisligi, 2 * blokGenisligi);
+                    const infazBlok = kalanlar.slice(2 * blokGenisligi, 3 * blokGenisligi);
+                    for (let r = 0; r < blokGenisligi; r++) {
+                        sentetikSatirlar.push(`${tarihler[r]} ${maddeBlok[r]} ${sureBlok[r]} ${infazBlok[r]}`);
+                    }
+                    i = k;
+                } else {
+                    // Bu tarih bloğuyla eşleşecek yeterli veri bulunamadı; bu bloğu
+                    // atla ve bir sonraki tarihten devam et (veri kaybı yerine en
+                    // azından çözülebilen diğer satırlar kazanılır).
+                    i = j;
+                }
+            }
+            return sentetikSatirlar;
+        }
+
         function realignUdfCezaTablosu(lines) {
             const headerIdx = lines.findIndex(l => /^[İI]nfaz\s*T[üu]r[üu]\s*:?\s*$/i.test(l.trim()));
             if (headerIdx === -1) return lines;
@@ -1284,19 +1331,101 @@
                 }
             }
 
-            // SÜTUN BAZLI düzen (eski davranış): önce tüm tarihler art arda,
-            // sonra tüm maddeler, sonra tüm süreler, sonra tüm infaz türleri.
-            i = tarihStart;
-            while (i < lines.length && tamTarihRe.test(lines[i])) i++;
-            const n = i - tarihStart;
-            if (n === 0) return lines;
-            const maddeBlok = lines.slice(i, i + n);
-            const sureBlok = lines.slice(i + n, i + 2 * n);
-            const infazBlok = lines.slice(i + 2 * n, i + 3 * n);
-            if (maddeBlok.length < n || sureBlok.length < n || infazBlok.length < n) return lines;
+            // SÜTUN BAZLI düzen (tek blok: önce tüm tarihler art arda, sonra tüm
+            // maddeler, sonra tüm süreler, sonra tüm infaz türleri) VE bunun
+            // KARIŞIK/bozuk biçimleri (tablonun bir kısmı satır bazlı, bir kısmı
+            // — örn. sayfa taşması nedeniyle — sütun bazlı; aralara İlam No gibi
+            // tekil satırlar sıkışmış) için GENEL çözümleyiciye düş.
+            const genelSonuc = genelDateAnchoredRealign(tableLines);
+            if (genelSonuc.length === 0) return lines;
+            return [...lines, ...genelSonuc];
+        }
+
+        // Bazı UDF'lerde ceza tablosu sadece 3 sütundur: "İlam No / Ceza Süresi
+        // ve Ceza Türü / İnfaz Türü" — "Suç Tarihi" ve "Ceza Mad." sütunları HİÇ
+        // yoktur (kullanıcı örneği, 2026-11-10). Süre ile madde genelde tek
+        // hücrede birleşik yazılır ("5 YIL HAPİS(142/2-h)"), bazen madde hiç
+        // yazılmaz. Her kalemin kendi suç tarihi olmadığından, belgenin CEZA
+        // BİLGİLERİ bölümünde (İlam No başlığından önce) geçen TEK ortak tarih
+        // varsa o kullanılır (yoksa 01/01/1900 sentinel'i); her iki durumda da
+        // satır UDF_TAHMINI_TARIH_ISARETI ile işaretlenip kullanıcıya "kontrol
+        // edin" uyarısı gösterilir — bu, satırları sessizce atlamaktan (eski
+        // davranış: tarih yoksa kalem bulunamamış gibi kaybolurdu) daha iyidir.
+        // "Suç Tarihi" veya "Ceza Mad." sütunu zaten varsa (standart 5 sütunlu
+        // tablo) bu fonksiyon devreye GİRMEZ.
+        function parse3SutunluCezaTablosu(lines) {
+            // NOT: Türkçe büyük noktalı İ/küçük noktasız ı harfleri standart
+            // Unicode büyük/küçük harf eşleştirmesinde (regex /i bayrağı) ASCII
+            // I/i'ye DÖNÜŞMEZ (örn. "İ" asla "i"ye eşleşmez) — bu yüzden TÜM
+            // satırlar önce toLocaleUpperCase('tr-TR') ile büyütülüp, karşılaştırma
+            // SADECE büyük harfli (ve gerektiğinde [İI] gibi açık harf sınıflarıyla)
+            // desenlerle yapılır; aksi halde "Tarihi" gibi karışık-harfli bir
+            // desen "TARİHİ" ile hiç eşleşmez (kullanıcı örneğiyle tespit edilen
+            // hata, 2026-11-10).
+            const upperLines = lines.map(l => l.toLocaleUpperCase('tr-TR'));
+            // "SUÇ TARİHİ / TARİHLERİ :" genel bir alan etiketi olarak (bu 3
+            // sütunlu tabloda da) belgenin başında zaten basılı olabilir; bu
+            // yüzden burada SADECE tablo sütun başlığı olarak tek başına geçen
+            // ("Suç Tarihi" yalın satır, ":" veya "/ TARİHLERİ" olmadan) hâli
+            // aranır — aksi halde bu kontrol her zaman yanlışlıkla true dönerdi.
+            const hasSucTarihiKolonu = upperLines.some(l => /^SU[ÇC]\s*TAR[İI]H[İI]\s*:?\s*$/.test(l.trim()));
+            const hasCezaMadKolonu = upperLines.some(l => /^CEZA\s*MAD\.?\s*$/.test(l.trim()));
+            if (hasSucTarihiKolonu || hasCezaMadKolonu) return lines;
+
+            const headerIdx = upperLines.findIndex(l => /^[İI]NFAZ\s*T[ÜU]R[ÜU]\s*:?\s*$/.test(l.trim()));
+            const sureBasligiIdx = upperLines.findIndex(l => /^CEZA\s*S[ÜU]RES[İI]\s*VE\s*CEZA\s*T[ÜU]R[ÜU](\s|$)/.test(l.trim()));
+            if (headerIdx === -1 || sureBasligiIdx === -1 || sureBasligiIdx > headerIdx) return lines;
+
+            const stopRe = /^(CEZAEV[İI]NE\s+G[İI]R[İI][ŞS]\s+TAR[İI]H[İI]|HAKEDEREK\s+TAHL[İI]YE\s+TAR[İI]H[İI]|KO[ŞS]ULLU\s+SAL[İI]VER[İI]LME\s+TAR[İI]H[İI]|MAHSUP)/;
+            let stopIdx = lines.length;
+            for (let k = headerIdx + 1; k < lines.length; k++) {
+                if (stopRe.test(upperLines[k])) { stopIdx = k; break; }
+            }
+            const tableLines = lines.slice(headerIdx + 1, stopIdx);
+            const tableUpperLines = upperLines.slice(headerIdx + 1, stopIdx);
+            if (tableLines.length === 0) return lines;
+
+            const infazRe = /5275|KHK|OHAL/;
+            const sureRe = /\d+\s*(YIL|AY|G[ÜU]N)|M[ÜU]EBBET/;
+            const infazSatirlari = [];
+            const sureSatirlari = [];
+            tableLines.forEach((l, idx) => {
+                const u = tableUpperLines[idx];
+                if (infazRe.test(u)) infazSatirlari.push(l);
+                else if (sureRe.test(u)) sureSatirlari.push(l);
+            });
+            if (infazSatirlari.length === 0 || sureSatirlari.length === 0) return lines;
+
+            // Belge-genel (tek) suç tarihi: "CEZA BİLGİLERİ" ile "İlam No" tablo
+            // başlığı arasında geçen tek bir tarih varsa budur (İÇTİMALI kararlarda
+            // sıkça görülür).
+            const tamTarihIcindeRe = /\d{1,2}[\/.]\d{1,2}[\/.]\d{4}/;
+            const cezaBilgileriIdx = upperLines.findIndex(l => /CEZA\s*B[İI]LG[İI]LER[İI]/.test(l));
+            const ilamNoBasligiIdx = upperLines.findIndex(l => /^[İI]LAM\s*NO\s*$/.test(l.trim()));
+            let ortakTarih = null;
+            if (cezaBilgileriIdx !== -1 && ilamNoBasligiIdx !== -1 && ilamNoBasligiIdx > cezaBilgileriIdx) {
+                for (let k = cezaBilgileriIdx; k < ilamNoBasligiIdx; k++) {
+                    const m = lines[k].match(tamTarihIcindeRe);
+                    if (m) { ortakTarih = m[0]; break; }
+                }
+            }
+            const tarihMetni = UDF_TAHMINI_TARIH_ISARETI + (ortakTarih || '01/01/1900');
+
+            // Süre hücresine bitişik "(142/2-h)" gibi TCK-ön-eksiz, çıplak bir
+            // madde ibaresi varsa ayıkla (bu belge türünde madde ayrıca
+            // yazılmaz, parantez içinde süreyle birleşik verilir).
+            const cıplakMaddeRe = /\(\s*(\d{1,3}(?:[\/.][\w.\-]+)*)\s*\)/;
+            const n = Math.min(sureSatirlari.length, infazSatirlari.length);
             const sentetikSatirlar = [];
             for (let k = 0; k < n; k++) {
-                sentetikSatirlar.push(`${lines[tarihStart + k]} ${maddeBlok[k]} ${sureBlok[k]} ${infazBlok[k]}`);
+                let sureMetni = sureSatirlari[k];
+                let maddeMetni = '';
+                const pm = sureMetni.match(cıplakMaddeRe);
+                if (pm) {
+                    maddeMetni = `TCK ${pm[1]}`;
+                    sureMetni = sureMetni.replace(cıplakMaddeRe, ' ').trim();
+                }
+                sentetikSatirlar.push(`${tarihMetni} ${maddeMetni} ${sureMetni} ${infazSatirlari[k]}`);
             }
             return [...lines, ...sentetikSatirlar];
         }
@@ -1338,8 +1467,20 @@
             if (!cdataMatch) throw new Error('UDF içeriğinden metin çıkarılamadı.');
             let rawLines = cdataMatch[1].split(/\r?\n/).map(l => l.replace(/ /g, ' ').trim()).filter(l => l.length > 0);
             rawLines = realignUdfCezaTablosu(rawLines);
+            rawLines = parse3SutunluCezaTablosu(rawLines);
             rawLines = mergeAdjacentLabelLines(rawLines);
             return rawLines;
+        }
+
+        // UYAP'ta alanlari hic doldurulmadan ("sucTarihi", "cezaSureTur" gibi
+        // alan adlarinin kendisi duz metin olarak kalmis) kaydedilmis, BOS bir
+        // sablon UDF'si tespit eder - kullanici ornegi, 2026-11-10. Bu durumda
+        // belgede gercekten hic veri yoktur (okunamayan bir hata degildir);
+        // kullaniciya bunu anlasilir sekilde bildirmek icin kullanilir.
+        function isBosUdfSablonu(lines) {
+            const bosSablonAlanAdlari = ['sucTarihi', 'cezaSureTur', 'infazTur', 'mahkemeAdi', 'ilamsNo', 'cezaeviGirisTar'];
+            const bulunan = bosSablonAlanAdlari.filter(ad => lines.includes(ad));
+            return bulunan.length >= 3;
         }
 
         // TCK 149/1-f, 149/1-g, 149/1-f-g dışındaki bentler listede yoksa bile, bu
@@ -1366,10 +1507,19 @@
             return maddeRaw.replace(/^(TCK|T\.?C\.?K\.?|Türk Ceza Kanunu)\s*/i, 'TCK ').trim();
         }
 
+        // Bazı UDF'lerde (Suç Tarihi sütunu hiç bulunmayan belgeler) satır
+        // başına bu işaret konularak, o satırın tarihinin belgede satır
+        // bazlı YAZMADIĞI, ortak/tahmini bir tarihten geldiği bildirilir —
+        // gerçek bir müddetname metninde bu dizi asla geçmez, bu yüzden
+        // güvenle işaret olarak kullanılabilir.
+        const UDF_TAHMINI_TARIH_ISARETI = '¤TAHMINI_TARIH¤';
+
         function parseCezaSatirlari(lines) {
             const dateRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
             const satirlar = [];
             lines.forEach(line => {
+                const sucTarihiTahmini = line.startsWith(UDF_TAHMINI_TARIH_ISARETI);
+                if (sucTarihiTahmini) line = line.slice(UDF_TAHMINI_TARIH_ISARETI.length);
                 const dateMatch = line.match(dateRe);
                 if (!dateMatch) return;
                 const upper = line.toLocaleUpperCase('tr-TR');
@@ -1389,9 +1539,18 @@
                 // "+112 gün" gibi ek ibareler süre olarak YANLIŞ okunmasın diye sadece
                 // bu bölümden önceki metin taranır.
                 const sureBolumu = kesmeIdx > -1 ? upper.slice(0, kesmeIdx) : upper;
-                const yilM = sureBolumu.match(/(\d+)\s*YIL/);
-                const ayM = sureBolumu.match(/(\d+)\s*AY/);
-                const gunM = sureBolumu.match(/(\d+)\s*G[ÜU]N/);
+                // Süre ibaresinin içinde "(TEC.1 YIL)" / "(TEKERRÜRDEN 1 YIL)" gibi
+                // parantezli ek açıklamalar bulunabilir (kullanıcı örneği, 2026-11-10);
+                // bu parantezli kısımlar YIL/AY/GÜN rakamı barındırdığında asıl ceza
+                // süresiyle karıştırılıp (örn. "3 AY 10 GÜN (tec.1 yıl)" satırında
+                // yanlışlıkla "1 Yıl" eklenip) hatalı süre okunmasına yol açıyordu;
+                // bu yüzden süre rakamları SADECE parantez İÇİ metin çıkarılmış
+                // haliyle aranır (madde/oran eşleşmeleri bundan etkilenmez, onlar
+                // orijinal satır/upper üzerinden ayrıca bulunur).
+                const sureBolumuParantezsiz = sureBolumu.replace(/\([^)]*\)/g, ' ');
+                const yilM = sureBolumuParantezsiz.match(/(\d+)\s*YIL/);
+                const ayM = sureBolumuParantezsiz.match(/(\d+)\s*AY/);
+                const gunM = sureBolumuParantezsiz.match(/(\d+)\s*G[ÜU]N/);
 
                 // Müebbet / Ağırlaştırılmış Müebbet: belgede süre YIL/AY/GÜN olarak değil,
                 // doğrudan "AĞIRLAŞTIRILMIŞ MÜEBBET (HAPİS)" / "AĞIR. MÜEBBET" veya (ağırlaştırılmamış)
@@ -1425,6 +1584,7 @@
 
                 satirlar.push({
                     sucTarihi: `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`,
+                    sucTarihiTahmini,
                     maddeRaw: maddeMatch ? normalizeEdilmisMadde(maddeMatch[1].trim()) : '',
                     yil: yilM ? parseInt(yilM[1]) : 0,
                     ay: ayM ? parseInt(ayM[1]) : 0,
@@ -1595,7 +1755,11 @@
                 const mahsupSatirlari = parseMahsupSatirlari(lines);
 
                 if (cezaSatirlari.length === 0 && mahsupSatirlari.length === 0 && !girisTarihiBulundu && !dogumTarihiBulundu) {
-                    goster(`<i class="fa-solid fa-circle-exclamation"></i> Bu ${turEtiket}'ten tanıdık bir müddetname alanı bulunamadı; format desteklenmiyor olabilir.`, 'text-red-600 font-semibold');
+                    if (isUdf && isBosUdfSablonu(lines)) {
+                        goster(`<i class="fa-solid fa-circle-exclamation"></i> Bu UDF'te hiçbir alan doldurulmamış görünüyor (belge, UYAP'tan bilgiler işlenmeden önce boş bir şablon olarak kaydedilmiş olabilir). Program bulunmayan bir veriyi okuyamaz; lütfen UYAP'ta bilgiler dolu şekilde görüntülenen/kaydedilen müddetnameyi yükleyin.`, 'text-red-600 font-semibold');
+                    } else {
+                        goster(`<i class="fa-solid fa-circle-exclamation"></i> Bu ${turEtiket}'ten tanıdık bir müddetname alanı bulunamadı; format desteklenmiyor olabilir.`, 'text-red-600 font-semibold');
+                    }
                     inputEl.value = '';
                     return;
                 }
@@ -1677,6 +1841,26 @@
                 });
                 const tekerrurEkli = cezaSatirlari.filter(s => s.ekGun > 0).length;
                 if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+N gün" (mükerrirlik ek günü) ibaresi görüldü; bu değer otomatik olarak "Mükerrir Gün" alanına ve yatar hesabına eklendi — lütfen doğruluğunu kontrol edin.`);
+                // Bazı UDF biçimlerinde ceza kalemlerinin kendi suç tarihi hiç
+                // yazılmaz (3 sütunlu tablo); bu satırlarda belgenin TEK ortak
+                // tarihi (veya hiç bulunamadıysa 01/01/1900 sentinel'i) kullanılmıştır
+                // — kullanıcı mutlaka kontrol/düzeltmelidir (kullanıcı talebi, 2026-11-10).
+                cezaSatirlari.forEach((s, idx) => {
+                    if (!s.sucTarihiTahmini) return;
+                    uyarilar.push(`<li id="suc-tarihi-tahmini-uyari-${idx}">${idx + 1}. ceza satırında belgede bu kaleme ait kendi suç tarihi yazılı değildi; <span class="text-red-700 font-semibold">kırmızı işaretli suç tarihi alanı tahmini/ortak bir değerdir, lütfen doğru tarihi siz girin.</span></li>`);
+                    const hataliTr = eklenenCezaSatirElemanlari[idx];
+                    if (!hataliTr) return;
+                    hataliTr.classList.add('ceza-hata-satiri');
+                    const tarihAlani = hataliTr.querySelector('.penalty-suc-tarihi');
+                    if (tarihAlani) tarihAlani.classList.add('ceza-hata-alani');
+                    const isaretiTemizleTarih = () => {
+                        hataliTr.classList.remove('ceza-hata-satiri');
+                        if (tarihAlani) tarihAlani.classList.remove('ceza-hata-alani');
+                        document.getElementById(`suc-tarihi-tahmini-uyari-${idx}`)?.remove();
+                    };
+                    hataliTr.addEventListener('input', isaretiTemizleTarih, { once: true });
+                    hataliTr.addEventListener('change', isaretiTemizleTarih, { once: true });
+                });
                 // Belgede yazılı oranın (hesaplamada DEĞİŞTİRİLMEDEN kullanılan değer),
                 // suç maddesi listesine göre OLMASI GEREKEN oranla uyuşup uyuşmadığını
                 // kontrol et (örn. belgede elle/hatalı değiştirilmiş bir oran farkedilsin).
