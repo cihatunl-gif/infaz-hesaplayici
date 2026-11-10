@@ -194,6 +194,14 @@
                     </div>
                     <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır.</p>
 
+                    <!-- 01/07/2016 öncesi işlenmiş, 5 yıldan az hapis cezalı (istisna suçlar
+                         hariç) hükümlülerin "3 gün içinde doğrudan açık" hakkı (R11,
+                         kullanıcı onayı 2026-11-10) için iyi hal bilgisi. -->
+                    <label class="flex items-center gap-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-200">
+                        <input type="checkbox" id="hukumluIyiHalli" onchange="calculateAll()" class="accent-amber-500">
+                        Hükümlü İyi Hallidir (01/07/2016 öncesi, 5 yıldan az hapis cezalarında "3 gün içinde doğrudan açık" hakkı değerlendirmesi için)
+                    </label>
+
                     <!-- Açık/Denetime ayrılma için asgari kapalı kalma şartı: giriş tarihi ile
                          bugün arasında bir süre farkı varsa, bu sürenin nerede geçtiği otomatik
                          VARSAYILMAZ; kullanıcıya sorulur. -->
@@ -438,6 +446,7 @@
             { madde: 'TCK 86/2-1. cümle', aciklama: 'Basit Yaralama', oran: '1/2' },
             { madde: 'TCK 106/2-a-c', aciklama: 'Birden fazla kişi tarafından birlikte silahla tehdit', oran: '1/2' },
             { madde: 'TCK 292/1', aciklama: 'Hükümlü veya Tutuklunun Kaçması', oran: '1/2' },
+            { madde: 'TCK 292/2', aciklama: 'Cebir veya Tehditle ya da Birden Fazla Kişiyle Birlikte Kaçma', oran: '1/2' },
             { madde: 'TCK 142/2.h.2', aciklama: 'Bina İçinde Muhafaza Altına Alınmış Olan Eşya Hakkında Hı...', oran: '1/2' },
             { madde: 'Askeri Ceza Kanunu 66/1-B Askeri Ceza Kanununa Muhalefet', aciklama: 'Askeri Ceza Kanunu 66/1-B Askeri Ceza Kanununa Muhalefet', oran: '1/2' },
             { madde: 'TCK 142/1.e.1', aciklama: 'Adet Gereği Açıkta Bırakılmış Eşya Hakkında Hırsızlık', oran: '1/2' },
@@ -776,6 +785,36 @@
             return false;
         }
 
+        // R11 (kullanıcı onayı, 2026-11-10): "01/07/2016 öncesi işlenmiş, 5 yıldan az
+        // hapis cezalı, istisna suç DIŞI" hükümlülerin doğrudan açık ceza infaz
+        // kurumuna alınması değerlendirmesinde HARİÇ tutulan istisna suçlar: terör ve
+        // örgütlü suçlar, kasten öldürme suçları (TCK 81/82/83), cinsel dokunulmazlığa
+        // karşı işlenen suçlar (TCK 102-105), özel hayatın ve haberleşmenin gizliliğine
+        // karşı suçlar (TCK 132-138) ve uyuşturucu/uyarıcı madde imal veya ticareti
+        // suçu (TCK 188). Bu fonksiyon SADECE bu R11 değerlendirmesi için kullanılır.
+        function isR11IstisnaMaddesi(maddeText) {
+            if (!maddeText) return false;
+            if (isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(maddeText)) return true;
+            const m = maddeText.trim().toLocaleLowerCase('tr-TR');
+            if (/^tck\s*8[123]\b/.test(m)) return true; // Kasten Öldürme (81,82,83)
+            if (/^tck\s*10[2345]\b/.test(m)) return true; // Cinsel Dokunulmazlığa Karşı Suçlar (102-105)
+            if (/^tck\s*13[2-8]\b/.test(m)) return true; // Özel Hayatın/Haberleşmenin Gizliliği (132-138)
+            if (/^tck\s*188\b/.test(m)) return true; // Uyuşturucu/Uyarıcı Madde İmal veya Ticareti
+            if (/^tck\s*22[01]\b/.test(m)) return true; // Örgüt kurma / örgüt üyeliği
+            return false;
+        }
+
+        // TCK 292/1-2 (Hükümlü veya Tutuklunun Kaçması / Firar) suçundan mahkumiyet
+        // tespiti. R1 kuralı (kullanıcı onayı, 2026-11-10): hükümlünün ceza
+        // bilgilerinde bu maddeden mahkumiyet SAYISI ile mahsup tablosundaki "Açık
+        // CİK (Firar)" kayıt SAYISI toplanır; toplam 2 veya daha fazla ise hükümlü
+        // "2 kez firar etmiş" sayılır (bkz. calculateAll içindeki firarSayisi).
+        function isFirarSucuMaddesi(maddeText) {
+            if (!maddeText) return false;
+            const m = maddeText.trim().toLocaleLowerCase('tr-TR');
+            return /^tck\s*292\b/.test(m);
+        }
+
         // Bazı maddelerde (SUC_MADDE_LISTESI'ndeki "tarihEsikli" alanı) infaz oranı,
         // suç tarihine göre LEHE KANUN karşılaştırmasına tabidir: suç, kayıtlı eşik
         // tarihinde veya ÖNCESİNDE işlenmişse (hükümlünün lehine olan) eski/düşük oran
@@ -872,55 +911,67 @@
            ====================================================== */
         const GECICI_10_6_ESIK_TARIHI = new Date('2023-07-31T23:59:59');
         const DS_30032020_ESIK_TARIHI = new Date('2020-03-30T23:59:59');
-        const ACIK_DS_VARSAYILAN = { acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: false };
+        // "ds2020Istisna": 30/03/2020 ve öncesi suçlara tanınan "denetime 3 yıl kala"
+        // ayrıcalığının kapsamı DIŞINDA tutulan suçlar (kullanıcı onayı, 2026-11-10).
+        // Bu alan "istisna106" (Geçici 10/6 madde / 31/07/2023 eşikli +3 yıl hakkı)
+        // ile AYNI ŞEY DEĞİLDİR: bir madde istisna106:false (yani +3 hakkından
+        // yararlanabilir) olduğu halde ds2020Istisna:true (yani 30/03/2020 öncesi
+        // olsa bile denetime HÂLÂ 1 yıl kala, 3 yıl kala DEĞİL) olabilir — örn.
+        // kasten öldürme (TCK 81/82/83), cinsel suçlar (102-105), uyuşturucu imal/
+        // ticareti (188), özel hayatın gizliliği (132-138) ve eşe/üstsoy/altsoy/
+        // kardeşe karşı yaralama (86/3-a, 87/2-d) tam olarak bu durumdadır.
+        const ACIK_DS_VARSAYILAN = { acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: false };
 
         // Sıra ÖNEMLİDİR: en spesifik anahtar en üstte olmalı (startsWith ile eşleştirilir).
         const ACIK_DS_TABLOSU = [
-            { key: 'TCK 141', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 142', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 148', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 149/1-f-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'TCK 149/1-f', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'TCK 149/1-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'TCK 149', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 188', acik: 5, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 190', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 102', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'TCK 103', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'TCK 104/2', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'TCK 104/3', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'TCK 104', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 105', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 82/1-d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'TCK 81', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 82', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 83', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: true },
-            { key: 'TCK 86/3-a', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 87/2.d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 94', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 95', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 96/2-b', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 96', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 220', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'TCK 221', acik: 2, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true },
-            { key: 'Terörle Mücadele Kanunu', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false },
-            { key: 'TCK 132', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 133', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 134', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 135', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 136', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 137', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
-            { key: 'TCK 138', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, teyitli: false },
+            { key: 'TCK 141', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: true },
+            { key: 'TCK 142', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: true },
+            { key: 'TCK 148', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: true },
+            { key: 'TCK 149/1-f-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, ds2020Istisna: false, teyitli: false },
+            { key: 'TCK 149/1-f', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, ds2020Istisna: false, teyitli: false },
+            { key: 'TCK 149/1-g', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, ds2020Istisna: false, teyitli: false },
+            { key: 'TCK 149', acik: 5, dsOnce: 3, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: true },
+            { key: 'TCK 188', acik: 5, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 190', acik: 7, dsOnce: 3, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: false },
+            { key: 'TCK 102', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 103', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 104/2', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 104/3', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 104', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 105', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 82/1-d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 82/1-e', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 82/1-f', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 81', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 82', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 83', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 86/3-a', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 87/2.d', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 94', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: false },
+            { key: 'TCK 95', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: false, teyitli: false },
+            { key: 'TCK 96/2-b', acik: 3, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 96', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 220', acik: 1, dsOnce: 3, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'TCK 221', acik: 2, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true },
+            { key: 'Terörle Mücadele Kanunu', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 132', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 133', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 134', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 135', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 136', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 137', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
+            { key: 'TCK 138', acik: 7, dsOnce: 1, dsSonra: 1, istisna106: false, ds2020Istisna: true, teyitli: false },
         ];
         // TCK 302-339 (2.Kitap 4.Kısım 4,5,6,7.Bölüm: Devletin güvenliği / Anayasal düzen /
-        // Milli savunma / Devlet sırları-casusluk) -> Geçici 10/6 istisna listesine girer.
-        // Kullanıcı onayı (2026-11-10): bu bölümdeki (devletin egemenliğine karşı/
-        // terör örgütü ile bağlantılı) suçlarda açık ceza infaz kurumuna ayrılma
-        // süresi 1 yıl kaladır (eski "7 yıl açık" genel değeri yerine). istisna106:true
-        // olduğundan denetimli serbestliğe ayrılma süresi de (aşağıdaki allBefore30032020
-        // mantığı gereği) suç tarihine BAKILMAKSIZIN zaten sabit 1 yıl kaladır.
+        // Milli savunma / Devlet sırları-casusluk): Terör suçları, anayasal düzene karşı
+        // işlenen suçlar ve (TCK 221 etkin pişmanlıktan yararlanan) örgüt suçları, cezanın
+        // 1/3'ü kapalı ceza infaz kurumunda geçirildikten SONRA koşullusuna 2 yıl kala
+        // açık ceza infaz kurumuna ayrılır (kullanıcı onayı, 2026-11-10 — bu açık süresi
+        // daha önce yanlışlıkla 1 yıl olarak girilmişti, 2 yıl olarak düzeltildi). 1/3
+        // kapalı kalma şartı isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi ile
+        // ayrıca (kapaliKalmaGerekliGun hesabında) uygulanır.
         for (let m = 302; m <= 339; m++) {
-            ACIK_DS_TABLOSU.push({ key: `TCK ${m}`, acik: 1, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true });
+            ACIK_DS_TABLOSU.push({ key: `TCK ${m}`, acik: 2, dsOnce: 1, dsSonra: 1, istisna106: true, ds2020Istisna: true, teyitli: true });
         }
 
         function getAcikDsBilgi(sucMadde) {
@@ -928,11 +979,11 @@
                 const trimmed = sucMadde.trim();
                 for (const rec of ACIK_DS_TABLOSU) {
                     if (trimmed.startsWith(rec.key)) {
-                        return { acik: rec.acik, dsOnce: rec.dsOnce, dsSonra: rec.dsSonra, istisna106: rec.istisna106, eslesme: rec.key, teyitli: rec.teyitli };
+                        return { acik: rec.acik, dsOnce: rec.dsOnce, dsSonra: rec.dsSonra, istisna106: rec.istisna106, ds2020Istisna: rec.ds2020Istisna, eslesme: rec.key, teyitli: rec.teyitli };
                     }
                 }
             }
-            return { acik: ACIK_DS_VARSAYILAN.acik, dsOnce: ACIK_DS_VARSAYILAN.dsOnce, dsSonra: ACIK_DS_VARSAYILAN.dsSonra, istisna106: ACIK_DS_VARSAYILAN.istisna106, eslesme: 'Diğer Suçlar (Varsayılan)', teyitli: false };
+            return { acik: ACIK_DS_VARSAYILAN.acik, dsOnce: ACIK_DS_VARSAYILAN.dsOnce, dsSonra: ACIK_DS_VARSAYILAN.dsSonra, istisna106: ACIK_DS_VARSAYILAN.istisna106, ds2020Istisna: ACIK_DS_VARSAYILAN.ds2020Istisna, eslesme: 'Diğer Suçlar (Varsayılan)', teyitli: false };
         }
 
         // "1/2", "2/3" gibi oran metnini ondalık sayıya çevirir
@@ -2065,7 +2116,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '') {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false) {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -2143,8 +2194,12 @@
                         </select>
                     </div>
                     <label class="flex items-center gap-1.5 text-[10px] text-slate-500 pt-0.5">
-                        <input type="checkbox" class="penalty-orgutlu accent-amber-500" ${orgutlu ? 'checked' : ''}>
+                        <input type="checkbox" class="penalty-orgutlu accent-amber-500" onchange="this.closest('tr').querySelector('.penalty-etkin-pismanlik-wrap').classList.toggle('hidden', !this.checked); if (!this.checked) this.closest('tr').querySelector('.penalty-etkin-pismanlik').checked = false; calculateAll();" ${orgutlu ? 'checked' : ''}>
                         Örgütlü Suç (5275 s.K. m.107/4)
+                    </label>
+                    <label class="flex items-center gap-1.5 text-[10px] text-amber-700 pt-0.5 penalty-etkin-pismanlik-wrap ${orgutlu ? '' : 'hidden'}">
+                        <input type="checkbox" class="penalty-etkin-pismanlik accent-amber-500" ${etkinPismanlik ? 'checked' : ''}>
+                        TCK 221 Etkin Pişmanlıktan Yararlandı (1/3 yatar, koşulluya 2 yıl kala açık)
                     </label>
                     <div class="flex items-center gap-1 pt-0.5 penalty-ekgun-wrap ${manuelOran ? '' : 'hidden'}">
                         <span class="text-[10px] text-slate-500 w-16">Mükerrir Gün:</span>
@@ -2466,6 +2521,15 @@
             // zaten yoktur, bu nedenle bu diziye dahil edilmez.
             const muebbetAdaylar = [];
 
+            // R1 (firar, kullanıcı onayı 2026-11-10): TCK 292/1 veya 292/2'den
+            // mahkumiyet SAYISI, burada toplanır; mahsup tablosundaki "Açık CİK
+            // (Firar)" kayıt sayısıyla birlikte aşağıda firarSayisi'na eklenir.
+            // firarTarihleri, "firar tarihi 31/07/2023'ten sonra mı" sorusunun
+            // cevaplanması için her bir firar kaydının (madde veya mahsup) suç/
+            // başlangıç tarihini tutar.
+            let firarSucuSayisi = 0;
+            const firarTarihleri = [];
+
             // 108/9 madde çocuk indirimi (TCK 102/2, 103, 104/2-3, 188): doğum tarihi,
             // satır döngüsünden ÖNCE burada okunur ki her satırın kendi suç tarihiyle
             // karşılaştırılabilsin. Hükümlü suç tarihinde 18 yaşını doldurmamışsa bu
@@ -2485,7 +2549,16 @@
                 const sTarih = row.querySelector('.penalty-suc-tarihi').value;
                 const orgutluEl = row.querySelector('.penalty-orgutlu');
                 const orgutlu = orgutluEl ? orgutluEl.checked : false;
+                const etkinPismanlikEl = row.querySelector('.penalty-etkin-pismanlik');
+                const etkinPismanlikChecked = orgutlu && etkinPismanlikEl ? etkinPismanlikEl.checked : false;
                 const isOzelInfazRow = OZEL_INFAZ_TIPLERI.includes(sureTip);
+
+                // R1 (firar, kullanıcı onayı 2026-11-10): bu satır TCK 292/1 veya
+                // 292/2'den bir mahkumiyet ise firar sayacına eklenir.
+                if (isFirarSucuMaddesi(sucMadde)) {
+                    firarSucuSayisi++;
+                    firarTarihleri.push(sTarih ? new Date(sTarih) : null);
+                }
 
                 // 5411 S.K. m.167 — bu satır zimmet (m.160) ise ve borç "Ödenmedi" işaretliyse.
                 const zimmetSelRow = row.querySelector('.penalty-zimmet-odeme');
@@ -2510,7 +2583,15 @@
                     // 30/03/2020 eşiğine göre sabit belirlenir (bkz. aşağıdaki hesaplama
                     // bloğu: dsKalaTemelYil). Buradaki tablo yalnızca "acik" (açık cezaevi
                     // kala-yıl) ve istisna106/teyitli bilgisi için kullanılır.
-                    const acikDsBilgi = getAcikDsBilgi(sucMadde);
+                    let acikDsBilgi = getAcikDsBilgi(sucMadde);
+                    // TCK 221 Etkin Pişmanlık (R4, kullanıcı onayı 2026-11-10): örgütlü
+                    // suç satırında bu kutu işaretliyse, maddenin tablo değeri ne olursa
+                    // olsun bu satır için açık süresi 2 yıl kalaya ve istisna
+                    // bayrakları true'ya sabitlenir (1/3 kapalı kalma şartı, terorDevletSucu
+                    // bayrağı üzerinden ayrıca uygulanır).
+                    if (etkinPismanlikChecked) {
+                        acikDsBilgi = { ...acikDsBilgi, acik: 2, istisna106: true, ds2020Istisna: true, eslesme: 'TCK 221 Etkin Pişmanlık', teyitli: true };
+                    }
                     const sucTarihiDate = sTarih ? new Date(sTarih) : null;
                     // Doğrudan açık ceza infaz kurumuna alınma şartındaki "toplam ceza"
                     // bu satırın HÜKMEDİLEN (ham, oran uygulanmamış) gün sayısıdır —
@@ -2523,26 +2604,39 @@
                     acikDsAdaylar.push({
                         acik: acikDsBilgi.acik,
                         istisna106: acikDsBilgi.istisna106,
+                        ds2020Istisna: acikDsBilgi.ds2020Istisna,
                         teyitli: acikDsBilgi.teyitli,
                         eslesme: acikDsBilgi.eslesme,
                         sucTarihiDate: sucTarihiDate,
+                        sucMadde: sucMadde,
                         mukerrir: mukerrir,
                         sucTuru: isMaddeTaksirli(sucMadde) ? 'taksirli' : 'kasitli',
                         hamGun: rowHamGun,
-                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde)
+                        orgutlu: orgutlu,
+                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked
                     });
                 }
 
-                // Müebbet (ağırlaştırılmış olmayan) satırlar: açığa/denetime ayrılma
-                // süresi sabit olsa da (5 yıl / 1 yıl kala), bu sürelere 30/03/2020 ve
-                // Geçici 10/6 eşikli +3 yıllık haklar aynı istisna suç mantığıyla
-                // uygulanabilir; bunun için suç maddesinin istisna106 bilgisi gerekir.
+                // Müebbet (ağırlaştırılmış olmayan) satırlar: açığa ayrılma süresi artık
+                // SABİT 5 yıl değildir — R6 (kullanıcı onayı, 2026-11-10) gereğince,
+                // müebbete konu suçun maddesine göre ACIK_DS_TABLOSU'ndaki aynı "acik"
+                // değeri kullanılır (örn. hırsızlık/yağma/uyuşturucu imal-ticareti 5 yıl,
+                // kasten öldürme/cinsel suç/diğer suçlar 7 yıl, eşe karşı öldürme 3 yıl).
+                // Denetime ayrılma süresi hâlâ 30/03/2020 eşiğine göre (3 veya 1 yıl)
+                // sabit belirlenir; ds2020Istisna burada da bu eşiğin uygulanıp
+                // uygulanmayacağını gösterir.
                 if (sureTip === 'muebbet') {
-                    const muebbetAcikDsBilgi = getAcikDsBilgi(sucMadde);
+                    let muebbetAcikDsBilgi = getAcikDsBilgi(sucMadde);
+                    if (etkinPismanlikChecked) {
+                        muebbetAcikDsBilgi = { ...muebbetAcikDsBilgi, acik: 2, istisna106: true, ds2020Istisna: true, eslesme: 'TCK 221 Etkin Pişmanlık', teyitli: true };
+                    }
                     muebbetAdaylar.push({
+                        acik: muebbetAcikDsBilgi.acik,
                         istisna106: muebbetAcikDsBilgi.istisna106,
+                        ds2020Istisna: muebbetAcikDsBilgi.ds2020Istisna,
+                        eslesme: muebbetAcikDsBilgi.eslesme,
                         sucTarihiDate: sTarih ? new Date(sTarih) : null,
-                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde)
+                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked
                     });
                 }
 
@@ -2849,10 +2943,11 @@
             let tutuklulukToplamGun = 0;
             // "Açık CİK (Firar)" / "Denetimli Serbestlik (İhlal)" mahsup kayıtları
             // (kullanıcı onayı, 2026-11-10): bu süreler infazdan sayılmaz (grandTotalMahsupDays/
-            // Agirlikli toplamına hiç eklenmez, yani bu kadar gün cezadan düşülmeden kalır)
-            // VE varlıkları açık/denetimli serbestlik haklarını aşağıda tamamen geçersiz kılar
-            // (bkz. hasAcikCikFirar/hasDsIhlal kullanımı).
-            let hasAcikCikFirar = false;
+            // Agirlikli toplamına hiç eklenmez, yani bu kadar gün cezadan düşülmeden kalır).
+            // "Açık CİK (Firar)" kayıtları ayrıca firarSucuSayisi/firarTarihleri'ne eklenir
+            // (R1, bkz. aşağıda firarSucuSayisi >= 2 kontrolü). "Denetimli Serbestlik
+            // (İhlal)" kaydı ise (R1 ile ilgisi olmadığından, değişmeden) tek başına DS
+            // hakkını iptal eder (bkz. hasDsIhlal kullanımı).
             let hasDsIhlal = false;
             const cocukYasMahsupNotlari = []; // açıklama kutusunda listelenecek etkilenen aralıklar
             const mahsupRows = document.querySelectorAll('#mahsupTableBody tr');
@@ -2886,7 +2981,10 @@
                         grandTotalMahsupDays += etkinGun;
                     }
                     if (tur === 'tutukluluk' || tur === 'gozalti') tutuklulukToplamGun += diffDays;
-                    if (tur === 'acik_cik_firar' && diffDays > 0) hasAcikCikFirar = true;
+                    if (tur === 'acik_cik_firar' && diffDays > 0) {
+                        firarSucuSayisi++;
+                        firarTarihleri.push(sDate);
+                    }
                     if (tur === 'ds_ihlal' && diffDays > 0) hasDsIhlal = true;
                     mahsupAraliklari.push({ no: rowIdx + 1, tur, sDate, eDate });
 
@@ -3156,17 +3254,25 @@
                 acikAyrilmaMetin = "Açığa Ayrılma Hakkı Yok (Ağırlaştırılmış Müebbet)";
                 dsAyrilmaMetin = "Uygulanmaz (Ağırlaştırılmış Müebbet)";
             } else if (mCount > 0) {
-                // Müebbette açığa ayrılma için TEMEL süre madde 14 gereği SABİT 5 yıl
-                // kaladır, denetimli serbestlik için TEMEL süre SABİT 1 yıl kaladır.
+                // R6 (kullanıcı onayı, 2026-11-10): müebbette açığa ayrılma için TEMEL
+                // süre artık sabit 5 yıl DEĞİLDİR; hükümlünün müebbete konu suçunun
+                // maddesine göre (ACIK_DS_TABLOSU'ndaki aynı "acik" değeri — örn.
+                // hırsızlık/yağma/uyuşturucu imal-ticareti 5 yıl, kasten öldürme/cinsel
+                // suç/diğer suçlar 7 yıl, eşe karşı öldürme 3 yıl) belirlenir; içtimada
+                // birden fazla müebbet varsa STT'ye en az süre istenen suç esas alınır
+                // (Açık Yön. m.6/3 ile aynı mantık). Denetime ayrılma için TEMEL süre
+                // hâlâ SABİT 1 yıl kaladır (30/03/2020 öncesi istisnasız suçlarda 3 yıl).
                 // Bu temel süreler, süreli hapisteki AYNI mantıkla, suç tarihine ve
                 // işlenen suçun istisna suç olup olmamasına göre 30/03/2020 ve Geçici
                 // 10/6 (31/07/2023) eşiklerinden +3 yıl alabilir; çünkü bu düzenlemeler
                 // cezanın süreli/müebbet olmasına bakmaz, SUÇUN istisna kapsamında olup
                 // olmadığına bakar (kullanıcı onayıyla eklenmiştir).
+                const temelAcikKalaM = Math.min(...muebbetAdaylar.map(r => r.acik));
                 const anyIstisnaM = muebbetAdaylar.some(r => r.istisna106);
+                const anyDs2020IstisnaM = muebbetAdaylar.some(r => r.ds2020Istisna);
                 const anyTarihsizM = muebbetAdaylar.some(r => !r.sucTarihiDate);
 
-                const allBefore30032020M = !anyTarihsizM && !anyIstisnaM && muebbetAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
+                const allBefore30032020M = !anyTarihsizM && !anyDs2020IstisnaM && muebbetAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYilM = allBefore30032020M ? 3 : 1;
                 const esik30032020EkM = allBefore30032020M ? 3 : 0;
 
@@ -3174,31 +3280,39 @@
                 const gecici106UygulanirM = !anyIstisnaM && allBeforeGecici106M && !allBefore30032020M;
                 const gecici106EkM = gecici106UygulanirM ? 3 : 0;
 
-                const acikKalaYilToplamM = 5 + esik30032020EkM + gecici106EkM;
+                const acikKalaYilToplamM = temelAcikKalaM + esik30032020EkM + gecici106EkM;
                 const dsKalaYilToplamM = dsKalaTemelYilM + gecici106EkM;
                 const acikKalaGun = acikKalaYilToplamM * 365;
                 const dsKalaGun = dsKalaYilToplamM * 365;
 
+                // R2 (kullanıcı onayı, 2026-11-10): "cezanın 1/10'unun (veya terör/
+                // örgüt suçlarında 1/3'ünün) kapalı ceza infaz kurumunda geçirilmesi"
+                // şartı MÜEBBET HAPİS İÇİN ARANMAZ. Bu nedenle, süreli hapisteki fallback
+                // mantığından farklı olarak burada kapaliKalmaGerekliGun hiç kullanılmaz;
+                // yeterli süre henüz geçmemişse en erken D0 (infazın başlangıcı) esas
+                // alınır ve kapaliKalmaSartMetni bu metinlere EKLENMEZ.
                 acikAyrilmaMetin = sttDays > acikKalaGun
                     ? formatDate(addDays(sttDate, -acikKalaGun))
-                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
+                    : formatDate(D0);
                 dsAyrilmaMetin = sttDays > dsKalaGun
                     ? formatDate(addDays(sttDate, -dsKalaGun))
-                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
-                acikAyrilmaMetin += ` (Müebbet nedeniyle ve suç tarihine göre STT'den ${acikKalaYilToplamM} yıl kala açığa ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
-                dsAyrilmaMetin += ` (Müebbet nedeniyle ve suç tarihine göre STT'den ${dsKalaYilToplamM} yıl kala denetimli serbestliğe ayrılma hakkı vardır.) (${kapaliKalmaSartMetni})`;
+                    : formatDate(D0);
+                acikAyrilmaMetin += ` (Müebbete konu suça ve suç tarihine göre STT'den ${acikKalaYilToplamM} yıl kala açığa ayrılma hakkı vardır. Müebbet hapiste asgari kapalı kalma şartı aranmaz.)`;
+                dsAyrilmaMetin += ` (Müebbete konu suça ve suç tarihine göre STT'den ${dsKalaYilToplamM} yıl kala denetimli serbestliğe ayrılma hakkı vardır. Müebbet hapiste asgari kapalı kalma şartı aranmaz.)`;
 
                 const notParcalariM = [];
                 if (anyTarihsizM) {
                     notParcalariM.push(`Müebbetteki suçun tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sabit) kabul edilmiştir.`);
-                } else if (anyIstisnaM) {
-                    notParcalariM.push(`Müebbetteki suç istisna suç kapsamında olduğundan, suç tarihi ne olursa olsun 30/03/2020 eşikli ve Geçici 10/6. madde kapsamındaki +3 yıllık erken açık/denetimli serbestlik hakları uygulanmamış, açığa ayrılma süresi 5 yıl, denetimli serbestliğe ayrılma süresi 1 yıl (sabit) olarak hesaplanmıştır.`);
                 } else if (allBefore30032020M) {
                     notParcalariM.push(`Müebbetteki suç 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe ayrılma süresi 3 yıl olarak, açığa ayrılma süresine de +3 yıl eklenerek hesaplanmıştır.`);
+                } else if (anyDs2020IstisnaM) {
+                    notParcalariM.push(`Müebbetteki suç, 30/03/2020 eşikli 3 yıllık denetimli serbestlik ayrıcalığının istisnası kapsamındaki bir suç olduğundan (örn. kasten öldürme, cinsel suç, uyuşturucu imal/ticareti, özel hayatın gizliliği, terör veya eşe/üstsoy/altsoy/kardeşe karşı suçlar), suç tarihi ne olursa olsun denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmıştır.`);
                 } else {
                     notParcalariM.push(`Müebbetteki suç 30/03/2020'den sonra işlendiğinden, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmış ve 30/03/2020 eşikli +3 yıllık açığa ayrılma hakkı uygulanmamıştır.`);
                 }
-                if (!anyIstisnaM) {
+                if (anyIstisnaM) {
+                    notParcalariM.push(`Ayrıca müebbetteki suç, Geçici 10/6. madde (31/07/2023) kapsamındaki istisna suçlardan olduğundan, bu maddeye bağlı +3 yıllık erken açık/denetimli serbestlik hakkı hiç uygulanmamıştır.`);
+                } else {
                     if (gecici106UygulanirM) {
                         notParcalariM.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, suçun tarihi 31/07/2023 ve öncesi olduğundan açığa ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
                     } else if (!anyTarihsizM && !allBeforeGecici106M) {
@@ -3209,6 +3323,7 @@
             } else if (acikDsAdaylar.length > 0) {
                 const temelAcikKala = Math.min(...acikDsAdaylar.map(r => r.acik));
                 const anyIstisna106 = acikDsAdaylar.some(r => r.istisna106);
+                const anyDs2020Istisna = acikDsAdaylar.some(r => r.ds2020Istisna);
                 const anyTarihsiz = acikDsAdaylar.some(r => !r.sucTarihiDate);
 
                 /* ====================================================================
@@ -3241,12 +3356,44 @@
                     dogrudanAcikDurum = 'karma_belirsiz';
                 }
 
+                /* ====================================================================
+                   R11 — 01/07/2016 ÖNCESİ, 5 YILDAN AZ HAPİS CEZASINDA "3 GÜN İÇİNDE
+                   DOĞRUDAN AÇIK" (kullanıcı onayı, 2026-11-10): İçtimadaki suçların
+                   TAMAMI 01/07/2016'dan ÖNCE işlenmiş, toplam hapis cezası 5 yıldan az
+                   (kasıtlı/taksirli ayrımı yapılmaksızın) ve içtimada R11 istisna
+                   suçlarından (terör/örgüt, kasten öldürme, cinsel suç, özel hayatın
+                   gizliliği, uyuşturucu imal/ticareti) HİÇBİRİ yoksa; hükümlü İYİ HALLİ
+                   ise cezaevine girişinden itibaren 3 GÜN İÇİNDE açık ceza infaz
+                   kurumuna ayrılabilir. Bu, yukarıdaki (3 yıl kasıtlı/5 yıl taksirli,
+                   2. mükerrerlik şartlı) genel "doğrudan açık" kuralından AYRI ve ONDAN
+                   DAHA GENİŞ bir imkandır (mükerrerlik burada aranmaz); bu nedenle
+                   yalnızca genel kural bu içtimaya UYGULANAMADIYSA ('kapali_baslar'
+                   durumundaysa) devreye girer — zaten doğrudan açığa hak kazanılmışsa
+                   (dogrudan_acik) tekrar değerlendirmeye gerek yoktur.
+                   ==================================================================== */
+                const hukumluIyiHalliEl = document.getElementById('hukumluIyiHalli');
+                const hukumluIyiHalli = hukumluIyiHalliEl ? hukumluIyiHalliEl.checked : false;
+                const R11_ESIK_TARIHI = new Date('2016-07-01T00:00:00');
+                const anyR11Istisna = acikDsAdaylar.some(r => isR11IstisnaMaddesi(r.sucMadde) || r.orgutlu);
+                const allBefore20160701 = !anyTarihsiz && acikDsAdaylar.every(r => r.sucTarihiDate < R11_ESIK_TARIHI);
+                const r11Uygun = dogrudanAcikDurum === 'kapali_baslar' && !anyR11Istisna && !anyTarihsiz
+                    && allBefore20160701 && toplamSureliHapisGun < 5 * 365 && hukumluIyiHalli;
+                if (r11Uygun) {
+                    dogrudanAcikDurum = 'dogrudan_acik_3gun';
+                }
+
                 // --- 30/03/2020 eşiği kuralı: denetim süresinin kendisini belirler +
                 // açığa ayrılmaya ayrıca +3 yıl eklenir. İçtimadaki suçlardan biri bile
-                // 30/03/2020'den SONRA ise tüm içtima için 1 yıla düşer. İstisna suç
-                // varsa (anyIstisna106), suç tarihi ne olursa olsun bu +3 yıl hiç
-                // uygulanmaz (kullanıcı onayıyla güncellenmiştir).
-                const allBefore30032020 = !anyTarihsiz && !anyIstisna106 && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
+                // 30/03/2020'den SONRA ise tüm içtima için 1 yıla düşer. R12 (kullanıcı
+                // onayı, 2026-11-10): bu +3 yıllık ayrıcalığın İSTİSNASI ("ds2020Istisna"),
+                // Geçici 10/6. maddenin istisna listesinden (istisna106/anyIstisna106)
+                // AYRI ve DAHA GENİŞTİR — örn. kasten öldürme (TCK 81/82/83), eşe veya
+                // üstsoy/altsoy/kardeşe karşı yaralama (86/3-a, 87/2-d), eziyet (96),
+                // cinsel suçlar, uyuşturucu imal/ticareti (188) ve özel hayatın gizliliği
+                // (132-138), Geçici 10/6 kapsamında +3 yıl HAK ETSE DE (istisna106:false),
+                // 30/03/2020 öncesi işlenmiş olsalar bile denetime HER ZAMAN 1 yıl kaladır,
+                // 3 yıl kala DEĞİLDİR (anyDs2020Istisna kullanılır, anyIstisna106 değil).
+                const allBefore30032020 = !anyTarihsiz && !anyDs2020Istisna && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYil = allBefore30032020 ? 3 : 1;
                 const esik30032020Ek = allBefore30032020 ? 3 : 0;
 
@@ -3278,14 +3425,16 @@
                 const notParcalari = [];
                 if (anyTarihsiz) {
                     notParcalari.push(`İçtimadaki bir veya daha fazla cezanın suç tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sonrası) kabul edilmiştir.`);
-                } else if (anyIstisna106) {
-                    notParcalari.push(`İçtimadaki suçlardan en az biri istisna suç kapsamında olduğundan, suç tarihi ne olursa olsun 30/03/2020 eşikli ve Geçici 10/6. madde kapsamındaki +3 yıllık erken açık/denetimli serbestlik hakları hiç uygulanmamış, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmıştır.`);
                 } else if (allBefore30032020) {
                     notParcalari.push(`İçtimadaki suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe ayrılma süresi 3 yıl olarak, açık cezaevine ayrılma süresine de +3 yıl eklenerek hesaplanmıştır.`);
+                } else if (anyDs2020Istisna) {
+                    notParcalari.push(`İçtimadaki suçlardan en az biri, 30/03/2020 eşikli 3 yıllık denetimli serbestlik ayrıcalığının istisnası kapsamındaki bir suç olduğundan (örn. kasten öldürme, cinsel suç, uyuşturucu imal/ticareti, özel hayatın gizliliği, terör veya eşe/üstsoy/altsoy/kardeşe karşı suçlar), suç tarihi ne olursa olsun denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmıştır.`);
                 } else {
                     notParcalari.push(`İçtimadaki suçlardan en az biri 30/03/2020'den sonra işlendiğinden, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmış ve 30/03/2020 eşikli +3 yıllık açık cezaevi hakkı uygulanmamıştır.`);
                 }
-                if (!anyIstisna106) {
+                if (anyIstisna106) {
+                    notParcalari.push(`İçtimadaki suçlardan en az biri, Geçici 10/6. madde (31/07/2023) kapsamındaki istisna suçlardan olduğundan, bu maddeye bağlı +3 yıllık erken açık/denetimli serbestlik hakkı hiç uygulanmamıştır.`);
+                } else {
                     if (gecici106Uygulanir) {
                         notParcalari.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, içtimadaki suçların tamamının tarihi 31/07/2023 ve öncesi olduğundan açık cezaevine ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
                     } else if (!anyTarihsiz && !allBeforeGecici106) {
@@ -3301,6 +3450,8 @@
                         ? `kasıtlı suçlardan toplam ${toplamSureliHapisGun} gün (3 yıl veya altı) hapis cezasına`
                         : `taksirli suçlardan toplam ${toplamSureliHapisGun} gün (5 yıl veya altı) hapis cezasına`;
                     notParcalari.unshift(`HÜKÜMLÜ DOĞRUDAN AÇIK CEZA İNFAZ KURUMUNA ALINIR: ${esasGerekce} mahkûm olunmuş, istisna suç işlenmemiş ve 2. kez mükerrirlik bulunmadığından, hükümlü hiç kapalı ceza infaz kurumuna girmeden doğrudan açık ceza infaz kurumuna alınabilir.`);
+                } else if (dogrudanAcikDurum === 'dogrudan_acik_3gun') {
+                    notParcalari.unshift(`HÜKÜMLÜ 3 GÜN İÇİNDE AÇIK CEZA İNFAZ KURUMUNA ALINIR: İçtimadaki suçların tamamı 01/07/2016 tarihinden önce işlenmiş, toplam hapis cezası 5 yıldan az olup istisna suç (terör/örgüt, kasten öldürme, cinsel suç, özel hayatın gizliliği, uyuşturucu imal/ticareti) bulunmamakta ve hükümlü iyi hallidir; bu nedenle cezaevine giriş tarihinden itibaren 3 gün içinde açık ceza infaz kurumuna ayrılabilir.`);
                 } else if (dogrudanAcikDurum === 'karma_belirsiz') {
                     notParcalari.unshift(`UYARI: İçtimada hem kasıtlı hem taksirli suç birlikte bulunduğundan, doğrudan açık ceza infaz kurumuna alınma şartı (kasıtlıda 3 yıl, taksirlide 5 yıl) otomatik değerlendirilememiştir; lütfen elle inceleyiniz.`);
                 }
@@ -3315,25 +3466,42 @@
                     // hiç kapalıya girmez.
                     acikAyrilmaMetin = `${formatDate(D0)} (Doğrudan - hiç kapalıya girmeden, infazın başladığı tarihten itibaren açık ceza infaz kurumunda)`;
                     dsAyrilmaMetin += ` (Kapalı kalma şartı bu hükümlü için uygulanmaz; doğrudan açığa alınmıştır.)`;
+                } else if (dogrudanAcikDurum === 'dogrudan_acik_3gun') {
+                    acikAyrilmaMetin = `${formatDate(addDays(D0, 3))} (01/07/2016 öncesi, 5 yıldan az hapis cezası ve iyi hal nedeniyle, cezaevine girişten itibaren 3 gün içinde açık ceza infaz kurumuna ayrılma hakkı)`;
+                    dsAyrilmaMetin += ` (Kapalı kalma şartı bu hükümlü için uygulanmaz; 3 gün içinde doğrudan açığa alınmıştır.)`;
                 } else {
                     acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
                     dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
                 }
             }
 
-            // AÇIK CİK (FİRAR) / DENETİMLİ SERBESTLİK (İHLAL) MAHSUP KAYDI VARSA
-            // (kullanıcı onayı, 2026-11-10): yukarıda hesaplanan açık/DS hakkı
-            // tamamen geçersiz kılınır. Kapalı ceza infaz kurumundan FİRAR varsa,
-            // açık ceza infaz kurumuna ayrılma hakkı hiç kullanılamaz; DS hakkı da
-            // açık hakkının ön şartına bağlı olduğundan aynı şekilde uygulanmaz.
-            // Denetimli serbestlik İHLALİ varsa, DS hakkı o aşamada iptal edilmiş
-            // sayılır ve hükümlü yeniden kapalı ceza infaz kurumunda infaza devam
-            // eder; daha önce kullanılmış olan açık hakkı bundan etkilenmez.
-            if (hasAcikCikFirar) {
-                acikAyrilmaMetin = 'Açık Ceza İnfaz Kurumuna Ayrılma Hakkı YOKTUR (kapalı ceza infaz kurumundan firar nedeniyle).';
-                dsAyrilmaMetin = 'Denetimli Serbestliğe Ayrılma Hakkı YOKTUR (açık hakkının ön şartı olan firar yasağı ihlal edilmiştir).';
-                acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Mahsup tablosunda "Açık CİK (Firar)" kaydı bulunduğundan, hükümlünün açık ceza infaz kurumuna ve denetimli serbestliğe ayrılma hakkı tamamen ortadan kalkmıştır.';
-            } else if (hasDsIhlal) {
+            // R1 — "2 KEZ FİRAR" KURALI (kullanıcı onayı, 2026-11-10): hükümlünün
+            // ceza bilgilerindeki TCK 292/1-2 mahkumiyet SAYISI ile mahsup
+            // tablosundaki "Açık CİK (Firar)" kayıt SAYISI TOPLANIR. Toplam 2 veya
+            // daha fazlaysa hükümlü "2 kez firar etmiş" sayılır: açık ceza infaz
+            // kurumuna ayrılma hakkı tamamen ve kalıcı olarak ortadan kalkar. DS
+            // hakkı ise firar tarihine bağlıdır: firar kayıtlarından biri bile
+            // 31/07/2023'ten SONRAysa DS hakkı da tamamen kalkar; tüm firar
+            // tarihleri 31/07/2023 ve öncesindeyse DS hakkı yukarıda hesaplanan
+            // (madde/tarihe göre, +3 dahil) süreyle AYNEN kullanılabilir — bu
+            // durumda dsAyrilmaMetin BURADA değiştirilmez. Tek bir firar kaydı
+            // (madde VEYA mahsup, toplamda 1) bu kuralı TETİKLEMEZ; açık/DS hakkı
+            // normal şekilde hesaplanmaya devam eder (kullanıcının mesajında
+            // açıkça yalnızca "2 kez firar" durumu düzenlendiğinden, 1 firar için
+            // ayrı bir kısıtlama varsayılmamıştır — bu bir YORUM kararıdır).
+            // Denetimli serbestlik İHLALİ (hasDsIhlal) ayrı ve değişmemiş bir
+            // kuraldır: tek bir "DS (İhlal)" kaydı DS hakkını tek başına iptal eder.
+            if (firarSucuSayisi >= 2) {
+                acikAyrilmaMetin = 'Açık Ceza İnfaz Kurumuna Ayrılma Hakkı YOKTUR (2 kez firar nedeniyle — TCK 292/1-2 mahkumiyeti ve/veya mahsup tablosundaki "Açık CİK (Firar)" kaydı toplamı 2 veya daha fazladır).';
+                const firarTarihiSonrasi20230731 = firarTarihleri.some(d => d && d > GECICI_10_6_ESIK_TARIHI);
+                if (firarTarihiSonrasi20230731) {
+                    dsAyrilmaMetin = 'Denetimli Serbestliğe Ayrılma Hakkı YOKTUR (2 kez firar ve firar tarihlerinden en az biri 31/07/2023 tarihinden sonra olduğu için).';
+                    acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Hükümlü 2 kez firar etmiş sayıldığından (TCK 292/1-2 mahkumiyeti ve/veya mahsup "Açık CİK (Firar)" kaydı toplamı ≥ 2) açık ceza infaz kurumuna ayrılma hakkı tamamen ortadan kalkmış; firar tarihlerinden en az biri 31/07/2023 sonrası olduğundan denetimli serbestlik hakkı da ortadan kalkmıştır.';
+                } else {
+                    acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Hükümlü 2 kez firar etmiş sayıldığından (TCK 292/1-2 mahkumiyeti ve/veya mahsup "Açık CİK (Firar)" kaydı toplamı ≥ 2) açık ceza infaz kurumuna ayrılma hakkı tamamen ortadan kalkmıştır. Firar tarihlerinin tamamı 31/07/2023 ve öncesinde olduğundan, denetimli serbestliğe ayrılma hakkı (yukarıda hesaplanan süre ve varsa +3 yıllık ek hak dahil) etkilenmemiştir.';
+                }
+            }
+            if (hasDsIhlal) {
                 dsAyrilmaMetin = 'Denetimli Serbestlik Hakkı İHLAL NEDENİYLE İPTAL EDİLMİŞTİR — hükümlü yeniden kapalı ceza infaz kurumunda infaza devam eder.';
                 acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Mahsup tablosunda "Denetimli Serbestlik (İhlal)" kaydı bulunduğundan, denetimli serbestlik hakkı iptal edilmiş sayılmıştır.';
             }
@@ -3626,6 +3794,7 @@
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
+                    etkinPismanlik: row.querySelector('.penalty-etkin-pismanlik') ? row.querySelector('.penalty-etkin-pismanlik').checked : false,
                     apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0,
                     zimmetOdeme: row.querySelector('.penalty-zimmet-odeme') ? row.querySelector('.penalty-zimmet-odeme').value : ''
                 });
@@ -3682,7 +3851,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '');
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik);
                         });
                     }
 
