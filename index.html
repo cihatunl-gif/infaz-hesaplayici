@@ -2617,26 +2617,37 @@
                     });
                 }
 
-                // Müebbet (ağırlaştırılmış olmayan) satırlar: açığa ayrılma süresi artık
-                // SABİT 5 yıl değildir — R6 (kullanıcı onayı, 2026-11-10) gereğince,
-                // müebbete konu suçun maddesine göre ACIK_DS_TABLOSU'ndaki aynı "acik"
-                // değeri kullanılır (örn. hırsızlık/yağma/uyuşturucu imal-ticareti 5 yıl,
-                // kasten öldürme/cinsel suç/diğer suçlar 7 yıl, eşe karşı öldürme 3 yıl).
-                // Denetime ayrılma süresi hâlâ 30/03/2020 eşiğine göre (3 veya 1 yıl)
-                // sabit belirlenir; ds2020Istisna burada da bu eşiğin uygulanıp
-                // uygulanmayacağını gösterir.
+                // Müebbet (ağırlaştırılmış olmayan) satırlar: açığa ayrılma süresi
+                // KULLANICI DÜZELTMESİ (2026-11-10, 2. tur) — R6'nın ilk uygulamasında
+                // madde bazlı 5/7 yıl ayrımı yapılmıştı; bu YANLIŞTIR. Doğru kural:
+                // TÜM suçlarda açığa ayrılma süresi SABİT 5 yıl kaladır; YALNIZCA eşe
+                // karşı işlenen suçlarda (TCK 82/1-d) 3 yıl kaladır. Terör/anayasal
+                // düzene karşı suçlar/TCK 221 etkin pişmanlık istisnası (R4) ise ayrı
+                // ve daha özel bir kural olarak 2 yıl kalayı KORUR (bu değiştirilmedi).
+                // İstisna106/ds2020Istisna (Geçici 10/6 +3 hakkı ve 30/03/2020 DS
+                // eşiği) hâlâ maddeye göre tablodan okunur — kullanıcı sadece "acik"
+                // (açık kala yıl) değerini düzeltmemizi istedi, başka bir şey değil.
                 if (sureTip === 'muebbet') {
                     let muebbetAcikDsBilgi = getAcikDsBilgi(sucMadde);
                     if (etkinPismanlikChecked) {
-                        muebbetAcikDsBilgi = { ...muebbetAcikDsBilgi, acik: 2, istisna106: true, ds2020Istisna: true, eslesme: 'TCK 221 Etkin Pişmanlık', teyitli: true };
+                        muebbetAcikDsBilgi = { ...muebbetAcikDsBilgi, istisna106: true, ds2020Istisna: true, eslesme: 'TCK 221 Etkin Pişmanlık', teyitli: true };
+                    }
+                    const terorDevletSucuRowM = isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked;
+                    let muebbetAcik;
+                    if (terorDevletSucuRowM) {
+                        muebbetAcik = 2;
+                    } else if (muebbetAcikDsBilgi.eslesme === 'TCK 82/1-d') {
+                        muebbetAcik = 3;
+                    } else {
+                        muebbetAcik = 5;
                     }
                     muebbetAdaylar.push({
-                        acik: muebbetAcikDsBilgi.acik,
+                        acik: muebbetAcik,
                         istisna106: muebbetAcikDsBilgi.istisna106,
                         ds2020Istisna: muebbetAcikDsBilgi.ds2020Istisna,
                         eslesme: muebbetAcikDsBilgi.eslesme,
                         sucTarihiDate: sTarih ? new Date(sTarih) : null,
-                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked
+                        terorDevletSucu: terorDevletSucuRowM
                     });
                 }
 
