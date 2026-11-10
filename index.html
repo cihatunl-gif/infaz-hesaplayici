@@ -125,6 +125,24 @@
                 <div id="pdfFillSonuc" class="hidden mt-2 text-[11px] leading-relaxed"></div>
             </div>
 
+            <!-- Hesaplama Yöntemi: Ayrışık / Bitişik Hesap Seçimi (2026-11-09) -->
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-scale-unbalanced text-amber-500"></i> Hesaplama Yöntemi
+                </h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btnHesapAyrisik" onclick="setHesaplamaYontemi('ayrisik')" class="px-3 py-2 text-xs font-bold rounded-lg border transition">
+                        Ayrışık Hesap
+                    </button>
+                    <button type="button" id="btnHesapBitisik" onclick="setHesaplamaYontemi('bitisik')" class="px-3 py-2 text-xs font-bold rounded-lg border transition">
+                        Bitişik Hesap
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2">
+                    <i class="fa-solid fa-circle-info"></i> <b>Ayrışık:</b> her ceza kalemi kendi oranıyla ayrı hesaplanıp toplanır (bazı savcılıkların kullandığı yöntem, programın varsayılanı). <b>Bitişik:</b> önce aynı orandaki (1/2, 2/3, 3/4) kalemler kendi arasında gün olarak toplanır, oran bu grup toplamına bir kerede uygulanır, sonra gruplar toplanır (bazı savcılıkların kullandığı diğer yöntem). Müebbet, ağırlaştırılmış müebbet, adli para cezası ve özel infaz rejimi kalemleri her iki yöntemde de aynı şekilde (gruplanmadan) hesaplanır; içtima tavanları (28/32 yıl vb.) her iki yöntemde de aynıdır.
+                </p>
+            </div>
+
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                 <div class="flex items-center justify-between mb-3">
@@ -195,7 +213,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                            <i class="fa-solid fa-calendar-check text-amber-500"></i> Mahsup Aralıkları (Gözaltı / Tutukluluk / Denetimli Serbestlik)
+                            <i class="fa-solid fa-calendar-check text-amber-500"></i> Mahsup Aralıkları (Gözaltı / Tutukluluk / Denetimli Serbestlik / Konutta İnfaz)
                         </h2>
                         <button onclick="addMahsupRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Mahsup Ekle
@@ -652,6 +670,25 @@
             { madde: 'TCK 132,133,134,135,136,137,138', aciklama: 'Türk Ceza Kanunu 132,133,134,135,136,137,138', oran: '1/3' },
             { madde: 'TCK (326-339 arası)', aciklama: 'Devletin Sırrına Karşı Suçlar ve Casusluk Suçları', oran: '1/3' },
             { madde: '2937 sayılı Devlet İstihbarat Hizmetleri ve Millî İstihbarat Teşkilatı Kanunu', aciklama: '2937 sayılı Devlet İstihbarat Hizmetleri ve Millî İstihba...', oran: '1/3', tarihEsikli: { tarih: '2016-07-01', oncekiOran: '1/2' } },
+            // 5411 sayılı Bankacılık Kanunu ceza hükümleri (m.150-160) — 2026-11-09 kullanıcı
+            // onayıyla eklendi. Kanun metninde özel bir infaz oranı belirtilmediğinden hepsi
+            // genel varsayılan oranla (1/2 indirim = 1/2 yatar, kasıtlı suç) işaretlendi;
+            // mükerrerlik genel formülle (max(yatar,2/3) / sabit 3/4) otomatik hesaplanır.
+            { madde: '5411 S.K. 150/1', aciklama: 'İzinsiz Bankacılık Faaliyeti / Mevduat-Katılım Fonu Toplama', oran: '1/2' },
+            { madde: '5411 S.K. 150/2', aciklama: 'İzinsiz Banka Adı Kullanma / Banka Gibi Faaliyet Gösterme İzlenimi Verme', oran: '1/2' },
+            { madde: '5411 S.K. 151', aciklama: 'Mevduat ve Katılım Fonu Sahiplerinin Haklarını Engelleme', oran: '1/2' },
+            { madde: '5411 S.K. 152/1', aciklama: 'Düzeltici, İyileştirici ve Kısıtlayıcı Önlemleri Almama', oran: '1/2' },
+            { madde: '5411 S.K. 152/2', aciklama: 'Önlemleri Almama (Nitelikli Pay Sahiplerine Yarar Sağlama Amacıyla)', oran: '1/2' },
+            { madde: '5411 S.K. 153/1', aciklama: 'Yetkili Mercilere/Denetim Görevlilerine Bilgi-Belge Vermeme', oran: '1/2' },
+            { madde: '5411 S.K. 153/2', aciklama: 'Denetim Görevlisinin Görevini Yapmasına Engel Olma', oran: '1/2' },
+            { madde: '5411 S.K. 154', aciklama: 'Belgelerin Saklanması Yükümlülüğüne Aykırılık', oran: '1/2' },
+            { madde: '5411 S.K. 155', aciklama: 'Gerçeğe Aykırı Beyanda Bulunma', oran: '1/2' },
+            { madde: '5411 S.K. 156', aciklama: 'İşlemleri Kayıt Dışı Bırakma / Gerçeğe Aykırı Muhasebeleştirme', oran: '1/2' },
+            { madde: '5411 S.K. 158/1', aciklama: 'İtibarın Zedelenmesi', oran: '1/2' },
+            { madde: '5411 S.K. 159/1', aciklama: 'Sırların Açıklanması', oran: '1/2' },
+            { madde: '5411 S.K. 160/1', aciklama: 'Zimmet (Temel Hâl)', oran: '1/2' },
+            { madde: '5411 S.K. 160/2', aciklama: 'Hileli Zimmet (Açığa Çıkmasını Önlemeye Yönelik Hile İle)', oran: '1/2' },
+            { madde: '5411 S.K. 160/3', aciklama: 'Fona Devredilen Bankada Nitelikli Pay Sahibinin Zimmeti', oran: '1/2' },
             { madde: 'Diğer Diğer', aciklama: 'Diğer', oran: '1/2' },
             { madde: 'TCK 58/9', aciklama: 'Örgüt', oran: '1/3' },
         ];
@@ -716,6 +753,27 @@
                    /^tck\s*309\b/.test(m) ||
                    /^tck\s*31[1-5]\b/.test(m) ||
                    /^tck\s*320\b/.test(m);
+        }
+
+        // ASGARİ KAPALI KALMA ŞARTINDA 1/3 ORANI (kullanıcı onayı, 2026-11-10):
+        // terör örgütü suçları (TCK 314 - Silahlı Terör Örgütü dahil, bkz.
+        // isTerorSucuMaddesi) ve "Devletin Egemenliği Aleyhine İşlenen Suçlar"
+        // (TCK İkinci Kitap Dördüncü Kısım Birinci Bölüm, m.302-308) işleyen
+        // hükümlülerde, açık ceza infaz kurumuna/denetimli serbestliğe ayrılma
+        // için kapalı ceza infaz kurumunda geçirilmesi gereken asgari süre,
+        // genel kural olan "toplam cezanın 1/10'u" YERİNE "toplam cezanın 1/3'ü"
+        // olarak hesaplanır (bkz. aşağıda kapaliKalmaGerekliGun). isTerorSucuMaddesi
+        // zaten 302, 307, 309, 311-315, 320 ve 310/1'i kapsadığından, burada sadece
+        // 303-306 ve 308 (Birinci Bölüm'ün geri kalanı) ile 314 için ayrı bir
+        // güvence eklenmiştir.
+        function isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(maddeText) {
+            if (!maddeText) return false;
+            if (isTerorSucuMaddesi(maddeText)) return true;
+            const m = maddeText.trim().toLocaleLowerCase('tr-TR');
+            if (/^tck\s*30[2-8]\b/.test(m)) return true; // Devletin Egemenliği Aleyhine İşlenen Suçlar (m.302-308)
+            if (/^tck\s*314\b/.test(m)) return true; // Silahlı Terör Örgütü (güvence)
+            if (m.startsWith('terörle mücadele kanunu')) return true;
+            return false;
         }
 
         // Bazı maddelerde (SUC_MADDE_LISTESI'ndeki "tarihEsikli" alanı) infaz oranı,
@@ -856,8 +914,13 @@
         ];
         // TCK 302-339 (2.Kitap 4.Kısım 4,5,6,7.Bölüm: Devletin güvenliği / Anayasal düzen /
         // Milli savunma / Devlet sırları-casusluk) -> Geçici 10/6 istisna listesine girer.
+        // Kullanıcı onayı (2026-11-10): bu bölümdeki (devletin egemenliğine karşı/
+        // terör örgütü ile bağlantılı) suçlarda açık ceza infaz kurumuna ayrılma
+        // süresi 1 yıl kaladır (eski "7 yıl açık" genel değeri yerine). istisna106:true
+        // olduğundan denetimli serbestliğe ayrılma süresi de (aşağıdaki allBefore30032020
+        // mantığı gereği) suç tarihine BAKILMAKSIZIN zaten sabit 1 yıl kaladır.
         for (let m = 302; m <= 339; m++) {
-            ACIK_DS_TABLOSU.push({ key: `TCK ${m}`, acik: 7, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: false });
+            ACIK_DS_TABLOSU.push({ key: `TCK ${m}`, acik: 1, dsOnce: 1, dsSonra: 1, istisna106: true, teyitli: true });
         }
 
         function getAcikDsBilgi(sucMadde) {
@@ -909,6 +972,26 @@
             if (banner) banner.classList.add('hidden');
         }
 
+        // HESAPLAMA YÖNTEMİ (2026-11-09): bazı savcılıklar "ayrışık" (her ceza kalemi
+        // kendi oranıyla ayrı hesaplanır — programın her zamanki/varsayılan yöntemi),
+        // bazıları "bitişik" (aynı orandaki kalemler önce kendi aralarında gün olarak
+        // toplanır, oran bu grup toplamına bir kerede uygulanır) hesap yapıyor. Bu
+        // seçim sadece ORAN-BAZLI SÜRELİ HAPİS kalemlerinin yatar gün hesabını
+        // değiştirir (bkz. calculateAll() içindeki bitisikGruplar bloğu); müebbet,
+        // ağırlaştırılmış müebbet, adli para cezası, özel infaz rejimi kalemleri ve
+        // içtima (tavan) mantığı her iki yöntemde de AYNI kalır (kullanıcı onayı).
+        let hesaplamaYontemi = 'ayrisik';
+        function setHesaplamaYontemi(yontem) {
+            hesaplamaYontemi = yontem;
+            const btnA = document.getElementById('btnHesapAyrisik');
+            const btnB = document.getElementById('btnHesapBitisik');
+            const aktif = 'bg-amber-500 text-slate-950 border-amber-500';
+            const pasif = 'bg-slate-50 text-slate-500 border-slate-300 hover:bg-slate-100';
+            if (btnA) btnA.className = `px-3 py-2 text-xs font-bold rounded-lg border transition ${yontem === 'ayrisik' ? aktif : pasif}`;
+            if (btnB) btnB.className = `px-3 py-2 text-xs font-bold rounded-lg border transition ${yontem === 'bitisik' ? aktif : pasif}`;
+            calculateAll();
+        }
+
         // TCK 149/1-f ve 149/1-g bentleri (ve bunların birleşimi 149/1-f-g), suç örgütünün
         // korkutucu gücünden yararlanma / örgüte yarar sağlama amacı taşıdığından, 5275 s.K.
         // m.107/4 anlamında örgütlü suç niteliğindedir. Bu maddelerden biri seçildiğinde
@@ -927,6 +1010,25 @@
             }
         }
 
+        // 5411 sayılı Bankacılık Kanunu m.160 (Zimmet) seçildiğinde, aynı Kanunun 167.
+        // maddesi gereği (Fona/Hazineye olan borç/tazminat ödenmedikçe koşullu salıverilme
+        // hükümleri uygulanmaz) satırın altında kırmızı bir uyarı kutusu ve zorunlu bir
+        // "ödendi mi?" seçimi gösterilir. Kullanıcı bu seçimi yapmadan Hesapla çalışmaz
+        // (bkz. calculateAll başındaki doğrulama). "Ödenmedi" seçilirse STT/açık/DS hiç
+        // hesaplanmaz (bkz. calculateAll sonundaki zimmetKosulluUygulanmaz bloğu).
+        const ZIMMET_MADDE_PREFIX = '5411 S.K. 160/';
+        function applyZimmetUyari(tr, maddeText) {
+            if (!tr) return;
+            const box = tr.querySelector('.penalty-zimmet-uyari');
+            if (!box) return;
+            const isZimmet = (maddeText || '').trim().startsWith(ZIMMET_MADDE_PREFIX);
+            box.classList.toggle('hidden', !isZimmet);
+            if (!isZimmet) {
+                const sel = box.querySelector('.penalty-zimmet-odeme');
+                if (sel) sel.value = '';
+            }
+        }
+
         // Kullanıcı suç maddesi alanına yazdıkça, listede eşleşen bir kayıt varsa
         // infaz oranını otomatik önerir (kullanıcı dilediği zaman kendi değiştirebilir)
         function onSucMaddeInput(inputEl) {
@@ -937,6 +1039,7 @@
                 oranSelect.value = indirimToYatarOranStr(info.oran);
             }
             applyAutoOrgutlu(tr, inputEl.value);
+            applyZimmetUyari(tr, inputEl.value);
             renderSucMaddeSuggestions(inputEl);
         }
 
@@ -976,6 +1079,7 @@
             const oranSelect = tr ? tr.querySelector('.penalty-oran') : null;
             if (oranSelect && itemEl.dataset.oran) oranSelect.value = indirimToYatarOranStr(itemEl.dataset.oran);
             applyAutoOrgutlu(tr, itemEl.dataset.madde);
+            applyZimmetUyari(tr, itemEl.dataset.madde);
             if (box) box.classList.add('hidden');
         }
 
@@ -1089,47 +1193,6 @@
             const headerIdx = lines.findIndex(l => /^[İI]nfaz\s*T[üu]r[üu]\s*:?\s*$/i.test(l.trim()));
             if (headerIdx === -1) return lines;
             const tamTarihRe = /^\d{1,2}[\/.]\d{1,2}[\/.]\d{4}$/;
-
-            const stopRe = /^(CEZAEV[İI]NE\s+G[İI]R[İI][ŞS]\s+TAR[İI]H[İI]|HAKEDEREK\s+TAHL[İI]YE\s+TAR[İI]H[İI]|KO[ŞS]ULLU\s+SAL[İI]VER[İI]LME\s+TAR[İI]H[İI]|MAHSUP)/i;
-            let stopIdx = lines.length;
-            for (let k = headerIdx + 1; k < lines.length; k++) {
-                if (stopRe.test(lines[k])) { stopIdx = k; break; }
-            }
-            const afterHeader = lines.slice(headerIdx + 1, stopIdx);
-
-            // YENİ DURUM — TEK SUÇ TARİHİ + ÇOK İNFAZ KALEMİ: aynı kararın cezası
-            // (örn. OHAL/671 s. KHK ile bir kısmı 1/2, kalanı 107/2 md ile 2/3
-            // oranında) birden fazla "Ceza Süresi ve Ceza Türü / İnfaz Türü"
-            // ikilisine bölünmüş olabilir; bu durumda suç tarihi SADECE karar
-            // başlığında bir kez yazılır, kalemler arasında hiç tekrarlanmaz.
-            // Başlıktan sonraki blokta hiç tam tarih yoksa, EN YAKIN önceki tam
-            // tarihi (paylaşılan suç tarihi) bulup her süre/infaz-türü ikilisine
-            // ortak olarak uygular.
-            if (afterHeader.length > 0 && !afterHeader.some(l => tamTarihRe.test(l))) {
-                let paylasilanTarihIdx = -1;
-                for (let k = headerIdx - 1; k >= 0 && headerIdx - k <= 15; k--) {
-                    if (tamTarihRe.test(lines[k])) { paylasilanTarihIdx = k; break; }
-                }
-                if (paylasilanTarihIdx !== -1) {
-                    const paylasilanTarih = lines[paylasilanTarihIdx];
-                    // Süre satırını tanımak için: YIL/AY/GÜN rakamı VEYA MÜEBBET
-                    // ibaresi; bu olmayan satırlar (İlam No değeri gibi paylaşılan
-                    // tekil değerler) atlanır.
-                    const sureSatiriRe = /\d+\s*(YIL|AY|G[ÜU]N)|M[ÜU]EBBET/i;
-                    const sentetikSatirlar = [];
-                    let k = 0;
-                    while (k < afterHeader.length) {
-                        if (!sureSatiriRe.test(afterHeader[k])) { k++; continue; }
-                        const sure = afterHeader[k];
-                        const infazTuru = afterHeader[k + 1] || '';
-                        sentetikSatirlar.push(`${paylasilanTarih} ${sure} ${infazTuru}`);
-                        k += 2;
-                    }
-                    if (sentetikSatirlar.length > 0) return [...lines, ...sentetikSatirlar];
-                }
-                return lines;
-            }
-
             let i = headerIdx + 1;
             // İlam No gibi paylaşılan, tarih olmayan tekil değer satırlarını atla
             // (yapı tahmin edilemiyorsa, çok uzaklaşınca vazgeç ve dokunma).
@@ -1144,6 +1207,11 @@
             // müddetnamelerde tablo zaten SATIR BAZLI (tarih,madde,süre,infaz-türü
             // dörtlüsü art arda, satır satır) yazılmış olabilir. Önce satır bazlı
             // düzeni dene, uymazsa sütun bazlı düzene (eski davranış) düş.
+            const stopRe = /^(CEZAEV[İI]NE\s+G[İI]R[İI][ŞS]\s+TAR[İI]H[İI]|HAKEDEREK\s+TAHL[İI]YE\s+TAR[İI]H[İI]|KO[ŞS]ULLU\s+SAL[İI]VER[İI]LME\s+TAR[İI]H[İI]|MAHSUP)/i;
+            let stopIdx = lines.length;
+            for (let k = tarihStart; k < lines.length; k++) {
+                if (stopRe.test(lines[k])) { stopIdx = k; break; }
+            }
             const tableLines = lines.slice(tarihStart, stopIdx);
             if (tableLines.length > 0 && tableLines.length % 4 === 0) {
                 const nSatir = tableLines.length / 4;
@@ -1327,6 +1395,7 @@
         // karşılığı olmayan bir etiket görülürse, eşleşmedi olarak işaretlenip
         // "Tutukluluk" ile eklenir — kullanıcı elle düzeltmesi için uyarılır.
         const MAHSUP_TUR_ESLESME = [
+            { re: /KONUTTA\s*[İI]NFAZ|ADL[İI]\s*KONTROL|109\s*\/\s*3/, tur: 'konutta_infaz' },
             { re: /DENET[İI]ML[İI] SERBEST|DENET[İI]MDE GE[CÇ]EN/, tur: 'ds' },
             { re: /TUTUKLULUK/, tur: 'tutukluluk' },
             { re: /A[CÇ]IK [CÇ]IK/, tur: 'acik_cik' },
@@ -1339,18 +1408,47 @@
             // boşluk/metin giriyor. Bu yüzden iki tarih arasına en fazla 10 karakterlik
             // (tire, boşluk vb.) esnek bir boşluk bırakılıyor; tire şartı KALDIRILDI.
             const rangeRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4}).{0,10}?(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
+
+            // MAHSUP BİLGİLERİ tablosu belgede her zaman bir "TOPLAM" satırıyla
+            // biter; bundan SONRAKİ her şey (imza, tarih, "NOT:" açıklama paragrafı)
+            // artık tablonun parçası DEĞİLDİR ve kesinlikle taranmamalıdır. Açıklama
+            // cümlesi ("Hükümlü ... tarihleri arasında ... infaz etmiştir.") da iki
+            // tarih içerdiğinden, TOPLAM satırına kadar kesin sınır çekilmezse
+            // yanlışlıkla mahsup satırı sanılıp tabloya ekleniyordu (kullanıcı
+            // tespiti, 2026-11-09) — bu yüzden tarama TOPLAM satırına ulaşınca
+            // kesin olarak durdurulur; TOPLAM'dan sonrasına hiç bakılmaz.
+            const headerIdx = lines.findIndex(l => /MAHSUP\s+B[İI]LG[İI]LER[İI]/i.test(l));
+            let toplamIdx = -1;
+            if (headerIdx !== -1) {
+                for (let k = headerIdx + 1; k < lines.length; k++) {
+                    if (/^TOPLAM(\s+MAHSUP)?\s*:?\s*$/i.test(lines[k])) { toplamIdx = k; break; }
+                }
+            }
+            // Başlık ve TOPLAM satırı ikisi de bulunduysa SADECE aralarındaki
+            // satırlar taranır; bulunamazsa (farklı/eski bir belge düzeni ihtimaline
+            // karşı) eski davranışa — tüm belgeyi tarama — düşülür.
+            const taranacakSatirlar = (headerIdx !== -1 && toplamIdx !== -1)
+                ? lines.slice(headerIdx + 1, toplamIdx)
+                : lines;
+
             const satirlar = [];
-            lines.forEach(line => {
+            taranacakSatirlar.forEach(line => {
                 const m = line.match(rangeRe);
                 if (!m) return;
                 const upper = line.toLocaleUpperCase('tr-TR');
-                // Müddetnamenin alt kısmındaki açıklama cümlesi ("NOT: Hükümlü ... tarihleri
-                // arasında ... infaz etmektedir.") iki tarih içerdiğinden yanlışlıkla mahsup
-                // satırı sanılabilir; bu tür açıklama metinleri hariç tutulur.
-                if (/^NOT\s*:|[İI]NFAZ ETMEKTED[İI]R/.test(upper)) return;
+                // Ek güvenlik: TOPLAM sınırı bulunamadığı (eski/tüm-belge davranışına
+                // düşüldüğü) durumlar için, açıklama cümlelerini hariç tutan eski
+                // metin-tabanlı filtre de korunur — artık "infaz etmektedir" (şimdiki
+                // zaman) yanında "infaz etmiştir" (geçmiş zaman) gibi farklı çekimleri
+                // de kapsar.
+                if (/^NOT\s*:|[İI]NFAZ ETM(EKTED[İI]R|[İI]Ş)/.test(upper)) return;
                 const eslesen = MAHSUP_TUR_ESLESME.find(e => e.re.test(upper));
                 satirlar.push({
-                    tur: eslesen ? eslesen.tur : 'tutukluluk',
+                    // Eşleşme bulunamazsa türü OTOMATİK "Tutukluluk" ile doldurmuyoruz —
+                    // kutu BOŞ bırakılır, hesaplayıcı doğru türü elle seçmek zorunda kalır
+                    // (kullanıcı talebi, 2026-11-09: yanlış otomatik seçim hatalı hesaplamaya
+                    // yol açabiliyordu).
+                    tur: eslesen ? eslesen.tur : '',
                     turEslesmedi: !eslesen,
                     start: `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`,
                     end: `${m[6]}-${m[5].padStart(2, '0')}-${m[4].padStart(2, '0')}`
@@ -1489,7 +1587,7 @@
                     }
                     eklenenCezaSatirElemanlari.push(eklenenTr);
                 });
-                mahsupSatirlari.forEach(s => addMahsupRow(s.tur, s.start, s.end));
+                const eklenenMahsupSatirElemanlari = mahsupSatirlari.map(s => addMahsupRow(s.tur, s.start, s.end));
                 if (document.querySelectorAll('#penaltyTableBody tr').length === 0) addPenaltyRow();
                 if (girisTarihiBulundu) document.getElementById('infazBaslangic').value = girisTarihiBulundu;
                 if (dogumTarihiBulundu) document.getElementById('hukumluDogumTarihi').value = dogumTarihiBulundu;
@@ -1498,21 +1596,76 @@
                 // Not: tekerrür/mükerrirlik tespit uyarısı kullanıcı talebiyle KALDIRILDI
                 // (2026-11-09) — otomatik tespit edilen 1./2. mükerrer durumu doğrudan
                 // kabul ediliyor, ayrıca "kontrol edin" uyarısı gösterilmiyor.
-                const turEslesmeyen = mahsupSatirlari.filter(s => s.turEslesmedi).length;
-                if (turEslesmeyen > 0) uyarilar.push(`${turEslesmeyen} mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi, geçici olarak "Tutukluluk" ile eklendi — lütfen doğru türü seçin.`);
+                //
+                // ALAN-BAZLI (field-specific) uyarılar artık TEK bir özet satırı yerine
+                // HER satır için kendi <li id="..."> öğesiyle listeleniyor (kullanıcı
+                // talebi, 2026-11-09): hesaplayıcı o satırdaki kırmızı işaretli alanı
+                // düzeltince (input/change), SADECE o satıra ait uyarı metni de listeden
+                // SİLİNİYOR — kırmızı işaret ile uyarı metni birlikte kalkıyor, böylece
+                // düzeltildiği anlaşılıyor. Genel/toplu bilgilendirme metinleri (belirli
+                // bir alana bağlı olmayanlar) sabit kalır, silinmez.
+                mahsupSatirlari.forEach((s, idx) => {
+                    if (!s.turEslesmedi) return;
+                    uyarilar.push(`<li id="mahsup-tur-uyari-${idx}">${idx + 1}. mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi; kutu BOŞ bırakıldı — doğru türü (Gözaltı/Tutukluluk/Açık Çık/Denetimli Serbestlik/Konutta İnfaz) lütfen kendiniz seçin. <span class="text-red-700 font-semibold">Tür seçilmeden bırakılırsa, açık ceza infaz kurumuna/denetimli serbestliğe ayrılma gibi haklar da (asgari kapalı kalma şartı mahsup türüne göre hesaplandığından) hatalı çıkabilir.</span></li>`);
+                    // Satırı, ceza satırlarındaki oran-uyuşmazlığı işaretiyle AYNI kırmızı
+                    // çember/nabız efektiyle görsel olarak işaretle. Kullanıcı türü
+                    // düzeltince (input/change) hem kırmızı işaret hem de yukarıdaki uyarı
+                    // metni (li#mahsup-tur-uyari-${idx}) birlikte kalkar.
+                    const hataliMahsupTr = eklenenMahsupSatirElemanlari[idx];
+                    if (!hataliMahsupTr) return;
+                    hataliMahsupTr.classList.add('ceza-hata-satiri');
+                    const turAlani = hataliMahsupTr.querySelector('.mahsup-tur');
+                    if (turAlani) turAlani.classList.add('ceza-hata-alani');
+                    const isaretiTemizleMahsup = () => {
+                        hataliMahsupTr.classList.remove('ceza-hata-satiri');
+                        if (turAlani) turAlani.classList.remove('ceza-hata-alani');
+                        document.getElementById(`mahsup-tur-uyari-${idx}`)?.remove();
+                    };
+                    hataliMahsupTr.addEventListener('input', isaretiTemizleMahsup, { once: true });
+                    hataliMahsupTr.addEventListener('change', isaretiTemizleMahsup, { once: true });
+                });
                 const tekerrurEkli = cezaSatirlari.filter(s => s.ekGun > 0).length;
                 if (tekerrurEkli > 0) uyarilar.push(`${tekerrurEkli} ceza satırında "+N gün" (mükerrirlik ek günü) ibaresi görüldü; bu değer otomatik olarak "Mükerrir Gün" alanına ve yatar hesabına eklendi — lütfen doğruluğunu kontrol edin.`);
                 // Belgede yazılı oranın (hesaplamada DEĞİŞTİRİLMEDEN kullanılan değer),
                 // suç maddesi listesine göre OLMASI GEREKEN oranla uyuşup uyuşmadığını
                 // kontrol et (örn. belgede elle/hatalı değiştirilmiş bir oran farkedilsin).
                 cezaSatirlari.forEach((s, idx) => {
-                    if (!s.oranParsed) return;
+                    // Belgede infaz oranı hiç okunamayan (oranParsed boş) süreli hapis
+                    // satırlarında program sessizce varsayılan bir oran (oranFallback)
+                    // atıyordu; bu da "belgeden değil, tahminden gelen" bir alan olduğundan
+                    // diğer otomatik-alan hatalarıyla AYNI şekilde işaretleniyor (kullanıcı
+                    // talebi, 2026-11-09).
+                    if (!s.oranParsed) {
+                        if (s.sureTip !== 'sureli') return;
+                        uyarilar.push(`<li id="oran-yok-uyari-${idx}">${idx + 1}. ceza satırında belgede infaz oranı okunamadı; geçici olarak varsayılan oran atandı. <span class="text-red-700 font-semibold">Kırmızı işaretli satırdaki doğru oranı lütfen kendiniz seçin.</span></li>`);
+                        const hataliTr = eklenenCezaSatirElemanlari[idx];
+                        if (!hataliTr) return;
+                        hataliTr.classList.add('ceza-hata-satiri');
+                        const oranAlani = hataliTr.querySelector('.penalty-oran');
+                        if (oranAlani) oranAlani.classList.add('ceza-hata-alani');
+                        const isaretiTemizleOranYok = () => {
+                            hataliTr.classList.remove('ceza-hata-satiri');
+                            if (oranAlani) oranAlani.classList.remove('ceza-hata-alani');
+                            document.getElementById(`oran-yok-uyari-${idx}`)?.remove();
+                        };
+                        hataliTr.addEventListener('input', isaretiTemizleOranYok, { once: true });
+                        hataliTr.addEventListener('change', isaretiTemizleOranYok, { once: true });
+                        return;
+                    }
+                    // Adli para cezası (4/4, indirimsiz) ile müebbet/ağırlaştırılmış müebbet
+                    // (sabit yıl, oran-bazlı DEĞİL) satırlarının "oranı" yoktur — bunlar için
+                    // suç maddesi listesindeki oranla karşılaştırma YAPILMAMALI. Önceden bu
+                    // kontrol sadece sureTip'e bakmıyordu; bu yüzden örn. adli para cezası
+                    // olarak işaretli bir satırda belgedeki "2/2" (tam/indirimsiz) ibaresi,
+                    // o maddenin normal süreli hapis oranıyla (örn. 1/2) hatalı biçimde
+                    // karşılaştırılıp yanlış uyarı veriyordu (kullanıcı tespiti, 2026-11-09).
+                    if (s.sureTip !== 'sureli') return;
                     const orgutluAutoChk = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
                     const beklenenOran = beklenenOranYatarHesapla(s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAutoChk, dogumTarihiBulundu);
                     if (beklenenOran === null) return;
                     const belgedekiOran = oranStrToNum(s.oranParsed);
                     if (Math.abs(beklenenOran - belgedekiOran) > 0.01) {
-                        uyarilar.push(`<span class="text-red-700 font-semibold">${idx + 1}. ceza satırı (${s.maddeRaw}): belgede yazılı oran ${s.oranParsed} iken, suç maddesi listesine göre olması gereken oran ${oranToTextPlain(beklenenOran)} — lütfen kontrol edin.</span>`);
+                        uyarilar.push(`<li id="oran-uyusmazlik-uyari-${idx}"><span class="text-red-700 font-semibold">${idx + 1}. ceza satırı (${s.maddeRaw}): belgede yazılı oran ${s.oranParsed} iken, suç maddesi listesine göre olması gereken oran ${oranToTextPlain(beklenenOran)} — lütfen kontrol edin.</span></li>`);
                         // Hatanın bulunduğu satırı VE içindeki oran alanını kırmızı,
                         // belirgin bir çerçeveyle işaretle — kullanıcı kolayca bulsun.
                         const hataliTr = eklenenCezaSatirElemanlari[idx];
@@ -1521,24 +1674,44 @@
                             const oranAlani = hataliTr.querySelector('.penalty-oran');
                             if (oranAlani) oranAlani.classList.add('ceza-hata-alani');
                             // Kullanıcı bu satırdaki herhangi bir alanı düzeltince (yazınca/
-                            // seçim değiştirince) kırmızı işaret otomatik kaldırılır.
+                            // seçim değiştirince) kırmızı işaret VE yukarıdaki uyarı metni
+                            // (li#oran-uyusmazlik-uyari-${idx}) birlikte kalkar.
                             const isaretiTemizle = () => {
                                 hataliTr.classList.remove('ceza-hata-satiri');
                                 if (oranAlani) oranAlani.classList.remove('ceza-hata-alani');
+                                document.getElementById(`oran-uyusmazlik-uyari-${idx}`)?.remove();
                             };
                             hataliTr.addEventListener('input', isaretiTemizle, { once: true });
                             hataliTr.addEventListener('change', isaretiTemizle, { once: true });
                         }
                     }
                 });
-                uyarilar.push(`Her ceza satırındaki suç maddesini ve infaz oranını (${turEtiket}\'te yazan değer doğrudan kullanıldı) gözden geçirin; oran bulunamayan satırlarda varsayılan olarak 1/2 atanmıştır.`);
+                uyarilar.push(`Her ceza satırındaki suç maddesini ve infaz oranını (${turEtiket}\'te yazan değer doğrudan kullanıldı) gözden geçirin.`);
                 uyarilar.push('TEKERRÜR/MÜKERRİRLİK: mükerrirlik tespiti satırdaki madde referansına (107/2 = yok, 108/1-2 = 1. mükerrer, 108/3 = 2. mükerrer) dayanır. Eski formatta basılmış bir müddetnamede bu referans yoksa tahmin güvenilir olmayabilir — metinde açıkça "tekerrür"/"108/1-2"/"108/3" geçmeyen satırlarda Mükerrir alanı "Tekerrür Yok" olarak eklenmiştir, lütfen kontrol edin.');
                 if (isUdf) uyarilar.push('UDF\'teki ceza tablosu, tespit edilen düzene (satır veya sütun bazlı) göre otomatik olarak yeniden dizildi; satır sayısı ve eşleşmeler mutlaka kontrol edilmelidir.');
-                if (!girisTarihiBulundu) uyarilar.push(`Cezaevine giriş tarihi ${turEtiket}\'te bulunamadı, elle girilmesi gerekiyor.`);
+                // Cezaevine giriş tarihi belgede bulunamadığında alan boş kalıyordu; artık
+                // diğer otomatik-alan hataları gibi kırmızı çerçeveyle işaretleniyor; alan
+                // doldurulunca (input/change) hem işaret hem bu uyarı satırı kalkar.
+                if (!girisTarihiBulundu) {
+                    uyarilar.push(`<li id="giris-tarihi-uyari">Cezaevine giriş tarihi ${turEtiket}\'te bulunamadı, elle girilmesi gerekiyor. <span class="text-red-700 font-semibold">Kırmızı işaretli alan doldurulmadan hesaplama/rapor kesinleştirilmemelidir.</span></li>`);
+                    const girisAlani = document.getElementById('infazBaslangic');
+                    if (girisAlani) {
+                        girisAlani.classList.add('ceza-hata-alani');
+                        const isaretiTemizleGiris = () => {
+                            girisAlani.classList.remove('ceza-hata-alani');
+                            document.getElementById('giris-tarihi-uyari')?.remove();
+                        };
+                        girisAlani.addEventListener('input', isaretiTemizleGiris, { once: true });
+                        girisAlani.addEventListener('change', isaretiTemizleGiris, { once: true });
+                    }
+                }
 
                 goster(
                     `<div class="text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check"></i> ${cezaSatirlari.length} ceza satırı, ${mahsupSatirlari.length} mahsup satırı eklendi${girisTarihiBulundu ? ', cezaevine giriş tarihi dolduruldu' : ''}${dogumTarihiBulundu ? ', doğum tarihi dolduruldu' : ''}.</div>` +
-                    `<ul class="mt-1.5 list-disc list-inside text-amber-700">${uyarilar.map(u => `<li>${u}</li>`).join('')}</ul>`
+                    // Bazı uyarılar kendi id'li <li> olarak hazır geliyor (alan-bazlı,
+                    // silinebilir olanlar); diğerleri düz metin — onlar burada <li>'ye
+                    // sarılır. (u.trim() zaten "<li" ile başlıyorsa olduğu gibi kullanılır.)
+                    `<ul class="mt-1.5 list-disc list-inside text-amber-700">${uyarilar.map(u => u.trim().startsWith('<li') ? u : `<li>${u}</li>`).join('')}</ul>`
                 );
                 calculateAll();
             } catch (err) {
@@ -1557,7 +1730,7 @@
 
             // Açılışta 1 adet ceza satırı ekle
             addPenaltyRow('sureli', 1, 0, 0, '', today, 'yok', false);
-            calculateAll();
+            setHesaplamaYontemi('ayrisik'); // buton stilini başlangıç durumuna getirir + calculateAll() çağırır
         });
 
         /* ======================================================
@@ -1892,7 +2065,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0) {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '') {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -1933,6 +2106,18 @@
                     </div>
                     <div class="flex items-center gap-1">
                         <input type="text" value="${(sucMadde || '').replace(/"/g, '&quot;')}" placeholder="Suç maddesini yazın" autocomplete="off" class="penalty-suc-madde w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-slate-800 font-medium" oninput="onSucMaddeInput(this)" onfocus="onSucMaddeInput(this)" onclick="onSucMaddeInput(this)" onblur="hideSucMaddeSuggestionsLater(this)">
+                    </div>
+                    <div class="penalty-zimmet-uyari hidden mt-1 p-2 rounded border-2 border-red-500 bg-red-50 text-[10px] text-red-800 leading-snug">
+                        <div class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> 5411 S.K. m.167 Uyarısı</div>
+                        <div class="mb-1.5">Madde 167 — 160 ıncı maddede yazılı suçlardan dolayı mahkûm olanlar, Fona veya Hazineye olan borçları ve tazminatları ödemediği veya bu borçlar ve tazminatlar malvarlıklarından tahsil olunamadığı sürece, bunlar hakkında koşullu salıverilme hükümleri uygulanmaz.</div>
+                        <label class="flex items-center gap-1.5 font-semibold">
+                            <span>Borç/Tazminat Durumu:</span>
+                            <select class="penalty-zimmet-odeme bg-white border border-red-400 rounded px-1.5 py-0.5 outline-none text-red-800 font-bold" onchange="this.classList.remove('ring-2','ring-red-600'); calculateAll();">
+                                <option value="" ${zimmetOdeme === '' ? 'selected' : ''}>Seçiniz…</option>
+                                <option value="odendi" ${zimmetOdeme === 'odendi' ? 'selected' : ''}>Ödendi / Tahsil Edildi</option>
+                                <option value="odenmedi" ${zimmetOdeme === 'odenmedi' ? 'selected' : ''}>Ödenmedi</option>
+                            </select>
+                        </label>
                     </div>
                     <div class="flex items-center gap-1 penalty-oran-wrap ${manuelOran ? '' : 'hidden'}">
                         <span class="text-[10px] text-slate-500">Oran:</span>
@@ -1979,6 +2164,7 @@
             `;
             tbody.appendChild(tr);
             toggleSuresiTip(tr.querySelector('.penalty-sure-tip'));
+            applyZimmetUyari(tr, sucMadde);
             renumberPenaltyRows();
             return tr;
         }
@@ -2019,10 +2205,14 @@
             tr.innerHTML = `
                 <td class="p-2 w-36">
                     <select class="mahsup-tur w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-sky-700 font-medium">
+                        <option value="" ${!tur ? 'selected' : ''}>Seçiniz</option>
                         <option value="gozalti" ${tur === 'gozalti' ? 'selected' : ''}>Gözaltı</option>
                         <option value="tutukluluk" ${tur === 'tutukluluk' ? 'selected' : ''}>Tutukluluk</option>
                         <option value="acik_cik" ${tur === 'acik_cik' ? 'selected' : ''}>Açık Çık</option>
                         <option value="ds" ${tur === 'ds' ? 'selected' : ''}>Denetimli Serbestlik (STT öncesi)</option>
+                        <option value="konutta_infaz" ${tur === 'konutta_infaz' ? 'selected' : ''}>Konutta İnfaz / Adli Kontrol (CMK 109/3-j)</option>
+                        <option value="acik_cik_firar" ${tur === 'acik_cik_firar' ? 'selected' : ''}>Açık CİK (Firar)</option>
+                        <option value="ds_ihlal" ${tur === 'ds_ihlal' ? 'selected' : ''}>Denetimli Serbestlik (İhlal)</option>
                     </select>
                 </td>
                 <td class="p-2"><input type="date" value="${start}" class="mahsup-start w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none"></td>
@@ -2031,6 +2221,7 @@
                 <td class="p-2 text-center"><button onclick="removeMahsupRow(this)" class="text-slate-500 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></td>
             `;
             tbody.appendChild(tr);
+            return tr;
         }
 
         function removeMahsupRow(btn) {
@@ -2196,12 +2387,36 @@
            ve doğru hesaba girer.
            ====================================================== */
         function calculateAll() {
+            // 5411 S.K. m.167 doğrulaması: zimmet (m.160) maddesi seçilip kırmızı uyarı
+            // kutusu görünür hâldeyken "Borç/Tazminat Durumu" henüz işaretlenmemişse,
+            // bu işaretlenmeden hesaplama YAPILMAZ (kullanıcı talebi, 2026-11-09).
+            let zimmetValidationFail = false;
+            document.querySelectorAll('#penaltyTableBody tr').forEach((row) => {
+                const uyariBox = row.querySelector('.penalty-zimmet-uyari');
+                const zimmetSel = row.querySelector('.penalty-zimmet-odeme');
+                if (uyariBox && zimmetSel && !uyariBox.classList.contains('hidden') && !zimmetSel.value) {
+                    zimmetValidationFail = true;
+                    zimmetSel.classList.add('ring-2', 'ring-red-600');
+                }
+            });
+            if (zimmetValidationFail) {
+                alert('5411 sayılı Kanun m.160 (Zimmet) suçu seçilen satır(lar)da, Fona/Hazineye olan borç/tazminatın ödenip ödenmediği işaretlenmeden hesaplama yapılamaz.\n\nLütfen kırmızı uyarı kutusundaki "Borç/Tazminat Durumu" seçimini tamamlayınız.');
+                return;
+            }
+
             const baslangicStr = document.getElementById('infazBaslangic').value;
             const D0 = baslangicStr ? new Date(baslangicStr) : new Date();
 
             let cumulative = new Date(D0.getTime());
             let totalRawDays = 0;
             let totalYatarGun = 0;
+            // BİTİŞİK HESAP (2026-11-09, bkz. setHesaplamaYontemi): oran-bazlı süreli
+            // hapis kalemleri bu modda tek tek değil, aynı orandaki kalemlerin HAM gün
+            // toplamına göre gruplanır; oran bu grup toplamına döngü SONRASINDA bir kerede
+            // uygulanır (bkz. aşağıdaki "BİTİŞİK HESAP: oran gruplarının..." bloğu).
+            // Anahtar: oranın sabit ondalık metni (örn. "0.666667"); değer: {oran, gun}.
+            const bitisikGruplar = {};
+            let bitisikEkGunToplam = 0;
             // CEZASI (TOPLAM) alanı için: kullanıcı talebiyle, günleri aya/ayları yıla
             // ÇEVİRMEDEN (gerçek müddetname örneklerindeki gibi) sadece aynı birimleri
             // kendi aralarında toplar (yıl+yıl, ay+ay, gün+gün). Süresiz cezalar (müebbet/
@@ -2218,6 +2433,11 @@
             // 3713 s.K. m.17 "ölünceye kadar" durumu (terör + AM) için (bkz. aşağıdaki
             // müebbet/AM dalındaki not ve rapor sonu BTT/STT gösterim bloğu, 2026-11-09)
             let hasOlunceyeKadarAM = false;
+            // 5411 S.K. m.167: içtimada zimmet (m.160) maddesi olup Fona/Hazineye olan
+            // borç/tazminatı "Ödenmedi" olarak işaretlenmiş en az bir satır varsa, koşullu
+            // salıverilme (STT) ve buna bağlı açık/denetimli serbestlik hiç hesaplanmaz
+            // (bkz. aşağıdaki rapor gösterim bloğu, 2026-11-09).
+            let zimmetKosulluUygulanmaz = false;
             // İçtima (m.107/3-e) STT tavanında kullanılacak toplam "tekerrür farkı"
             // (bkz. tekerrurFarkiHesapla) — her mükerrer süreli hapis kaleminden
             // bu döngü içinde eklenir.
@@ -2254,7 +2474,6 @@
             const dogumTarihi1089 = dogumTarihiStr1089 ? new Date(dogumTarihiStr1089) : null;
             const yas18Tarihi1089 = dogumTarihi1089 ? yilEkleGercek(dogumTarihi1089, 18) : null;
             const cocuk1089Notlari = []; // Açıklamada listelenecek, bu indirimden etkilenen satırlar
-            const terorSureliNotlari = []; // 3713 s.K. m.17 gereği 3/4 sabit oran uygulanan süreli hapis satırları
 
             const penaltyRows = document.querySelectorAll('#penaltyTableBody tr');
 
@@ -2267,6 +2486,12 @@
                 const orgutluEl = row.querySelector('.penalty-orgutlu');
                 const orgutlu = orgutluEl ? orgutluEl.checked : false;
                 const isOzelInfazRow = OZEL_INFAZ_TIPLERI.includes(sureTip);
+
+                // 5411 S.K. m.167 — bu satır zimmet (m.160) ise ve borç "Ödenmedi" işaretliyse.
+                const zimmetSelRow = row.querySelector('.penalty-zimmet-odeme');
+                if (zimmetSelRow && zimmetSelRow.value === 'odenmedi') {
+                    zimmetKosulluUygulanmaz = true;
+                }
 
                 // Özel infaz rejimi satırları (4/4, koşullusu yok) mahkumiyete bağlı olağan
                 // süreli hapis cezası olmadığından, mükerrerlik/örgütlü suç bayraklarını ve
@@ -2303,7 +2528,8 @@
                         sucTarihiDate: sucTarihiDate,
                         mukerrir: mukerrir,
                         sucTuru: isMaddeTaksirli(sucMadde) ? 'taksirli' : 'kasitli',
-                        hamGun: rowHamGun
+                        hamGun: rowHamGun,
+                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde)
                     });
                 }
 
@@ -2315,7 +2541,8 @@
                     const muebbetAcikDsBilgi = getAcikDsBilgi(sucMadde);
                     muebbetAdaylar.push({
                         istisna106: muebbetAcikDsBilgi.istisna106,
-                        sucTarihiDate: sTarih ? new Date(sTarih) : null
+                        sucTarihiDate: sTarih ? new Date(sTarih) : null,
+                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde)
                     });
                 }
 
@@ -2326,6 +2553,7 @@
                 let sureMetinYAG = "";
                 let rowDays = 0;       // BTT'ye (hakederek tahliye) katkı veren ham gün
                 let rowYatarGun = 0;   // STT'ye (koşullu salıverilme) katkı veren yatar gün
+                let rowOran = 0;       // Bu satırın oranı (sadece oran-bazlı süreli hapiste dolar) — bitişik etiketinde kullanılır
                 let rowOranMetni = ""; // Rapordaki "oran" sütununda gösterilecek kısa metin
                 let ozelInfazBilgi = null; // Özel infaz rejimi ise OZEL_INFAZ_BILGI kaydı
 
@@ -2470,22 +2698,11 @@
                     // etkilenmeyen güncel/varsayılan oran — baseOranForMukerrer) zaten
                     // bundan yüksekse (ör. 3/4) o korunur — "bir kademe yükselt" YANLIŞTIR,
                     // düzeltildi. 2. kez mükerrerlikte oran sabit (3/4)'tür.
-                    let rowOran = baseOran;
+                    rowOran = baseOran;
                     if (mukerrir === '1') {
                         rowOran = Math.max(baseOranForMukerrer, 2 / 3);
                     } else if (mukerrir === '2') {
                         rowOran = 0.75;
-                    }
-
-                    // 3713 s.K. m.17 (Ek cümle): terör suçu kapsamındaki maddelerden
-                    // SÜRELİ HAPİS cezası alanlarda koşullu salıverilme oranı, mükerrerlik/
-                    // örgütlü durumuna bakılmaksızın SABİT 3/4 olarak uygulanır (kullanıcı
-                    // onayı, 2026-11-09). Bu oran, yukarıdaki 107/2-108 hesaplamalarının
-                    // YERİNE geçer.
-                    const terorSureliHapis = isTerorSucuMaddesi(sucMadde);
-                    if (terorSureliHapis) {
-                        rowOran = 0.75;
-                        terorSureliNotlari.push(`${sucMadde || 'ilgili ceza kalemi'}, 3713 sayılı Terörle Mücadele Kanununun 2. maddesi kapsamında terör suçu sayıldığından, aynı Kanunun 17. maddesi (ek cümle) gereği bu süreli hapis cezasında koşullu salıverilme oranı mükerrerlik/örgütlü durumuna bakılmaksızın sabit 3/4 olarak uygulanmıştır.`);
                     }
 
                     // İçtima (m.107/3-e) STT tavanında kullanılacak "tekerrür farkı"
@@ -2501,7 +2718,18 @@
                     // fazla kalemde küsürat varken (ör. 0,5 + 0,5 + 0,667 gün) toplamda daha az
                     // gün kaybına yol açıp STT'yi gerçekte olması gerekenden ileri bir tarihe
                     // kaydırıyordu (hükümlü aleyhine). Düzeltme: yuvarlama satır bazında yapılır.
-                    rowYatarGun = Math.floor(rowDays * rowOran);
+                    // BİTİŞİK HESAP modunda bu satırın kendi yatar günü YOKTUR — aynı
+                    // orandaki tüm kalemlerin ham günü gruplanıp oran döngü SONRASINDA bir
+                    // kerede uygulanır (bkz. yukarıdaki bitisikGruplar tanımı ve aşağıdaki
+                    // forEach-sonrası blok). Bu satırın totalYatarGun'a katkısı burada 0'dır.
+                    if (hesaplamaYontemi === 'bitisik') {
+                        const oranKey = rowOran.toFixed(6);
+                        if (!bitisikGruplar[oranKey]) bitisikGruplar[oranKey] = { oran: rowOran, gun: 0 };
+                        bitisikGruplar[oranKey].gun += rowDays;
+                        rowYatarGun = 0;
+                    } else {
+                        rowYatarGun = Math.floor(rowDays * rowOran);
+                    }
 
                     // Raporda "İnfaz Türü" olarak gösterilecek metin: gerçek müddetname
                     // örneğindeki gibi, hangi madde gereği infaz edildiği (mükerrirlik
@@ -2516,10 +2744,6 @@
                     // oranı için özel bir atıf yazılmaz (varsayılan "107/2 md." kalır).
                     // Kullanıcı onayıyla düzeltildi, 2026-11-09 (önceki "108/9" hatalıydı).
                     else if (is108_9Maddesi(sucMadde) && cocuk1089Uygulandi) infazMaddesi = '5275 S.K. 107/2-g md.';
-                    // 3713 s.K. m.17: terör suçu süreli hapis cezasında infaz türü etiketi,
-                    // mükerrerlik/örgütlü etiketinin YERİNE bu şekilde gösterilir (kullanıcı
-                    // onayı, 2026-11-09).
-                    if (terorSureliHapis) infazMaddesi = '3713 S.K. 17. madde';
                     rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}`;
 
                     if (cocuk1089Uygulandi) {
@@ -2528,10 +2752,16 @@
 
                     // Ek Gün (5275 s.K. 108/2 md): kullanıcının girdiği gün sayısı, yatar günün
                     // üzerine DOĞRUDAN eklenir (oranla çarpılmaz); raporda "oran+N gün" olarak gösterilir.
+                    // Bitişik modda da ek gün oranla çarpılmaz; grup toplamından bağımsız,
+                    // ayrıca toplanıp forEach sonrasında totalYatarGun'a eklenir.
                     const ekGunInput = row.querySelector('.penalty-ek-gun');
                     const ekGun = ekGunInput ? (parseInt(ekGunInput.value) || 0) : 0;
                     if (ekGun > 0) {
-                        rowYatarGun += ekGun;
+                        if (hesaplamaYontemi === 'bitisik') {
+                            bitisikEkGunToplam += ekGun;
+                        } else {
+                            rowYatarGun += ekGun;
+                        }
                         rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}+${ekGun} gün`;
                     }
                 }
@@ -2548,6 +2778,10 @@
                         oranLabel.innerText = `İndirimsiz • Yatar: ${Math.floor(rowYatarGun)}g`;
                     } else if (ozelInfazBilgi) {
                         oranLabel.innerText = `4/4 (Koşullu Yok) • ${ozelInfazBilgi.kurum === 'acik' ? 'Açık' : 'Kapalı'} CİK`;
+                    } else if (hesaplamaYontemi === 'bitisik') {
+                        // Bitişik modda bu satırın kendi yatar günü yok; grup toplamı
+                        // forEach sonrasında hesaplanır (bkz. bitisikGruplar).
+                        oranLabel.innerText = `Oran: ${oranToText(rowOran)} • Bitişik grupta (${rowDays} gün bu gruba eklendi)`;
                     } else {
                         oranLabel.innerText = `Oran: ${oranToText(rowDays ? rowYatarGun / rowDays : 0)} • Yatar: ${Math.floor(rowYatarGun)}g`;
                     }
@@ -2562,6 +2796,32 @@
 
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
             });
+
+            // --- BİTİŞİK HESAP: oran gruplarının HAM gün toplamına oranın bir kerede
+            // uygulanması (bkz. yukarıdaki süreli hapis dalı ve bitisikGruplar tanımı) ---
+            // Her grup kendi toplam gününü kendi oranıyla çarpıp hükümlü lehine aşağı
+            // yuvarlar (Math.floor); ek gün (5275 s.K. 108/2) oranla çarpılmadığından
+            // ayrı toplanıp sonunda eklenir. Müebbet/AM/adli para/özel infaz rejimi
+            // satırları zaten gruba girmez — onların kendi rowYatarGun'u döngü içinde
+            // doğrudan totalYatarGun'a eklenmiştir; burada SADECE oran-bazlı süreli
+            // hapis kalemlerinin bitişik toplamı eklenir (içtima tavanı mantığı
+            // değişmez, aşağıdaki kombinasyon tavanı bloğu bu toplamı aynen kullanır).
+            let bitisikHesapDetaylari = []; // rapordaki açıklamaya grup kırılımı için
+            if (hesaplamaYontemi === 'bitisik') {
+                let bitisikSureliYatarToplam = 0;
+                Object.values(bitisikGruplar)
+                    .sort((a, b) => a.oran - b.oran)
+                    .forEach(grup => {
+                        const grupYatar = Math.floor(grup.gun * grup.oran);
+                        bitisikSureliYatarToplam += grupYatar;
+                        bitisikHesapDetaylari.push(`${oranToText(grup.oran)} oranlı kalemler: ${grup.gun} gün × ${oranToText(grup.oran)} = ${grupYatar} gün yatar`);
+                    });
+                bitisikSureliYatarToplam += bitisikEkGunToplam;
+                if (bitisikEkGunToplam > 0) {
+                    bitisikHesapDetaylari.push(`Ek gün (5275 s.K. m.108/2): +${bitisikEkGunToplam} gün`);
+                }
+                totalYatarGun += bitisikSureliYatarToplam;
+            }
 
             // --- ÇOCUK YAŞ İNDİRİMİ: doğum tarihi girildiyse kural ve yaş eşik tarihlerini belirle ---
             const dogumTarihiStr = document.getElementById('hukumluDogumTarihi') ? document.getElementById('hukumluDogumTarihi').value : '';
@@ -2582,9 +2842,18 @@
             let grandTotalMahsupDays = 0;
             let grandTotalMahsupAgirlikli = 0;
             // Açık/denetime ayrılma için asgari kapalı kalma şartına sayılan mahsup günleri:
-            // sadece Tutukluluk (hükümlü bu süreyi kapalı tutukevi/cezaevinde geçirmiş sayılır).
-            // Gözaltı, Açık Çık ve Denetimli Serbestlik mahsupları kapalı kalma şartına dahil edilmez.
+            // Gözaltı + Tutukluluk (hükümlü bu süreleri kapalı tutukevi/cezaevinde geçirmiş
+            // sayılır — kullanıcı onayıyla 2026-11-10'da Gözaltı da bu toplama eklendi,
+            // önceden sadece Tutukluluk sayılıyordu). Açık Çık, Konutta İnfaz ve Denetimli
+            // Serbestlik (normal/ihlalsiz) mahsupları kapalı kalma şartına hâlâ dahil edilmez.
             let tutuklulukToplamGun = 0;
+            // "Açık CİK (Firar)" / "Denetimli Serbestlik (İhlal)" mahsup kayıtları
+            // (kullanıcı onayı, 2026-11-10): bu süreler infazdan sayılmaz (grandTotalMahsupDays/
+            // Agirlikli toplamına hiç eklenmez, yani bu kadar gün cezadan düşülmeden kalır)
+            // VE varlıkları açık/denetimli serbestlik haklarını aşağıda tamamen geçersiz kılar
+            // (bkz. hasAcikCikFirar/hasDsIhlal kullanımı).
+            let hasAcikCikFirar = false;
+            let hasDsIhlal = false;
             const cocukYasMahsupNotlari = []; // açıklama kutusunda listelenecek etkilenen aralıklar
             const mahsupRows = document.querySelectorAll('#mahsupTableBody tr');
             // Tarih çakışması uyarısı için: geçerli (başlangıç+bitiş girilmiş) her
@@ -2601,12 +2870,27 @@
                     const sDate = new Date(sVal);
                     const eDate = new Date(eVal);
                     const diffDays = Math.max(0, diffDaysCalendar(sDate, eDate));
-                    row.querySelector('.mahsup-row-total').innerText = diffDays;
-                    grandTotalMahsupDays += diffDays;
-                    if (tur === 'tutukluluk') tutuklulukToplamGun += diffDays;
+
+                    // 5271 s. CMK 109/3-j (konutta infaz / adli kontrol tedbiri): bu
+                    // tedbir altında geçen süre tutukluluk gibi tam gün sayılmaz,
+                    // "iki güne bir gün" oranında mahsup edilir (kullanıcı onayıyla).
+                    // Tam bir gün karşılığı için 2 tam gün gerektiğinden küsürat
+                    // aşağı yuvarlanır (Math.floor) - 3 gün -> 1 gün, 4 gün -> 2 gün.
+                    const etkinGun = (tur === 'konutta_infaz') ? Math.floor(diffDays / 2) : diffDays;
+                    const firarVeyaIhlalSatiri = (tur === 'acik_cik_firar' || tur === 'ds_ihlal');
+
+                    row.querySelector('.mahsup-row-total').innerText = (tur === 'konutta_infaz' && diffDays > 0)
+                        ? `${etkinGun} (${diffDays}g)`
+                        : diffDays;
+                    if (!firarVeyaIhlalSatiri) {
+                        grandTotalMahsupDays += etkinGun;
+                    }
+                    if (tur === 'tutukluluk' || tur === 'gozalti') tutuklulukToplamGun += diffDays;
+                    if (tur === 'acik_cik_firar' && diffDays > 0) hasAcikCikFirar = true;
+                    if (tur === 'ds_ihlal' && diffDays > 0) hasDsIhlal = true;
                     mahsupAraliklari.push({ no: rowIdx + 1, tur, sDate, eDate });
 
-                    let agirlikliGun = diffDays;
+                    let agirlikliGun = etkinGun;
                     if (cocukYasKurali && (tur === 'tutukluluk' || tur === 'acik_cik') && diffDays > 0) {
                         agirlikliGun = agirlikliMahsupGun(sDate, eDate, cocukYasKurali, yas15Tarihi, yas18Tarihi);
                         if (agirlikliGun !== diffDays) {
@@ -2614,7 +2898,9 @@
                             cocukYasMahsupNotlari.push({ sDate, eDate, gercekGun: diffDays, agirlikliGun });
                         }
                     }
-                    grandTotalMahsupAgirlikli += agirlikliGun;
+                    if (!firarVeyaIhlalSatiri) {
+                        grandTotalMahsupAgirlikli += agirlikliGun;
+                    }
                 } else {
                     row.querySelector('.mahsup-row-total').innerText = 0;
                 }
@@ -2630,7 +2916,7 @@
             // tarihinden önce olması KASITLI OLARAK uyarılmaz — hükümlü önceden
             // denetimli serbestliğe çıkmış, arada yeni bir ilam gelmiş ve tekrar kapalı
             // cezaevine alınmış olabilir; bu meşru bir senaryodur, çakışma değildir.
-            const MAHSUP_TUR_ETIKET = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', ds: 'Denetimli Serbestlik' };
+            const MAHSUP_TUR_ETIKET = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', ds: 'Denetimli Serbestlik', konutta_infaz: 'Konutta İnfaz (Adli Kontrol)', acik_cik_firar: 'Açık CİK (Firar)', ds_ihlal: 'Denetimli Serbestlik (İhlal)' };
             const cakismaMesajlari = [];
             for (let a = 0; a < mahsupAraliklari.length; a++) {
                 for (let b = a + 1; b < mahsupAraliklari.length; b++) {
@@ -2644,7 +2930,7 @@
                     }
                 }
                 const m = mahsupAraliklari[a];
-                if ((m.tur === 'gozalti' || m.tur === 'tutukluluk') && m.eDate > D0) {
+                if ((m.tur === 'gozalti' || m.tur === 'tutukluluk' || m.tur === 'konutta_infaz') && m.eDate > D0) {
                     cakismaMesajlari.push(`${m.no}. mahsup satırı (${MAHSUP_TUR_ETIKET[m.tur]}) bitiş tarihi, cezaevine giriş tarihinden SONRA — kontrol edin.`);
                 }
             }
@@ -2664,6 +2950,11 @@
             let effectiveRawDays = totalRawDays;
             let effectiveYatarGun = totalYatarGun;
             let capWarningText = "";
+            // 28/32 yıl (m.107/3-e / m.108/1-c) tavanı fiilen bağlanırsa (kullanıcı
+            // onayı, 2026-11-10): raporda bu tavanlı koşullu salıverilme tarihinin
+            // yanında, tavan uygulanmasaydı (ham toplamla) çıkacak tarih de ayrıca
+            // bilgi amaçlı gösterilir (bkz. aşağıda sttDateTavansiz).
+            let sttTavanBagladi = false;
 
             // 3713 s.K. m.17: terör suçundan Ağırlaştırılmış Müebbet alan hükümlü için
             // koşullu salıverilme hükümleri hiç uygulanmaz; ceza ölünceye kadar devam eder.
@@ -2682,7 +2973,11 @@
             if (combinationCategory && hasMukerrerSuresiz && ['a', 'b', 'c', 'd'].includes(combinationCategory)) {
                 effectiveYatarGun = maxMukerrerSuresizYatarGun;
                 effectiveRawDays = maxMukerrerSuresizRawDays;
-                capWarningText += `Mükerrerlik/5275 s.K. m.108/1 rejimi kapsamındaki ağırlaştırılmış müebbet/müebbet hapis cezasının, içtimadaki diğer kalemlerle birlikte kendi sabit koşullu salıverilme/hakederek tahliye süresinin (en ağır kalemin kendi değeri) esas alınmasına karar verilmiştir; madde 108, bu tür içtimalar için 107/3-107/4'teki gibi ayrı bir üst sınır öngörmemektedir. `;
+                // NOT: Bu durumda (mükerrer/108-8 rejimindeki AM/müebbet içeren a/b/c/d
+                // içtima kategorisi) en ağır süresiz kalemin kendi sabit STT/BTT değeri
+                // doğrudan sonuç olarak alınır — kullanıcı talebiyle (2026-11-09) bunu
+                // açıklayan metin Açıklama bölümünde artık GÖSTERİLMİYOR (hesaplama
+                // mantığı aynen yukarıdaki şekilde devam ediyor, sadece rapordaki not kaldırıldı).
             } else if (combinationCategory) {
                 const tier = hasOrgutlu ? 'orgutlu' : 'normal';
                 let ceilingYil = COMBINATION_CAP_YIL[tier][combinationCategory];
@@ -2711,6 +3006,7 @@
 
                 if (Math.floor(totalYatarGun) > sttCapDays) {
                     effectiveYatarGun = sttCapDays;
+                    sttTavanBagladi = true;
                     capWarningText += `Hükümlünün koşullu salıverilme için infaz kurumunda geçirmesi gereken süre, hesaplanan tutar bu sınırı aştığından, 5275 sayılı Kanun ${maddeRef} maddesi gereğince en fazla ${sttCapDays} gün (${ceilingYil} yıl) olarak hesaplanmıştır. `;
                 }
 
@@ -2754,6 +3050,22 @@
             const sttDate = new Date(D0.getTime());
             sttDate.setDate(sttDate.getDate() + sttDays);
 
+            // 28/32 yıl tavanı bağlandıysa (sttTavanBagladi), tavan uygulanmasaydı
+            // (ham/gerçek toplam yatar güne göre) koşullu salıverilme tarihi ne
+            // olurdu — bilgi amaçlı, raporda tavanlı tarihin yanında gösterilir.
+            if (sttTavanBagladi) {
+                let sttDaysTavansiz;
+                if (cocukYasKurali) {
+                    const kalanYatarGunHedefiTavansiz = Math.max(0, Math.floor(totalYatarGun) - grandTotalMahsupAgirlikli);
+                    sttDaysTavansiz = simulateSTTGercekGun(D0, kalanYatarGunHedefiTavansiz, cocukYasKurali, yas15Tarihi, yas18Tarihi).gun;
+                } else {
+                    sttDaysTavansiz = Math.max(0, Math.floor(totalYatarGun) - grandTotalMahsupDays);
+                }
+                const sttDateTavansiz = new Date(D0.getTime());
+                sttDateTavansiz.setDate(sttDateTavansiz.getDate() + sttDaysTavansiz);
+                capWarningText += `(Bilgi: 28/32 yıllık tavan bağlanmasaydı, koşullu salıverilme tarihi ${formatDate(sttDateTavansiz)} olurdu.) `;
+            }
+
             /* ======================================================
                MUHTEMEL AÇIK CEZA İNFAZ KURUMUNA / DENETİMLİ SERBESTLİĞE
                AYRILMA TARİHİ
@@ -2787,10 +3099,20 @@
                  OTOMATİK OLARAK SAĞLANMIŞ KABUL EDİLMEZ.
                ====================================================== */
             const ON_YIL_GUN_ESIK = 10 * 365;
-            const kapaliKalmaGerekliGun = totalRawDays < ON_YIL_GUN_ESIK ? 30 : Math.ceil(totalRawDays / 10);
-            const kapaliKalmaGerekliGunAciklama = totalRawDays < ON_YIL_GUN_ESIK
-                ? "en az 1 ay (30 gün)"
-                : `toplam cezanın 1/10'u olan ${kapaliKalmaGerekliGun} gün`;
+            // Terör örgütü suçları / devletin egemenliğine karşı suçlar (kullanıcı
+            // onayı, 2026-11-10): asgari kapalı kalma şartı, 10 yıl eşiğine
+            // bakılmaksızın HER ZAMAN toplam cezanın 1/3'üdür (genel 1/10 kuralı
+            // yerine). Süreli hapis (acikDsAdaylar) veya müebbet (muebbetAdaylar)
+            // kalemlerinden biri bile bu kapsamdaysa içtimanın tamamı için geçerlidir.
+            const anyTerorDevletSucu = acikDsAdaylar.some(r => r.terorDevletSucu) || muebbetAdaylar.some(r => r.terorDevletSucu);
+            const kapaliKalmaGerekliGun = anyTerorDevletSucu
+                ? Math.ceil(totalRawDays / 3)
+                : (totalRawDays < ON_YIL_GUN_ESIK ? 30 : Math.ceil(totalRawDays / 10));
+            const kapaliKalmaGerekliGunAciklama = anyTerorDevletSucu
+                ? `(terör örgütü/devletin egemenliğine karşı suç nedeniyle) toplam cezanın 1/3'ü olan ${kapaliKalmaGerekliGun} gün`
+                : (totalRawDays < ON_YIL_GUN_ESIK
+                    ? "en az 1 ay (30 gün)"
+                    : `toplam cezanın 1/10'u olan ${kapaliKalmaGerekliGun} gün`);
 
             // Giriş tarihi (D0) ile BUGÜN arasındaki gerçek gün farkı ve kullanıcının
             // bu süre için verdiği cevap (girisGunuDurum select kutusu).
@@ -2999,6 +3321,23 @@
                 }
             }
 
+            // AÇIK CİK (FİRAR) / DENETİMLİ SERBESTLİK (İHLAL) MAHSUP KAYDI VARSA
+            // (kullanıcı onayı, 2026-11-10): yukarıda hesaplanan açık/DS hakkı
+            // tamamen geçersiz kılınır. Kapalı ceza infaz kurumundan FİRAR varsa,
+            // açık ceza infaz kurumuna ayrılma hakkı hiç kullanılamaz; DS hakkı da
+            // açık hakkının ön şartına bağlı olduğundan aynı şekilde uygulanmaz.
+            // Denetimli serbestlik İHLALİ varsa, DS hakkı o aşamada iptal edilmiş
+            // sayılır ve hükümlü yeniden kapalı ceza infaz kurumunda infaza devam
+            // eder; daha önce kullanılmış olan açık hakkı bundan etkilenmez.
+            if (hasAcikCikFirar) {
+                acikAyrilmaMetin = 'Açık Ceza İnfaz Kurumuna Ayrılma Hakkı YOKTUR (kapalı ceza infaz kurumundan firar nedeniyle).';
+                dsAyrilmaMetin = 'Denetimli Serbestliğe Ayrılma Hakkı YOKTUR (açık hakkının ön şartı olan firar yasağı ihlal edilmiştir).';
+                acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Mahsup tablosunda "Açık CİK (Firar)" kaydı bulunduğundan, hükümlünün açık ceza infaz kurumuna ve denetimli serbestliğe ayrılma hakkı tamamen ortadan kalkmıştır.';
+            } else if (hasDsIhlal) {
+                dsAyrilmaMetin = 'Denetimli Serbestlik Hakkı İHLAL NEDENİYLE İPTAL EDİLMİŞTİR — hükümlü yeniden kapalı ceza infaz kurumunda infaza devam eder.';
+                acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Mahsup tablosunda "Denetimli Serbestlik (İhlal)" kaydı bulunduğundan, denetimli serbestlik hakkı iptal edilmiş sayılmıştır.';
+            }
+
             // Resmi rapor alanları
             document.getElementById('repCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
 
@@ -3025,10 +3364,18 @@
                 document.getElementById('repStt').innerText = 'Uygulanmaz (3713 S.K. m.17)';
             } else {
                 document.getElementById('repBtt').innerText = formatDate(bttDate);
-                document.getElementById('repStt').innerText = formatDate(sttDate);
+                // 5411 S.K. m.167: zimmet borcu/tazminatı ödenmediğinden koşullu
+                // salıverilme hükümleri uygulanmaz; hükümlü BTT'ye kadar (tam infaz) yatar.
+                document.getElementById('repStt').innerText = zimmetKosulluUygulanmaz
+                    ? 'Uygulanmaz (5411 S.K. m.167)'
+                    : formatDate(sttDate);
             }
-            document.getElementById('repAcikAyrilma').innerText = acikAyrilmaMetin;
-            document.getElementById('repDsAyrilma').innerText = dsAyrilmaMetin;
+            document.getElementById('repAcikAyrilma').innerText = zimmetKosulluUygulanmaz
+                ? 'Uygulanmaz (5411 S.K. m.167)'
+                : acikAyrilmaMetin;
+            document.getElementById('repDsAyrilma').innerText = zimmetKosulluUygulanmaz
+                ? 'Uygulanmaz (5411 S.K. m.167)'
+                : dsAyrilmaMetin;
 
             const bugunFormatted = formatDate(new Date());
             document.getElementById('repTarihAlani').innerText = bugunFormatted;
@@ -3036,22 +3383,31 @@
             // Raporda Mahsup Bilgileri Tablosu
             const repMahsupBody = document.getElementById('repMahsupRows');
             if (repMahsupBody) {
-                const mahsupLabels = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', ds: 'Denetimli Serbestlik' };
+                const mahsupLabels = { gozalti: 'Gözaltı', tutukluluk: 'Tutukluluk', acik_cik: 'Açık Çık', ds: 'Denetimli Serbestlik', konutta_infaz: 'Konutta İnfaz (Adli Kontrol)', acik_cik_firar: 'Açık CİK (Firar)', ds_ihlal: 'Denetimli Serbestlik (İhlal)' };
                 const rows = [];
                 mahsupRows.forEach(row => {
                     const tur = row.querySelector('.mahsup-tur').value;
                     const sVal = row.querySelector('.mahsup-start').value;
                     const eVal = row.querySelector('.mahsup-end').value;
-                    const gun = row.querySelector('.mahsup-row-total').innerText;
+                    const rawGun = row.querySelector('.mahsup-row-total').innerText;
                     if (sVal && eVal) {
                         const cocukTag = row.dataset.cocukYasEtkisi === '1'
                             ? ' <span class="text-[8px] font-bold text-rose-600">(Çocuk Yaş)</span>' : '';
+                        // konutta_infaz satırlarında row-total "X (Yg)" biçiminde (X=mahsup
+                        // edilen gün, Y=gerçek gün); raporda "X Gün (Y gün karşılığı, 2g=1g)"
+                        // şeklinde daha okunur gösterilir.
+                        let gun = rawGun, konutTag = '';
+                        const konutMatch = /^(\d+) \((\d+)g\)$/.exec(rawGun);
+                        if (konutMatch) {
+                            gun = konutMatch[1];
+                            konutTag = ` <span class="text-[8px] font-bold text-indigo-600">(${konutMatch[2]} gün karşılığı, CMK 109/3-j 2g=1g)</span>`;
+                        }
                         rows.push(`
                             <tr class="border-b border-slate-300">
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
-                                <td class="py-0.5 px-1.5 leading-tight font-semibold text-emerald-700">${gun} Gün${cocukTag}</td>
+                                <td class="py-0.5 px-1.5 leading-tight font-semibold text-emerald-700">${gun} Gün${cocukTag}${konutTag}</td>
                             </tr>
                         `);
                     }
@@ -3104,20 +3460,32 @@
             // 108/9 madde çocuk indirimi notu: SADECE bu indirim en az bir ceza kaleminde
             // fiilen uygulanmışsa yazılır (cocuk1089Notlari boşsa hiç eklenmez).
             const cocuk1089AciklamaMetni = cocuk1089Notlari.length ? cocuk1089Notlari.join('\n') : "";
-            const terorSureliAciklamaMetni = terorSureliNotlari.length ? terorSureliNotlari.join('\n') : "";
+
+            // 5411 S.K. m.167 notu: SADECE zimmet (m.160) borcu/tazminatı "Ödenmedi"
+            // işaretlenmiş en az bir satır varsa yazılır (kullanıcı talebi, 2026-11-09).
+            const zimmetAciklamaMetni = zimmetKosulluUygulanmaz
+                ? `<span style="color:#dc2626;font-weight:700;">5411 sayılı Bankacılık Kanunu'nun 167. maddesi gereği hesaplama yapılmıştır: zimmet (m.160) suçundan dolayı Fona veya Hazineye olan borç ve tazminatlar ödenmediğinden veya malvarlığından tahsil olunamadığından, koşullu salıverilme hükümleri uygulanmamış; buna bağlı olarak açık ceza infaz kurumuna ve denetimli serbestliğe ayrılma hakları da hesaplanmamıştır. Hükümlü, borç/tazminat ödenip bu durum belgeyle tevsik edilmedikçe tam infaz (BTT) tarihine kadar yatar.</span>`
+                : "";
+
+            // Bitişik hesap grup kırılımı notu: SADECE bitişik yöntem seçiliyse ve en az
+            // bir oran-bazlı süreli hapis grubu varsa yazılır (kullanıcı talebi, 2026-11-09).
+            const bitisikAciklamaMetni = (hesaplamaYontemi === 'bitisik' && bitisikHesapDetaylari.length)
+                ? `Bitişik hesap yöntemi uygulanmıştır: oran-bazlı süreli hapis kalemleri, aynı orandaki kalemlerin ham gün toplamına göre gruplanmış ve oran bu grup toplamına bir kerede uygulanmıştır. ${bitisikHesapDetaylari.join('; ')}.`
+                : "";
 
             // Açıklama: otomatik üretilen kanuni uyarı metni + çocuk yaş notu + özel infaz
-            // rejimi notları + kullanıcının yazdığı manuel not
+            // rejimi notları + bitişik hesap notu + kullanıcının yazdığı manuel not
             const manuelNot = (document.getElementById('aciklamaManuel') || {}).value || "";
             const repAciklamaEl = document.getElementById('repAciklama');
             if (repAciklamaEl) {
                 const parcalar = [
                     capWarningText.trim(),
-                    acikDsNot.trim(),
+                    zimmetAciklamaMetni,
+                    zimmetKosulluUygulanmaz ? "" : acikDsNot.trim(),
                     cocukYasAciklamaMetni.trim(),
                     cocuk1089AciklamaMetni.trim(),
-                    terorSureliAciklamaMetni.trim(),
                     ...ozelInfazAciklamaParcalari,
+                    bitisikAciklamaMetni,
                     manuelNot.trim() ? escapeHtml(manuelNot.trim()) : ""
                 ].filter(Boolean);
                 // NOT: özel infaz notları kırmızı <span> işaretlemesi içerdiğinden burada
@@ -3163,7 +3531,7 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('infazBaslangic').value = today;
             addPenaltyRow('sureli', 0, 0, 0, '', today, 'yok', false);
-            calculateAll();
+            setHesaplamaYontemi('ayrisik'); // hesaplama yöntemini varsayılana döndürür + calculateAll() çağırır
         }
 
         /* ======================================================
@@ -3258,7 +3626,8 @@
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
-                    apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0
+                    apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0,
+                    zimmetOdeme: row.querySelector('.penalty-zimmet-odeme') ? row.querySelector('.penalty-zimmet-odeme').value : ''
                 });
             });
 
@@ -3275,6 +3644,7 @@
                 hukumluDogumTarihi: document.getElementById('hukumluDogumTarihi').value,
                 infazBaslangic: document.getElementById('infazBaslangic').value,
                 aciklamaManuel: (document.getElementById('aciklamaManuel') || {}).value || "",
+                hesaplamaYontemi: hesaplamaYontemi,
                 penalties: penalties,
                 mahsups: mahsups,
                 timestamp: new Date().toISOString()
@@ -3312,7 +3682,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0);
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '');
                         });
                     }
 
@@ -3323,7 +3693,9 @@
                         });
                     }
 
-                    calculateAll();
+                    // Hesaplama yöntemi (ayrışık/bitişik) — eski JSON dosyalarında bu alan
+                    // yoktur, bu durumda varsayılan (ayrışık) kullanılır.
+                    setHesaplamaYontemi(data.hesaplamaYontemi === 'bitisik' ? 'bitisik' : 'ayrisik');
                 } catch (err) {
                     alert('Geçersiz JSON Verisi!');
                 }
