@@ -1657,19 +1657,33 @@
             // yanlışlıkla mahsup satırı sanılıp tabloya ekleniyordu (kullanıcı
             // tespiti, 2026-11-09) — bu yüzden tarama TOPLAM satırına ulaşınca
             // kesin olarak durdurulur; TOPLAM'dan sonrasına hiç bakılmaz.
-            const headerIdx = lines.findIndex(l => /MAHSUP\s+B[İI]LG[İI]LER[İI]/i.test(l));
+            const headerIdx = lines.findIndex(l => /MAHSUP\s*B\s*[İIi]\s*LG\s*[İIi]\s*LER|MAHSUP\s+NEV/i.test(l));
+            // KESİN SINIR (kullanıcı talebi, 2026-11-11): mahsup bilgisi "TOPLAM MAHSUP"
+            // satırında BİTER. Bu satırdan sonraki hiçbir tarih (düzenleme tarihi, NOT /
+            // açıklama paragrafındaki tarihler) mahsup sayılmaz. TOPLAM ibaresi satırın
+            // ortasında da olabilir (PDF'te son mahsup satırıyla aynı satıra düşebilir);
+            // o durumda satırın TOPLAM'dan ÖNCEKİ kısmı korunur, sonrası atılır.
+            const toplamRe = /TOPLAM\s*MAHSUP|^\s*TOPLAM(\s|:|$)/i;
+            const notRe = /^\s*(NOT|NOTLAR)\s*:/i;
+            const basla = headerIdx !== -1 ? headerIdx + 1 : 0;
             let toplamIdx = -1;
-            if (headerIdx !== -1) {
-                for (let k = headerIdx + 1; k < lines.length; k++) {
-                    if (/^TOPLAM(\s|:|$)/i.test(lines[k])) { toplamIdx = k; break; }
-                }
+            for (let k = basla; k < lines.length; k++) {
+                if (toplamRe.test(lines[k])) { toplamIdx = k; break; }
             }
-            // Başlık ve TOPLAM satırı ikisi de bulunduysa SADECE aralarındaki
-            // satırlar taranır; bulunamazsa (farklı/eski bir belge düzeni ihtimaline
-            // karşı) eski davranışa — tüm belgeyi tarama — düşülür.
-            const taranacakSatirlar = (headerIdx !== -1 && toplamIdx !== -1)
-                ? lines.slice(headerIdx + 1, toplamIdx)
-                : lines;
+            let taranacakSatirlar;
+            if (toplamIdx !== -1) {
+                taranacakSatirlar = lines.slice(basla, toplamIdx);
+                const kalan = lines[toplamIdx].slice(0, lines[toplamIdx].search(toplamRe)).trim();
+                if (kalan) taranacakSatirlar.push(kalan);
+            } else {
+                // TOPLAM satırı hiç yoksa: başlıktan (yoksa belgenin başından) itibaren,
+                // ilk "NOT:" / "Notlar:" satırına kadar taranır — açıklama bölümüne girilmez.
+                let notIdx = -1;
+                for (let k = basla; k < lines.length; k++) {
+                    if (notRe.test(lines[k])) { notIdx = k; break; }
+                }
+                taranacakSatirlar = lines.slice(basla, notIdx !== -1 ? notIdx : lines.length);
+            }
 
             // Başlangıç tarihi bir satırda, bitiş tarihi (çizgiyle birlikte) sonraki satırda
             // kalmışsa ("01/08/2023 -" + "21/02/2024") ikisi tek satırda birleştirilir.
