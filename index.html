@@ -1252,7 +1252,8 @@
         // eşleşir — eski kod tüm tabloyu TEK bir düzenin (ya hep satır ya hep
         // sütun) izlediğini varsayıyordu.
         function genelDateAnchoredRealign(tableLines) {
-            const tamTarihRe = /^\d{1,2}[\/.]\d{1,2}[\/.]\d{4}$/;
+            // Suç tarihi sütununda tam tarih YERİNE sadece yıl (örn. "2017") yazılmış olabilir.
+            const tamTarihRe = /^(?:\d{1,2}[\/.]\d{1,2}[\/.])?\d{4}$/;
             const n = tableLines.length;
             const sentetikSatirlar = [];
             let i = 0;
@@ -1290,7 +1291,8 @@
         function realignUdfCezaTablosu(lines) {
             const headerIdx = lines.findIndex(l => /^[İI]nfaz\s*T[üu]r[üu]\s*:?\s*$/i.test(l.trim()));
             if (headerIdx === -1) return lines;
-            const tamTarihRe = /^\d{1,2}[\/.]\d{1,2}[\/.]\d{4}$/;
+            // Tam tarih veya sadece yıl (örn. "2017") — suç tarihi sütunu için.
+            const tamTarihRe = /^(?:\d{1,2}[\/.]\d{1,2}[\/.])?\d{4}$/;
             let i = headerIdx + 1;
             // İlam No gibi paylaşılan, tarih olmayan tekil değer satırlarını atla
             // (yapı tahmin edilemiyorsa, çok uzaklaşınca vazgeç ve dokunma).
@@ -1520,8 +1522,19 @@
             lines.forEach(line => {
                 const sucTarihiTahmini = line.startsWith(UDF_TAHMINI_TARIH_ISARETI);
                 if (sucTarihiTahmini) line = line.slice(UDF_TAHMINI_TARIH_ISARETI.length);
-                const dateMatch = line.match(dateRe);
-                if (!dateMatch) return;
+                let dateMatch = line.match(dateRe);
+                // A YOLU (kullanıcı kararı, 2026-11-11): suç tarihi belgede tam tarih
+                // yerine sadece yıl olarak ("2017") yazılmışsa satır ATLANMAZ; ceza
+                // süresi/madde/oran yine okunur, suç tarihi alanı BOŞ bırakılıp
+                // kullanıcıdan tam tarihi girmesi istenir (gün/ay uydurulmaz — 30/03/2020
+                // gibi eşikler hesabı değiştirdiği için tahmin yanlış sonuç verebilir).
+                let sucTarihiSadeceYil = '';
+                if (!dateMatch) {
+                    // "2018/245" gibi İlam/Esas numaralarındaki yıl yıl-only suç tarihi sayılmaz.
+                    const yilM0 = line.match(/(?<![\d\/.\-])(19[89]\d|20[0-3]\d)(?![\d]|\s*[\/.\-]\s*\d)/);
+                    if (!yilM0) return;
+                    sucTarihiSadeceYil = yilM0[1];
+                }
                 const upper = line.toLocaleUpperCase('tr-TR');
                 // "CEZASI :" ile başlayan özet satırı (tek satırda toplam yıl/ay/gün) bir
                 // ceza kalemi değil, müddetnamenin genel özetidir — atlanır.
@@ -1583,7 +1596,8 @@
                 const ekGunM = ekGunMatches.length ? ekGunMatches[ekGunMatches.length - 1] : null;
 
                 satirlar.push({
-                    sucTarihi: `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`,
+                    sucTarihi: dateMatch ? `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : '',
+                    sucTarihiSadeceYil,
                     sucTarihiTahmini,
                     maddeRaw: maddeMatch ? normalizeEdilmisMadde(maddeMatch[1].trim()) : '',
                     yil: yilM ? parseInt(yilM[1]) : 0,
@@ -1618,7 +1632,14 @@
             // AYRI sütunlarda (tire YOK) yer alıyor — satır birleştirildiğinde araya sadece
             // boşluk/metin giriyor. Bu yüzden iki tarih arasına en fazla 10 karakterlik
             // (tire, boşluk vb.) esnek bir boşluk bırakılıyor; tire şartı KALDIRILDI.
-            const rangeRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4}).{0,10}?(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
+            // 2026-11-11 DÜZELTME: (1) tarih içindeki ayırıcı artık "/" ve "." yanında "-"
+            // de olabilir ("01-08-2023"); (2) iki tarih arasındaki çizgi çeşitleri (-, –, —)
+            // ve boşluk/kısa metin payı 30 karaktere çıkarıldı; (3) başlangıç ile bitiş
+            // tarihi çizgi yüzünden ALT SATIRA bölünmüşse satırlar birleştirilir.
+            const rangeRe = /(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}).{0,30}?(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/;
+            const tekTarihRe = /\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{4}/g;
+            const cizgiSonRe = /[-–—]\s*$/;
+            const cizgiBasRe = /^\s*[-–—]/;
 
             // MAHSUP BİLGİLERİ tablosu belgede her zaman bir "TOPLAM" satırıyla
             // biter; bundan SONRAKİ her şey (imza, tarih, "NOT:" açıklama paragrafı)
@@ -1642,8 +1663,26 @@
                 ? lines.slice(headerIdx + 1, toplamIdx)
                 : lines;
 
+            // Başlangıç tarihi bir satırda, bitiş tarihi (çizgiyle birlikte) sonraki satırda
+            // kalmışsa ("01/08/2023 -" + "21/02/2024") ikisi tek satırda birleştirilir.
+            const birlesik = [];
+            for (let q = 0; q < taranacakSatirlar.length; q++) {
+                let cur = taranacakSatirlar[q];
+                const curTarihSayisi = (cur.match(tekTarihRe) || []).length;
+                const nxt = taranacakSatirlar[q + 1];
+                if (curTarihSayisi === 1 && nxt) {
+                    const nxtTarihSayisi = (nxt.match(tekTarihRe) || []).length;
+                    const nxtSadeceTarih = nxt.replace(tekTarihRe, '').replace(/[\s\-–—]/g, '') === '';
+                    if (nxtTarihSayisi === 1 && (cizgiSonRe.test(cur) || cizgiBasRe.test(nxt) || nxtSadeceTarih)) {
+                        cur = cur + ' ' + nxt;
+                        q++;
+                    }
+                }
+                birlesik.push(cur);
+            }
+
             const satirlar = [];
-            taranacakSatirlar.forEach(line => {
+            birlesik.forEach(line => {
                 const m = line.match(rangeRe);
                 if (!m) return;
                 const upper = line.toLocaleUpperCase('tr-TR');
@@ -1860,6 +1899,28 @@
                     };
                     hataliTr.addEventListener('input', isaretiTemizleTarih, { once: true });
                     hataliTr.addEventListener('change', isaretiTemizleTarih, { once: true });
+                });
+                // Suç tarihi belgede sadece YIL olarak yazılmış satırlar (A yolu, 2026-11-11):
+                // tarih alanı boş bırakıldı, kırmızı işaretlenip kullanıcıdan tam tarih istenir.
+                cezaSatirlari.forEach((s, idx) => {
+                    if (!s.sucTarihiSadeceYil) return;
+                    uyarilar.push(`<li id="suc-tarihi-yil-uyari-${idx}">${idx + 1}. ceza satırında suç tarihi belgede sadece yıl olarak (${s.sucTarihiSadeceYil}) yazılı; ceza süresi ve diğer bilgiler dolduruldu, <span class="text-red-700 font-semibold">ancak suç tarihi alanı BOŞ bırakıldı — lütfen tam suç tarihini (gün/ay/yıl) siz girin.</span> (Bazı oranlar ve haklar suç tarihine göre değiştiği için tarih tahmin edilmedi.)</li>`);
+                    const hataliTr = eklenenCezaSatirElemanlari[idx];
+                    if (!hataliTr) return;
+                    hataliTr.classList.add('ceza-hata-satiri');
+                    const tarihAlani = hataliTr.querySelector('.penalty-suc-tarihi');
+                    if (tarihAlani) tarihAlani.classList.add('ceza-hata-alani');
+                    const isaretiTemizleYil = () => {
+                        // Tarih hâlâ boşsa işareti kaldırma (kullanıcı henüz girmedi).
+                        if (tarihAlani && !tarihAlani.value) return;
+                        hataliTr.classList.remove('ceza-hata-satiri');
+                        if (tarihAlani) tarihAlani.classList.remove('ceza-hata-alani');
+                        document.getElementById(`suc-tarihi-yil-uyari-${idx}`)?.remove();
+                        hataliTr.removeEventListener('input', isaretiTemizleYil);
+                        hataliTr.removeEventListener('change', isaretiTemizleYil);
+                    };
+                    hataliTr.addEventListener('input', isaretiTemizleYil);
+                    hataliTr.addEventListener('change', isaretiTemizleYil);
                 });
                 // Belgede yazılı oranın (hesaplamada DEĞİŞTİRİLMEDEN kullanılan değer),
                 // suç maddesi listesine göre OLMASI GEREKEN oranla uyuşup uyuşmadığını
