@@ -1978,7 +1978,9 @@
                     if (!hataliTr) return;
                     hataliTr.classList.add('ceza-hata-satiri');
                     const tarihAlani = hataliTr.querySelector('.penalty-suc-tarihi');
-                    if (tarihAlani) tarihAlani.classList.add('ceza-hata-alani');
+                    // addPenaltyRow, suç tarihi verilmediğinde alanı BUGÜNÜN tarihiyle doldurur;
+                    // burada alan bilerek BOŞALTILIR ki bugünün tarihi suç tarihi sanılmasın.
+                    if (tarihAlani) { tarihAlani.value = ''; tarihAlani.classList.add('ceza-hata-alani'); }
                     const isaretiTemizleYil = () => {
                         // Tarih hâlâ boşsa işareti kaldırma (kullanıcı henüz girmedi).
                         if (tarihAlani && !tarihAlani.value) return;
