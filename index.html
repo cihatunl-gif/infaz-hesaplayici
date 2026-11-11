@@ -145,7 +145,8 @@
 
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                <div class="flex items-center justify-between mb-3">
+                <!-- Başlık + Ceza Ekle / Manuel Ekle: sayfa aşağı kaydırıldıkça üstte SABİT kalır (2026-11-11) -->
+                <div class="flex items-center justify-between mb-3" style="position: sticky; top: 0; z-index: 30; background: #ffffff; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                         <i class="fa-solid fa-layer-group text-amber-500"></i> Cezalar, Süresiz Hapis & Suç Maddesi (5275 s.K. m.99)
                     </h2>
@@ -1296,7 +1297,7 @@
             let i = headerIdx + 1;
             // İlam No gibi paylaşılan, tarih olmayan tekil değer satırlarını atla
             // (yapı tahmin edilemiyorsa, çok uzaklaşınca vazgeç ve dokunma).
-            while (i < lines.length && !tamTarihRe.test(lines[i])) {
+            while (i < lines.length && !(tamTarihRe.test(lines[i]) || lines[i] === '-')) {
                 if (i - headerIdx > 5) return lines;
                 i++;
             }
@@ -1319,7 +1320,7 @@
                 for (let r = 0; r < nSatir; r++) {
                     const tarihSatiri = tableLines[r * 4];
                     const digerUcSatir = tableLines.slice(r * 4 + 1, r * 4 + 4);
-                    if (!tamTarihRe.test(tarihSatiri) || digerUcSatir.some(l => tamTarihRe.test(l))) {
+                    if (!(tamTarihRe.test(tarihSatiri) || tarihSatiri === '-') || digerUcSatir.some(l => tamTarihRe.test(l))) {
                         satirBazliUyumlu = false;
                         break;
                     }
@@ -1327,7 +1328,8 @@
                 if (satirBazliUyumlu) {
                     const sentetikSatirlar = [];
                     for (let r = 0; r < nSatir; r++) {
-                        sentetikSatirlar.push(tableLines.slice(r * 4, r * 4 + 4).join(' '));
+                        const dortlu = tableLines.slice(r * 4, r * 4 + 4);
+                        sentetikSatirlar.push(dortlu[0] === '-' ? UDF_TARIH_YOK_ISARETI + dortlu.slice(1).join(' ') : dortlu.join(' '));
                     }
                     return [...lines, ...sentetikSatirlar];
                 }
@@ -1517,6 +1519,7 @@
         // gerçek bir müddetname metninde bu dizi asla geçmez, bu yüzden
         // güvenle işaret olarak kullanılabilir.
         const UDF_TAHMINI_TARIH_ISARETI = '¤TAHMINI_TARIH¤';
+        const UDF_TARIH_YOK_ISARETI = '¤TARIH_YOK¤';
 
         function parseCezaSatirlari(lines) {
             const dateRe = /(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/;
@@ -1524,14 +1527,21 @@
             lines.forEach(line => {
                 const sucTarihiTahmini = line.startsWith(UDF_TAHMINI_TARIH_ISARETI);
                 if (sucTarihiTahmini) line = line.slice(UDF_TAHMINI_TARIH_ISARETI.length);
-                let dateMatch = line.match(dateRe);
+                // Suç tarihi hücresi "-" (boş) olan satır (programın kendi raporunda suç tarihi
+                // girilmemiş kalem): satır atlanmaz, tarih boş bırakılıp kullanıcıdan istenir.
+                const sucTarihiBos = line.startsWith(UDF_TARIH_YOK_ISARETI);
+                if (sucTarihiBos) line = line.slice(UDF_TARIH_YOK_ISARETI.length);
+                // AÇIKLAMA / NOT paragrafları (uzun cümleler) içinde tarih, madde ve "3 yıl" gibi
+                // ifadeler geçebilir; bunlar ceza kalemi DEĞİLDİR. Gerçek ceza satırları kısadır.
+                if (line.length > 200) return;
+                let dateMatch = sucTarihiBos ? null : line.match(dateRe);
                 // A YOLU (kullanıcı kararı, 2026-11-11): suç tarihi belgede tam tarih
                 // yerine sadece yıl olarak ("2017") yazılmışsa satır ATLANMAZ; ceza
                 // süresi/madde/oran yine okunur, suç tarihi alanı BOŞ bırakılıp
                 // kullanıcıdan tam tarihi girmesi istenir (gün/ay uydurulmaz — 30/03/2020
                 // gibi eşikler hesabı değiştirdiği için tahmin yanlış sonuç verebilir).
                 let sucTarihiSadeceYil = '';
-                if (!dateMatch) {
+                if (!dateMatch && !sucTarihiBos) {
                     // "2018/245" gibi İlam/Esas numaralarındaki yıl yıl-only suç tarihi sayılmaz.
                     const yilM0 = line.match(/(?<![\d\/.\-])(19[89]\d|20[0-3]\d)(?![\d]|\s*[\/.\-]\s*\d)/);
                     if (!yilM0) return;
@@ -1627,6 +1637,7 @@
                 satirlar.push({
                     sucTarihi: dateMatch ? `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : '',
                     sucTarihiSadeceYil,
+                    sucTarihiBos,
                     sucTarihiTahmini,
                     maddeRaw: maddeMatch ? normalizeEdilmisMadde(maddeMatch[1].trim()) : '',
                     yil: yilM ? parseInt(yilM[1]) : 0,
@@ -1972,8 +1983,8 @@
                 // Suç tarihi belgede sadece YIL olarak yazılmış satırlar (A yolu, 2026-11-11):
                 // tarih alanı boş bırakıldı, kırmızı işaretlenip kullanıcıdan tam tarih istenir.
                 cezaSatirlari.forEach((s, idx) => {
-                    if (!s.sucTarihiSadeceYil) return;
-                    uyarilar.push(`<li id="suc-tarihi-yil-uyari-${idx}">${idx + 1}. ceza satırında suç tarihi belgede sadece yıl olarak (${s.sucTarihiSadeceYil}) yazılı; ceza süresi ve diğer bilgiler dolduruldu, <span class="text-red-700 font-semibold">ancak suç tarihi alanı BOŞ bırakıldı — lütfen tam suç tarihini (gün/ay/yıl) siz girin.</span> (Bazı oranlar ve haklar suç tarihine göre değiştiği için tarih tahmin edilmedi.)</li>`);
+                    if (!s.sucTarihiSadeceYil && !s.sucTarihiBos) return;
+                    uyarilar.push(`<li id="suc-tarihi-yil-uyari-${idx}">${idx + 1}. ceza satırında suç tarihi belgede ${s.sucTarihiBos ? 'yazılı değil' : `sadece yıl olarak (${s.sucTarihiSadeceYil}) yazılı`}; ceza süresi ve diğer bilgiler dolduruldu, <span class="text-red-700 font-semibold">ancak suç tarihi alanı BOŞ bırakıldı — lütfen tam suç tarihini (gün/ay/yıl) siz girin.</span> (Bazı oranlar ve haklar suç tarihine göre değiştiği için tarih tahmin edilmedi.)</li>`);
                     const hataliTr = eklenenCezaSatirElemanlari[idx];
                     if (!hataliTr) return;
                     hataliTr.classList.add('ceza-hata-satiri');
@@ -2800,6 +2811,9 @@
             // kendi aralarında toplar (yıl+yıl, ay+ay, gün+gün). Süresiz cezalar (müebbet/
             // ağırlaştırılmış müebbet) bu toplama girmez (yıl/ay/gün girişleri yoktur).
             let toplamYilAyri = 0, toplamAyAyri = 0, toplamGunAyri = 0;
+            // Adli para cezasından çevrilen hapis günlerinin toplamı (rapordaki "CEZASI (TOPLAM)"
+            // gün hanesine eklenir; açık hakkı hesabında toplam cezadan düşülür — 2026-11-11).
+            let apcToplamGun = 0;
             const rowReportData = [];
 
             // Kombinasyon (içtima) tavanı için sayaçlar
@@ -2850,7 +2864,13 @@
             // firarTarihleri, "firar tarihi 31/07/2023'ten sonra mı" sorusunun
             // cevaplanması için her bir firar kaydının (madde veya mahsup) suç/
             // başlangıç tarihini tutar.
-            let firarSucuSayisi = 0;
+            let firarSucuSayisi = 0; // (eski toplam sayaç — artık kullanılmıyor, aşağıdaki iki ayrı sayaç esas)
+            // KULLANICI KARARI (2026-11-11): ceza bilgisindeki TCK 292 mahkumiyetleri ile mahsup
+            // tablosundaki "Açık CİK (Firar)" kayıtları AYRI AYRI değerlendirilir, birbirine
+            // EKLENMEZ — aynı firar olayı hem mahkumiyet hem mahsup kaydı olarak göründüğünde
+            // "2 kez firar" sayılmasın diye. "2 kez firar" = ceza bilgisinde 2+ firar mahkumiyeti
+            // VEYA mahsup tablosunda 2+ firar kaydı.
+            let firarCezaSayisi = 0, firarMahsupSayisi = 0;
             const firarTarihleri = [];
 
             // 108/9 madde çocuk indirimi (TCK 102/2, 103, 104/2-3, 188): doğum tarihi,
@@ -2879,7 +2899,7 @@
                 // R1 (firar, kullanıcı onayı 2026-11-10): bu satır TCK 292/1 veya
                 // 292/2'den bir mahkumiyet ise firar sayacına eklenir.
                 if (isFirarSucuMaddesi(sucMadde)) {
-                    firarSucuSayisi++;
+                    firarCezaSayisi++;
                     firarTarihleri.push(sTarih ? new Date(sTarih) : null);
                 }
 
@@ -3050,6 +3070,8 @@
                     // mükerrerlik de etkilemez. İçtima (m.107/3-4) kombinasyon tavanlarına dahil edilmez.
                     rowDays = apcGunDeger;
                     rowYatarGun = apcGunDeger;
+                    apcToplamGun += apcGunDeger;
+                    toplamGunAyri += apcGunDeger; // CEZASI (TOPLAM) satırında gün olarak görünsün
                     nextDate = addDays(cumulative, rowDays);
                     sureMetinYAG = `${apcGunDeger} Gün (Adli Para Cezası)`;
                     // Raporda İnfaz Türü sütunu, gerçek müddetnamelerdeki gibi madde
@@ -3322,6 +3344,12 @@
             // (İhlal)" kaydı ise (R1 ile ilgisi olmadığından, değişmeden) tek başına DS
             // hakkını iptal eder (bkz. hasDsIhlal kullanımı).
             let hasDsIhlal = false;
+            // KULLANICI KARARI (2026-11-11): mahsup tablosundaki denetim satırlarında
+            // ("Denetimli Serbestlik (STT öncesi)" ve "Denetimli Serbestlik (İhlal)") geçen
+            // günlerin TOPLAMI, hükümlünün denetimli serbestlik HAKKINDAN düşülür: 1 yıl (365
+            // gün) denetim hakkı olan hükümlü daha önce 65 gün denetimde kalmışsa kalan hakkı
+            // 300 gündür; muhtemel denetime ayrılma tarihi STT'den 300 gün öncesidir.
+            let dsKullanilanGun = 0;
             const cocukYasMahsupNotlari = []; // açıklama kutusunda listelenecek etkilenen aralıklar
             const mahsupRows = document.querySelectorAll('#mahsupTableBody tr');
             // Tarih çakışması uyarısı için: geçerli (başlangıç+bitiş girilmiş) her
@@ -3355,10 +3383,11 @@
                     }
                     if (tur === 'tutukluluk' || tur === 'gozalti') tutuklulukToplamGun += diffDays;
                     if (tur === 'acik_cik_firar' && diffDays > 0) {
-                        firarSucuSayisi++;
+                        firarMahsupSayisi++;
                         firarTarihleri.push(sDate);
                     }
                     if (tur === 'ds_ihlal' && diffDays > 0) hasDsIhlal = true;
+                    if ((tur === 'ds' || tur === 'ds_ihlal') && diffDays > 0) dsKullanilanGun += diffDays;
                     mahsupAraliklari.push({ no: rowIdx + 1, tur, sDate, eDate });
 
                     let agirlikliGun = etkinGun;
@@ -3568,12 +3597,14 @@
             // yerine). Süreli hapis (acikDsAdaylar) veya müebbet (muebbetAdaylar)
             // kalemlerinden biri bile bu kapsamdaysa içtimanın tamamı için geçerlidir.
             const anyTerorDevletSucu = acikDsAdaylar.some(r => r.terorDevletSucu) || muebbetAdaylar.some(r => r.terorDevletSucu);
+            // Açık hakkı hesabında toplam cezadan adli para cezası günleri düşülür (2026-11-11).
+            const acikHesabiToplamGun = Math.max(0, totalRawDays - apcToplamGun);
             const kapaliKalmaGerekliGun = anyTerorDevletSucu
-                ? Math.ceil(totalRawDays / 3)
-                : (totalRawDays < ON_YIL_GUN_ESIK ? 30 : Math.ceil(totalRawDays / 10));
+                ? Math.ceil(acikHesabiToplamGun / 3)
+                : (acikHesabiToplamGun < ON_YIL_GUN_ESIK ? 30 : Math.ceil(acikHesabiToplamGun / 10));
             const kapaliKalmaGerekliGunAciklama = anyTerorDevletSucu
                 ? `(terör örgütü/devletin egemenliğine karşı suç nedeniyle) toplam cezanın 1/3'ü olan ${kapaliKalmaGerekliGun} gün`
-                : (totalRawDays < ON_YIL_GUN_ESIK
+                : (acikHesabiToplamGun < ON_YIL_GUN_ESIK
                     ? "en az 1 ay (30 gün)"
                     : `toplam cezanın 1/10'u olan ${kapaliKalmaGerekliGun} gün`);
 
@@ -3656,14 +3687,22 @@
                 // mantığından farklı olarak burada kapaliKalmaGerekliGun hiç kullanılmaz;
                 // yeterli süre henüz geçmemişse en erken D0 (infazın başlangıcı) esas
                 // alınır ve kapaliKalmaSartMetni bu metinlere EKLENMEZ.
-                acikAyrilmaMetin = sttDays > acikKalaGun
-                    ? formatDate(addDays(sttDate, -acikKalaGun))
+                const dsKalaGunNet = Math.max(0, dsKalaGun - dsKullanilanGun);
+                const sttDaysApcsiz = Math.max(0, sttDays - apcToplamGun);
+                acikAyrilmaMetin = sttDaysApcsiz > acikKalaGun
+                    ? formatDate(addDays(D0, sttDaysApcsiz - acikKalaGun))
                     : formatDate(D0);
-                dsAyrilmaMetin = sttDays > dsKalaGun
-                    ? formatDate(addDays(sttDate, -dsKalaGun))
+                dsAyrilmaMetin = sttDays > dsKalaGunNet
+                    ? formatDate(addDays(sttDate, -dsKalaGunNet))
                     : formatDate(D0);
                 acikAyrilmaMetin += ` (Müebbete konu suça ve suç tarihine göre STT'den ${acikKalaYilToplamM} yıl kala açığa ayrılma hakkı vardır. Müebbet hapiste asgari kapalı kalma şartı aranmaz.)`;
                 dsAyrilmaMetin += ` (Müebbete konu suça ve suç tarihine göre STT'den ${dsKalaYilToplamM} yıl kala denetimli serbestliğe ayrılma hakkı vardır. Müebbet hapiste asgari kapalı kalma şartı aranmaz.)`;
+                if (dsKullanilanGun > 0) {
+                    dsAyrilmaMetin += ` (Daha önce denetimli serbestlikte geçirilen ${dsKullanilanGun} gün, ${dsKalaGun} günlük denetim hakkından düşülmüştür; kalan denetim hakkı ${dsKalaGunNet} gündür.)`;
+                }
+                if (apcToplamGun > 0) {
+                    acikAyrilmaMetin += ` (Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.)`;
+                }
 
                 const notParcalariM = [];
                 if (anyTarihsizM) {
@@ -3778,14 +3817,27 @@
                 const acikKalaGun = acikKalaYilToplam * 365;
                 const dsKalaGun = dsKalaYilToplam * 365;
 
-                acikAyrilmaMetin = sttDays > acikKalaGun
-                    ? formatDate(addDays(sttDate, -acikKalaGun))
+                const dsKalaGunNet = Math.max(0, dsKalaGun - dsKullanilanGun);
+                // ADLİ PARA CEZASI (kullanıcı kararı, 2026-11-11): adli para cezasından çevrilen
+                // hapis açık ceza infaz kurumunda infaz edilir; bu yüzden AÇIĞA ayrılma tarihi,
+                // toplam cezadan APC günleri DÜŞÜLEREK bulunur (koşullu salıverilmeye kalan
+                // süreden APC günleri çıkarılır, kalan süre üzerinden "STT'ye N yıl kala"
+                // uygulanır). Denetimli serbestlik ve STT/BTT bundan ETKİLENMEZ.
+                const sttDaysApcsiz = Math.max(0, sttDays - apcToplamGun);
+                acikAyrilmaMetin = sttDaysApcsiz > acikKalaGun
+                    ? formatDate(addDays(D0, sttDaysApcsiz - acikKalaGun))
                     : formatDate(addDays(D0, kapaliKalmaGerekliGun));
-                dsAyrilmaMetin = sttDays > dsKalaGun
-                    ? formatDate(addDays(sttDate, -dsKalaGun))
+                dsAyrilmaMetin = sttDays > dsKalaGunNet
+                    ? formatDate(addDays(sttDate, -dsKalaGunNet))
                     : formatDate(addDays(D0, kapaliKalmaGerekliGun));
                 acikAyrilmaMetin += ` (Bu suça ve suç tarihine göre STT'den ${acikKalaYilToplam} yıl kala açığa ayrılma hakkı vardır.)`;
                 dsAyrilmaMetin += ` (Bu suça ve suç tarihine göre STT'den ${dsKalaYilToplam} yıl kala denetimli serbestliğe ayrılma hakkı vardır.)`;
+                if (dsKullanilanGun > 0) {
+                    dsAyrilmaMetin += ` (Daha önce denetimli serbestlikte geçirilen ${dsKullanilanGun} gün, ${dsKalaGun} günlük denetim hakkından düşülmüştür; kalan denetim hakkı ${dsKalaGunNet} gündür.)`;
+                }
+                if (apcToplamGun > 0) {
+                    acikAyrilmaMetin += ` (Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.)`;
+                }
 
                 const notParcalari = [];
                 if (anyTarihsiz) {
@@ -3856,14 +3908,17 @@
             // ayrı bir kısıtlama varsayılmamıştır — bu bir YORUM kararıdır).
             // Denetimli serbestlik İHLALİ (hasDsIhlal) ayrı ve değişmemiş bir
             // kuraldır: tek bir "DS (İhlal)" kaydı DS hakkını tek başına iptal eder.
-            if (firarSucuSayisi >= 2) {
-                acikAyrilmaMetin = 'Açık Ceza İnfaz Kurumuna Ayrılma Hakkı YOKTUR (2 kez firar nedeniyle — TCK 292/1-2 mahkumiyeti ve/veya mahsup tablosundaki "Açık CİK (Firar)" kaydı toplamı 2 veya daha fazladır).';
+            if (acikAyrilmaMetin === "-" && apcToplamGun > 0 && sCount === 0 && amCount === 0 && mCount === 0) {
+                acikAyrilmaMetin = `${formatDate(D0)} (Adli para cezasından çevrilen hapis doğrudan açık ceza infaz kurumunda infaz edilir.)`;
+            }
+            if (firarCezaSayisi >= 2 || firarMahsupSayisi >= 2) {
+                acikAyrilmaMetin = 'Açık Ceza İnfaz Kurumuna Ayrılma Hakkı YOKTUR (2 kez firar nedeniyle — ceza bilgisinde 2 veya daha fazla TCK 292/1-2 mahkumiyeti ya da mahsup tablosunda 2 veya daha fazla "Açık CİK (Firar)" kaydı vardır; ikisi ayrı ayrı değerlendirilir, birbirine eklenmez).';
                 const firarTarihiSonrasi20230731 = firarTarihleri.some(d => d && d > GECICI_10_6_ESIK_TARIHI);
                 if (firarTarihiSonrasi20230731) {
                     dsAyrilmaMetin = 'Denetimli Serbestliğe Ayrılma Hakkı YOKTUR (2 kez firar ve firar tarihlerinden en az biri 31/07/2023 tarihinden sonra olduğu için).';
-                    acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Hükümlü 2 kez firar etmiş sayıldığından (TCK 292/1-2 mahkumiyeti ve/veya mahsup "Açık CİK (Firar)" kaydı toplamı ≥ 2) açık ceza infaz kurumuna ayrılma hakkı tamamen ortadan kalkmış; firar tarihlerinden en az biri 31/07/2023 sonrası olduğundan denetimli serbestlik hakkı da ortadan kalkmıştır.';
+                    acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Hükümlü 2 kez firar etmiş sayıldığından (ceza bilgisinde 2+ TCK 292/1-2 mahkumiyeti veya mahsup tablosunda 2+ "Açık CİK (Firar)" kaydı; ayrı ayrı değerlendirilir) açık ceza infaz kurumuna ayrılma hakkı tamamen ortadan kalkmış; firar tarihlerinden en az biri 31/07/2023 sonrası olduğundan denetimli serbestlik hakkı da ortadan kalkmıştır.';
                 } else {
-                    acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Hükümlü 2 kez firar etmiş sayıldığından (TCK 292/1-2 mahkumiyeti ve/veya mahsup "Açık CİK (Firar)" kaydı toplamı ≥ 2) açık ceza infaz kurumuna ayrılma hakkı tamamen ortadan kalkmıştır. Firar tarihlerinin tamamı 31/07/2023 ve öncesinde olduğundan, denetimli serbestliğe ayrılma hakkı (yukarıda hesaplanan süre ve varsa +3 yıllık ek hak dahil) etkilenmemiştir.';
+                    acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + 'UYARI: Hükümlü 2 kez firar etmiş sayıldığından (ceza bilgisinde 2+ TCK 292/1-2 mahkumiyeti veya mahsup tablosunda 2+ "Açık CİK (Firar)" kaydı; ayrı ayrı değerlendirilir) açık ceza infaz kurumuna ayrılma hakkı tamamen ortadan kalkmıştır. Firar tarihlerinin tamamı 31/07/2023 ve öncesinde olduğundan, denetimli serbestliğe ayrılma hakkı (yukarıda hesaplanan süre ve varsa +3 yıllık ek hak dahil) etkilenmemiştir.';
                 }
             }
             if (hasDsIhlal) {
@@ -4077,11 +4132,118 @@
            dosya programın kendi UDF okuyucusuna (yukarıdaki PDF/UDF
            otomatik doldurma) geri yüklendiğinde de doğru çalışır.
            ====================================================== */
-        function buildUdfContentXml(fullText) {
-            // CDATA kapanış dizisi metin içinde literal olarak geçemez; böyle bir
-            // durum pratikte olmaz ama güvenlik için kaçış uygulanır.
-            const guvenliMetin = fullText.replace(/]]>/g, ']] >');
-            return `<?xml version="1.0" encoding="UTF-8" ?>\n\n<template format_id="1.8" >\n<content><![CDATA[${guvenliMetin}]]></content><properties><pageFormat mediaSizeName="1" leftMargin="70.875" rightMargin="70.875" topMargin="70.875" bottomMargin="70.875" paperOrientation="1" headerFOffset="15.0" footerFOffset="15.0" /></properties>\n<elements >\n<paragraph resolver="hvl-default"><content resolver="hvl-default" family="Times New Roman" size="11" startOffset="0" length="${guvenliMetin.length}" /></paragraph>\n</elements>\n<styles><style name="hvl-default" family="Times New Roman" description="Gövde" size="12" RightIndent="0.0" LeftIndent="0.0" SpaceAbove="0.0" SpaceBelow="0.0" /></styles>\n</template>\n`;
+        /* UDF ÇIKTISI — 2026-11-11'de YENİDEN YAZILDI (kullanıcı talebi: "UDF bozuk çıkıyor,
+           PDF gibi versin"). Önceki sürüm raporun tüm metnini TEK bir paragraf olarak yazıyordu
+           (tablo/başlık yok, satırlar birbirine yapışık). Yeni sürüm, ekrandaki/PDF'teki rapor
+           kağıdını (#printSheet) dolaşıp UYAP'ın kendi müddetname UDF'lerindeki yapının aynısını
+           üretir: ortalanmış kalın başlık, bölüm başlıkları, kenarlıklı TABLOLAR (her hücre ayrı
+           paragraf), açıklama kutusu ve imza bloğu. Metin CDATA içinde düz durur; her paragraf
+           ve hücre, bu metindeki konumuna (startOffset/length) göre <elements> altında tanımlanır
+           (gerçek UYAP müddetname UDF'leri örnek alınmıştır). */
+        function buildUdfFromPrintSheet(root) {
+            let text = '';
+            const P_ATTR = 'RightIndent="0.0" LineSpacing="0.0" Hanging="0.0" SpaceAbove="1.0" SpaceBelow="1.0" LeftIndent="0.0"';
+            const temiz = t => (t || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+            const para = (t, o = {}) => {
+                t = temiz(t).replace(/]]>/g, ']] >');
+                const start = text.length;
+                text += t + '\n';
+                const c = `resolver="hvl-default"${o.bold ? ' bold="true"' : ''} size="${o.size || 9}"`;
+                let x = `<paragraph resolver="hvl-default" Alignment="${o.align || 0}" ${P_ATTR}>`;
+                if (t.length) x += `<content ${c} startOffset="${start}" length="${t.length}" />`;
+                x += `<content ${c} startOffset="${start + t.length}" length="1" /></paragraph>`;
+                return x;
+            };
+            const gorunur = el => !!el && getComputedStyle(el).display !== 'none';
+            // Hücre metni: <br> ve blok öğeler satır sonu sayılır.
+            const hucreSatirlari = el => {
+                const k = el.cloneNode(true);
+                k.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+                k.querySelectorAll('div,p,li').forEach(d => d.append('\n'));
+                return k.textContent.split('\n').map(temiz).filter(Boolean);
+            };
+            let tabloNo = 0;
+            const tabloXml = (satirlar, spans) => {
+                tabloNo++;
+                let x = `<table tableName="Tablo${tabloNo}" columnCount="${spans.length}" columnSpans="${spans.join(',')}" border="borderCell">`;
+                let dataNo = 0, headNo = 0;
+                satirlar.forEach(r => {
+                    x += r.header ? `<row rowType="headerRow" rowName="header${++headNo}">` : `<row rowType="dataRow" rowName="row${++dataNo}">`;
+                    for (let i = 0; i < spans.length; i++) {
+                        const h = r.cells[i] || { lines: [''] };
+                        x += '<cell>' + (h.lines.length ? h.lines : ['']).map(l => para(l, { bold: h.bold, align: h.align, size: h.size })).join('') + '</cell>';
+                    }
+                    x += '</row>';
+                });
+                return x + '</table>';
+            };
+            const spansFor = (n, ilkBaslik) => {
+                if (n === 1) return [100];
+                if (n === 2) return [80, 120];
+                if (n === 4 && /^Mahsup/i.test(ilkBaslik || '')) return [195, 74, 66, 65];
+                if (n === 4) return [60, 100, 80, 160];
+                return Array(n).fill(Math.round(400 / n));
+            };
+            // Bir HTML tablosunu UDF tablosuna (iç içe tablo varsa art arda tablolara) çevirir.
+            const tabloyuCevir = (table) => {
+                let out = '';
+                let bekleyen = [];
+                const bosalt = () => {
+                    if (!bekleyen.length) return;
+                    const n = Math.max(...bekleyen.map(r => r.cells.length));
+                    out += tabloXml(bekleyen, spansFor(n, (bekleyen[0].cells[0] || { lines: [''] }).lines[0]));
+                    bekleyen = [];
+                };
+                const trler = [...table.querySelectorAll(':scope > thead > tr, :scope > tbody > tr, :scope > tfoot > tr, :scope > tr')];
+                trler.forEach(tr => {
+                    if (!gorunur(tr)) return;
+                    const icTablo = tr.querySelector('table');
+                    if (icTablo) { bosalt(); out += tabloyuCevir(icTablo); return; }
+                    const header = tr.parentElement.tagName === 'THEAD';
+                    const cells = [];
+                    [...tr.children].forEach(td => {
+                        if (!gorunur(td)) return;
+                        const span = parseInt(td.getAttribute('colspan') || '1') || 1;
+                        const kalin = header || td.tagName === 'TH' || /font-(bold|extrabold|semibold)/.test(td.className);
+                        // Birleşik (colspan) hücre: metin, birleşen hücrelerin SONUNCUSUNA yazılır
+                        // (örn. "TOPLAM MAHSUP" değerin hemen solunda dursun), öncekiler boş kalır.
+                        for (let i = 0; i < span - 1; i++) cells.push({ lines: [''] });
+                        cells.push({ lines: [hucreSatirlari(td).join(' ')], bold: kalin, align: /text-right/.test(td.className) ? 2 : 0 });
+                    });
+                    if (cells.length) bekleyen.push({ header, cells });
+                });
+                bosalt();
+                return out;
+            };
+
+            let els = '';
+            [...root.children].forEach(blok => {
+                if (!gorunur(blok)) return;
+                const tablo = blok.querySelector(':scope > table');
+                const h4 = blok.querySelector(':scope > h4');
+                const aciklama = blok.querySelector(':scope > #repAciklama');
+                if (blok.querySelector(':scope > h2')) {                       // Başlık
+                    [...blok.children].forEach(h => { els += para(h.textContent, { bold: true, align: 1, size: h.tagName === 'H2' ? 12 : 10 }); });
+                    els += para('');
+                } else if (tablo || aciklama) {                                 // Bölüm (başlık + tablo / açıklama)
+                    if (h4) els += para(h4.textContent, { bold: true, size: 10 });
+                    if (tablo) els += tabloyuCevir(tablo);
+                    if (aciklama) {
+                        const satirlar = aciklama.textContent.split('\n').map(temiz).filter(Boolean);
+                        els += tabloXml([{ cells: [{ lines: satirlar.length ? satirlar : ['—'] }] }], [100]);
+                    }
+                    els += para('');
+                } else {                                                        // İmza bloğu
+                    const tarihEl = blok.querySelector('#repTarihAlani');
+                    if (tarihEl) els += para(tarihEl.textContent, { size: 9 });
+                    [...blok.querySelectorAll('p')].filter(pp => pp !== tarihEl).forEach((pp, i) => {
+                        if (i > 0) els += para('', { align: 2 });
+                        els += para(pp.textContent, { bold: true, align: 2, size: 10 });
+                    });
+                }
+            });
+            const xml = `<?xml version="1.0" encoding="UTF-8" ?>\n\n<template format_id="1.8" >\n<content><![CDATA[${text}]]></content><properties><pageFormat mediaSizeName="1" leftMargin="42.51968479156494" rightMargin="42.51968479156494" topMargin="28.34645652770996" bottomMargin="28.34645652770996" paperOrientation="1" headerFOffset="15.0" footerFOffset="15.0" /></properties>\n<elements resolver="hvl-default" >\n${els}\n</elements>\n<styles><style name="default" size="12" description="Geçerli" family="Dialog" bold="false" italic="false" /><style name="hvl-default" family="Times New Roman" size="12" description="Gövde" RightIndent="0.0" Alignment="0" LineSpacing="0.0" SpaceAbove="0.0" SpaceBelow="0.0" LeftIndent="0.0" /></styles>\n</template>\n`;
+            return { xml, text };
         }
 
         async function exportUdf() {
@@ -4092,36 +4254,14 @@
             const printSheet = document.getElementById('printSheet');
             if (!printSheet) return;
             calculateAll();
-            // "printSheet" normalde sadece yazdırma anında (@media print) görünür olur
-            // ("print-only": display:none). Ekranda gizliyken innerText tarayıcıda BOŞ
-            // döner (satır/sütun ayrımı kaybolur, metinler birbirine yapışık çıkar — bu
-            // yüzden UDF'te "hiç ayıraç yok" sorunu oluşuyordu); bu yüzden metni almadan
-            // önce, kullanıcıya görünmeyecek şekilde (ekran dışına, visibility:hidden ile)
-            // geçici olarak gösterilir, metin alınır alınmaz eski haline döndürülür.
-            const eskiStil = { display: printSheet.style.display, position: printSheet.style.position, visibility: printSheet.style.visibility, left: printSheet.style.left, top: printSheet.style.top };
-            printSheet.style.display = 'block';
-            printSheet.style.position = 'fixed';
-            printSheet.style.visibility = 'hidden';
-            printSheet.style.left = '-99999px';
-            printSheet.style.top = '0';
-            let metin;
-            try {
-                metin = printSheet.innerText || printSheet.textContent || '';
-            } finally {
-                printSheet.style.display = eskiStil.display;
-                printSheet.style.position = eskiStil.position;
-                printSheet.style.visibility = eskiStil.visibility;
-                printSheet.style.left = eskiStil.left;
-                printSheet.style.top = eskiStil.top;
-            }
-            metin = metin.replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-            if (!metin) {
+            const udf = buildUdfFromPrintSheet(printSheet);
+            if (!udf.text.trim()) {
                 alert('Rapor içeriği boş görünüyor; lütfen önce hesaplama alanlarını doldurun.');
                 return;
             }
             try {
                 const zip = new JSZip();
-                zip.file('content.xml', buildUdfContentXml(metin));
+                zip.file('content.xml', udf.xml);
                 zip.file('documentproperties.xml', `<?xml version="1.0" encoding="UTF-8" ?>\n<documentProperties><title>Müddetname</title></documentProperties>\n`);
                 const blob = await zip.generateAsync({ type: 'blob' });
                 const tarihEtiketi = new Date().toISOString().split('T')[0];
