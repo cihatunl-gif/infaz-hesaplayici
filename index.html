@@ -1505,6 +1505,8 @@
         // ekine normalize eder (tam eşleşirse oran/örgütlü otomatik gelir, eşleşmezse
         // satır yine de eklenir ve kullanıcı elle düzeltir).
         const PDF_MADDE_RE = /((?:TCK|T\.?C\.?K\.?|Türk Ceza Kanunu)\s*\d+[\w.\-]*(?:[\/][\w.\-]+)*)/i;
+        // TCK dışındaki kanunlar: "765 SY 456/2", "6136 SY 13/1", "6136 SY 15/1-1. fıkra".
+        const DIGER_KANUN_MADDE_RE = /((?<!\d)\d{3,4}\s*(?:SY|S\.\s*K\.?|SK)\s*\d+[\w.\-]*(?:\/[\w.\-]+)*)/i;
         function normalizeEdilmisMadde(maddeRaw) {
             return maddeRaw.replace(/^(TCK|T\.?C\.?K\.?|Türk Ceza Kanunu)\s*/i, 'TCK ').trim();
         }
@@ -1539,8 +1541,21 @@
                 // "CEZASI :" ile başlayan özet satırı (tek satırda toplam yıl/ay/gün) bir
                 // ceza kalemi değil, müddetnamenin genel özetidir — atlanır.
                 if (upper.includes('CEZASI') && upper.includes(':')) return;
-                const kesmeIdx = upper.indexOf('5275');
-                const maddeMatch = line.match(PDF_MADDE_RE);
+                // İnfaz türü bölümünün başladığı yer: "5275 S.K. ..." veya (eski kanun) "647 S.K. ...".
+                const idx5275 = upper.indexOf('5275');
+                const idx647 = upper.search(/(?<!\d)647\s*S\.?\s*K/);
+                const is647Infaz = idx647 !== -1 || /AYDA\s*6\s*G[ÜU]N/.test(upper);
+                const kesmeIdx = (idx5275 !== -1 && idx647 !== -1) ? Math.min(idx5275, idx647) : (idx5275 !== -1 ? idx5275 : idx647);
+                let maddeMatch = line.match(PDF_MADDE_RE);
+                // TCK dışı kanun maddeleri ("765 SY 456/2", "6136 SY 13/1" gibi — kanun
+                // numarası + SY/S.K. + madde): sadece infaz türü bölümünden ÖNCEKİ kısımda
+                // aranır ki "5275 S.K. 107/2" / "647 S.K. Ek-2" infaz atıfları madde sanılmasın
+                // (kullanıcı talebi, 2026-11-11).
+                if (!maddeMatch) {
+                    const onKisim = kesmeIdx > -1 ? line.slice(0, kesmeIdx) : line;
+                    const digerM = onKisim.match(DIGER_KANUN_MADDE_RE);
+                    if (digerM) maddeMatch = [digerM[0], digerM[1].replace(/\s+/g, ' ').replace(/[.\-]+$/, '').trim()];
+                }
                 // Bir satırın ceza satırı olduğunu anlamak için TCK madde ibaresi VEYA
                 // "5275 S.K." infaz türü ibaresi gerekir (Manuel Ekle ile, TCK maddesi
                 // yazılmadan eklenen satırlar — örn. "Diğer Diğer" — için madde yoktur
@@ -1592,8 +1607,22 @@
                 // "N/N" görünse bile oran her zaman en sonda yazılır).
                 const oranMatches = [...upper.matchAll(/([1-4])\s*\/\s*([2-4])/g)];
                 const oranM = oranMatches.length ? oranMatches[oranMatches.length - 1] : null;
-                const ekGunMatches = [...upper.matchAll(/\+\s*(\d+)/g)];
-                const ekGunM = ekGunMatches.length ? ekGunMatches[ekGunMatches.length - 1] : null;
+                // Ek süre "+ 2 Ay 20 Gün" gibi AY/GÜN (veya YIL) birimleriyle de yazılabilir;
+                // güne çevrilir (1 yıl=365, 1 ay=30): "+ 2 Ay 20 Gün" = 80 gün. Önceden sadece
+                // "+" sonrasındaki ilk sayı alındığından 80 yerine 2 okunuyordu (2026-11-11).
+                // "647 S.K. ... (1/2 + Ayda 6 Gün)" ibaresi bir ek gün DEĞİLDİR (infaz kuralıdır).
+                let ekGunHesap = 0;
+                const artiIdx = upper.lastIndexOf('+');
+                if (artiIdx !== -1 && !is647Infaz) {
+                    const artiSonrasi = upper.slice(artiIdx + 1);
+                    const birimliM = artiSonrasi.match(/^\s*(?:(\d+)\s*YIL)?\s*(?:(\d+)\s*AY)?\s*(?:(\d+)\s*G[ÜU]N)?/);
+                    if (birimliM && (birimliM[1] || birimliM[2] || birimliM[3])) {
+                        ekGunHesap = (parseInt(birimliM[1] || 0) * 365) + (parseInt(birimliM[2] || 0) * 30) + parseInt(birimliM[3] || 0);
+                    } else {
+                        const yalinM = artiSonrasi.match(/^\s*(\d+)/);
+                        if (yalinM) ekGunHesap = parseInt(yalinM[1]);
+                    }
+                }
 
                 satirlar.push({
                     sucTarihi: dateMatch ? `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : '',
@@ -1604,8 +1633,8 @@
                     ay: ayM ? parseInt(ayM[1]) : 0,
                     gun: gunM ? parseInt(gunM[1]) : 0,
                     mukerrirTahmin: tahminEtMukerrirlik(upper),
-                    oranParsed: oranM ? `${oranM[1]}/${oranM[2]}` : '',
-                    ekGun: ekGunM ? parseInt(ekGunM[1]) : 0,
+                    oranParsed: is647Infaz ? '647' : (oranM ? `${oranM[1]}/${oranM[2]}` : ''),
+                    ekGun: ekGunHesap,
                     // 'sureli' (varsayılan) | 'muebbet' | 'agirlastirilmis_muebbet' | 'adli_para'
                     sureTip: isAgMuebbetSatiri ? 'agirlastirilmis_muebbet'
                         : (isMuebbetSatiri ? 'muebbet'
@@ -1996,6 +2025,9 @@
                     // o maddenin normal süreli hapis oranıyla (örn. 1/2) hatalı biçimde
                     // karşılaştırılıp yanlış uyarı veriyordu (kullanıcı tespiti, 2026-11-09).
                     if (s.sureTip !== 'sureli') return;
+                    // 647 s.K. Ek-2 (1/2 + ayda 6 gün) eski kanun infaz rejimidir; suç maddesi
+                    // listesindeki güncel oranla karşılaştırılmaz.
+                    if (s.oranParsed === '647') return;
                     const orgutluAutoChk = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
                     const beklenenOran = beklenenOranYatarHesapla(s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAutoChk, dogumTarihiBulundu);
                     if (beklenenOran === null) return;
@@ -2462,6 +2494,7 @@
                             <option value="2/3" ${oranSecimi === '2/3' ? 'selected' : ''}>2/3</option>
                             <option value="3/4" ${oranSecimi === '3/4' ? 'selected' : ''}>3/4</option>
                             <option value="4/4" ${oranSecimi === '4/4' ? 'selected' : ''}>4/4 (İndirimsiz)</option>
+                            <option value="647" ${oranSecimi === '647' ? 'selected' : ''}>1/2 + Ayda 6 Gün (647 s.K. — 01/06/2005 öncesi suç)</option>
                         </select>
                     </div>
                 </td>
@@ -2941,6 +2974,7 @@
                 let isAdliPara = false;
                 let suresizText = "";
                 let sureMetinYAG = "";
+                let is647Row = false;   // 647 s.K. Ek-2 (1/2 + ayda 6 gün) bu satırda fiilen uygulandı mı
                 let rowDays = 0;       // BTT'ye (hakederek tahliye) katkı veren ham gün
                 let rowYatarGun = 0;   // STT'ye (koşullu salıverilme) katkı veren yatar gün
                 let rowOran = 0;       // Bu satırın oranı (sadece oran-bazlı süreli hapiste dolar) — bitişik etiketinde kullanılır
@@ -3112,7 +3146,23 @@
                     // orandaki tüm kalemlerin ham günü gruplanıp oran döngü SONRASINDA bir
                     // kerede uygulanır (bkz. yukarıdaki bitisikGruplar tanımı ve aşağıdaki
                     // forEach-sonrası blok). Bu satırın totalYatarGun'a katkısı burada 0'dır.
-                    if (hesaplamaYontemi === 'bitisik') {
+                    // 647 s.K. Ek-2 md. — "1/2 + Ayda 6 Gün" (kullanıcı tarifi + gerçek müddetname
+                    // ile gün gün doğrulandı, 2026-11-11): SADECE 01/06/2005'ten ÖNCE işlenen
+                    // suçlarda geçerlidir. Cezanın yarısı alınır; bu yarının içindeki HER TAM AY
+                    // (30 gün) için iyi halli hükümlüye 6 gün indirim yapılır:
+                    //   yatar = yarı − floor(yarı / 30) × 6      (örn. 2 yıl 8 ay = 970 gün →
+                    //   yarı 485 → 16 tam ay × 6 = 96 → 389 gün yatar)
+                    // Koşullu salıverilme zaten iyi hal şartına bağlı olduğundan indirim, bu oran
+                    // seçildiğinde uygulanır (iyi halli değilse satırda düz "1/2" seçilir).
+                    // Oran kutusunda bu seçenek işaretli olsa bile suç tarihi 01/06/2005 veya
+                    // sonrasıysa (ya da suç tarihi boşsa) kural UYGULANMAZ, düz 1/2 hesaplanır.
+                    // Bu satır bitişik hesap grubuna girmez (oranla çarpım değil, özel formül).
+                    const is647Secili = manuelOranMi && oranSecimiVal === '647';
+                    is647Row = is647Secili && !!sTarih && new Date(sTarih) < new Date('2005-06-01');
+                    if (is647Row) {
+                        const yari647 = rowDays / 2;
+                        rowYatarGun = Math.floor(yari647 - Math.floor(yari647 / 30) * 6);
+                    } else if (hesaplamaYontemi === 'bitisik') {
                         const oranKey = rowOran.toFixed(6);
                         if (!bitisikGruplar[oranKey]) bitisikGruplar[oranKey] = { oran: rowOran, gun: 0 };
                         bitisikGruplar[oranKey].gun += rowDays;
@@ -3135,6 +3185,12 @@
                     // Kullanıcı onayıyla düzeltildi, 2026-11-09 (önceki "108/9" hatalıydı).
                     else if (is108_9Maddesi(sucMadde) && cocuk1089Uygulandi) infazMaddesi = '5275 S.K. 107/2-g md.';
                     rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}`;
+                    if (is647Row) {
+                        infazMaddesi = '647 S.K. Ek-2 md.';
+                        rowOranMetni = '647 S.K. Ek-2 md. (1/2 + Ayda 6 Gün)';
+                    } else if (is647Secili) {
+                        rowOranMetni += ' (647 S.K. Ek-2 uygulanmadı: suç tarihi 01/06/2005 öncesi değil veya girilmedi)';
+                    }
 
                     if (cocuk1089Uygulandi) {
                         cocuk1089Notlari.push(`${sucMadde || 'ilgili ceza kalemi'} (suç tarihi ${formatDate(new Date(sTarih))}) kapsamında hükümlü suç tarihinde 18 yaşını doldurmadığından, 5275 s.K. m.107/2-g gereği normalde yetişkinde uygulanan 3/4 oranı yerine 2/3 oranı uygulanmıştır.`);
@@ -3152,7 +3208,9 @@
                         } else {
                             rowYatarGun += ekGun;
                         }
-                        rowOranMetni = `${infazMaddesi} ${oranToTextPlain(rowOran)}+${ekGun} gün`;
+                        rowOranMetni = is647Row
+                            ? `647 S.K. Ek-2 md. (1/2 + Ayda 6 Gün)+${ekGun} gün`
+                            : `${infazMaddesi} ${oranToTextPlain(rowOran)}+${ekGun} gün`;
                     }
                 }
 
@@ -3168,6 +3226,8 @@
                         oranLabel.innerText = `İndirimsiz • Yatar: ${Math.floor(rowYatarGun)}g`;
                     } else if (ozelInfazBilgi) {
                         oranLabel.innerText = `4/4 (Koşullu Yok) • ${ozelInfazBilgi.kurum === 'acik' ? 'Açık' : 'Kapalı'} CİK`;
+                    } else if (is647Row) {
+                        oranLabel.innerText = `1/2 + Ayda 6 Gün (647 s.K.) • Yatar: ${Math.floor(rowYatarGun)}g`;
                     } else if (hesaplamaYontemi === 'bitisik') {
                         // Bitişik modda bu satırın kendi yatar günü yok; grup toplamı
                         // forEach sonrasında hesaplanır (bkz. bitisikGruplar).
