@@ -362,6 +362,10 @@
                                 <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MUHTEMEL AÇIK CEZA İNFAZ KURUMUNA AYRILMA TARİHİ</td>
                                 <td class="py-1.5 px-2 font-bold text-indigo-700 font-mono text-sm" id="repAcikAyrilma">-</td>
                             </tr>
+                            <tr class="border-b border-slate-300">
+                                <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MUHTEMEL ERKEN AÇIĞA AYRILMA (60 PUAN) TARİHİ</td>
+                                <td class="py-1.5 px-2 font-bold text-teal-700 font-mono text-sm" id="repErkenAcikAyrilma">-</td>
+                            </tr>
                             <tr>
                                 <td class="py-1.5 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MUHTEMEL DENETİMLİ SERBESTLİĞE AYRILMA TARİHİ</td>
                                 <td class="py-1.5 px-2 font-bold text-purple-700 font-mono text-sm" id="repDsAyrilma">-</td>
@@ -1070,7 +1074,30 @@
             }
             return { tarih: dsTarih, not: `Açık ceza infaz kurumundan denetime ayrılabilmek için açık ceza infaz kurumunda en az ${gerekli} gün (koşullu salıverilmeye kadar geçirilecek sürenin 1/10'u, en az 5 gün) kalınması zorunludur; bu süre karşılanmaktadır.` };
         }
+        // ERKEN AÇIĞA AYRILMA (60 puan, kullanıcı onayı 2026-11-12): hükümlü iyi hal puanını
+        // tam alırsa, kapalı ceza infaz kurumunda geçirmesi gereken sürenin 1/10'u kadar
+        // (yukarı yuvarlanır) daha erken açığa ayrılır. Örnek: kapalı süre 2753 gün -> 276 gün.
+        function erkenAcikHesapla(d0, acikTarih) {
+            const kapaliGun = Math.max(0, diffDaysCalendar(d0, acikTarih));
+            if (kapaliGun <= 0) return null;
+            const erkenGun = Math.ceil(kapaliGun / 10);
+            let tarih = addDays(acikTarih, -erkenGun);
+            if (tarih < d0) tarih = new Date(d0.getTime());
+            return { tarih: tarih, kapaliGun: kapaliGun, erkenGun: erkenGun };
+        }
+        // Erken açığa ayrılma HESAPLANMAYACAK suç grupları: terör, örgütlü suçlar, cinsel (TCK 102-103),
+        // eşe karşı suçlar, beden/ruh bakımından savunamayacak kişiye karşı suçlar. Neden metni döner ('' = serbest).
+        function erkenAcikHaricNeden(sucMadde, orgutlu, eslesme) {
+            const m = (sucMadde || '').trim().toLocaleLowerCase('tr-TR');
+            if (isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || isTerorEtkinPismanlikMaddesi(sucMadde)) return 'terör suçu';
+            if (orgutlu || /^tck\s*22[01]\b/.test(m) || /^tck\s*149\/1[-.]?[^,]*[fg]/.test(m) || /^tck\s*149\/1-f|^tck\s*149\/1-g/.test(m)) return 'örgütlü suç';
+            if (/^tck\s*10[23]\b/.test(m)) return 'cinsel suç (TCK 102/103)';
+            if (/^tck\s*86\/3-b/.test(m) || /^tck\s*82\/1-d\s*,\s*e/.test(m) || /^tck\s*82\/1-e/.test(m)) return 'beden/ruh bakımından savunamayacak kişiye karşı suç';
+            if (eslesme === 'TCK 82/1-d' || eslesme === 'TCK 86/3-a' || eslesme === 'TCK 96/2-b') return 'eşe karşı suç';
+            return '';
+        }
         function dsYilAdayHesapla(r) {
+            if (r.terorDevletSucu) return 1; // terör: zamansız ve koşulsuz 1 yıl
             if (!r.sucTarihiDate) return 1;
             if (r.sucTarihiDate > DS_30032020_ESIK_TARIHI) return 1;
             if (!r.ds2020Istisna) return 3;
@@ -3104,6 +3131,7 @@
                         sucTuru: isMaddeTaksirli(sucMadde) ? 'taksirli' : 'kasitli',
                         hamGun: rowHamGun,
                         orgutlu: orgutlu,
+                        erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, acikDsBilgi.eslesme) || (etkinPismanlikChecked ? 'terör/örgütlü suç' : ''),
                         terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked
                     });
                 }
@@ -3139,6 +3167,7 @@
                         ds2016Grup: muebbetAcikDsBilgi.ds2016Grup,
                         eslesme: muebbetAcikDsBilgi.eslesme,
                         sucTarihiDate: sTarih ? new Date(sTarih) : null,
+                        erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, muebbetAcikDsBilgi.eslesme) || (etkinPismanlikChecked ? 'terör/örgütlü suç' : ''),
                         terorDevletSucu: terorDevletSucuRowM
                     });
                 }
@@ -3792,11 +3821,13 @@
             }
 
             let acikAyrilmaMetin = "-";
+            let erkenAcikMetin = "-";
             let dsAyrilmaMetin = "-";
             let acikDsNot = "";
 
             if (amCount > 0) {
                 acikAyrilmaMetin = "Açığa Ayrılma Hakkı Yok (Ağırlaştırılmış Müebbet)";
+                erkenAcikMetin = "Uygulanmaz (açığa ayrılma hakkı yok)";
                 dsAyrilmaMetin = "Uygulanmaz (Ağırlaştırılmış Müebbet)";
             } else if (mCount > 0) {
                 // R6 (kullanıcı onayı, 2026-11-10): müebbette açığa ayrılma için TEMEL
@@ -3826,7 +3857,7 @@
                 const gecici106EkM = gecici106UygulanirM ? 3 : 0;
 
                 const acikKalaYilToplamM = temelAcikKalaM + esik30032020EkM + gecici106EkM;
-                const dsKalaYilToplamM = dsKalaTemelYilM + gecici106EkM;
+                const dsKalaYilToplamM = anyTerorDevletSucu ? 1 : dsKalaTemelYilM + gecici106EkM; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplamM * 365;
                 const dsKalaGun = dsKalaYilToplamM * 365;
 
@@ -3855,6 +3886,18 @@
                 }
                 acikAyrilmaMetin = formatDate(acikDateM);
                 dsAyrilmaMetin = formatDate(dsDateM);
+                {
+                    const haricNedenM = muebbetAdaylar.map(r => r.erkenHaric).find(x => x);
+                    if (haricNedenM) {
+                        erkenAcikMetin = `Uygulanmaz (${haricNedenM} nedeniyle)`;
+                    } else {
+                        const erM = erkenAcikHesapla(D0, acikDateM);
+                        if (erM) {
+                            erkenAcikMetin = formatDate(erM.tarih);
+                            ekNotlarM.push(`Erken açığa ayrılma: 60 puanın tamamı alınırsa kapalıda geçirilecek ${erM.kapaliGun} günün 1/10'u olan ${erM.erkenGun} gün öne çekilerek ${formatDate(erM.tarih)} tarihinde açığa ayrılabilir.`);
+                        }
+                    }
+                }
 
                 const notParcalariM = [];
                 if (anyTarihsizM) {
@@ -3968,7 +4011,7 @@
                 const gecici106Ek = gecici106Uygulanir ? 3 : 0;
 
                 const acikKalaYilToplam = temelAcikKala + esik30032020Ek + gecici106Ek;
-                const dsKalaYilToplam = dsKalaTemelYil + gecici106Ek;
+                const dsKalaYilToplam = anyTerorDevletSucu ? 1 : dsKalaTemelYil + gecici106Ek; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplam * 365;
                 const dsKalaGun = dsKalaYilToplam * 365;
 
@@ -4000,6 +4043,20 @@
                 }
                 acikAyrilmaMetin = formatDate(acikDate);
                 dsAyrilmaMetin = formatDate(dsDate);
+                {
+                    const haricNeden = acikDsAdaylar.map(r => r.erkenHaric).find(x => x);
+                    if (haricNeden) {
+                        erkenAcikMetin = `Uygulanmaz (${haricNeden} nedeniyle)`;
+                    } else if (dogrudanAcikDurum === 'kapali_baslar') {
+                        const er = erkenAcikHesapla(D0, acikDate);
+                        if (er) {
+                            erkenAcikMetin = formatDate(er.tarih);
+                            ekNotlar.push(`Erken açığa ayrılma: 60 puanın tamamı alınırsa kapalıda geçirilecek ${er.kapaliGun} günün 1/10'u olan ${er.erkenGun} gün öne çekilerek ${formatDate(er.tarih)} tarihinde açığa ayrılabilir.`);
+                        }
+                    } else {
+                        erkenAcikMetin = 'Gerekmez (doğrudan açık)';
+                    }
+                }
 
                 const notParcalari = [];
                 if (anyTarihsiz) {
@@ -4077,6 +4134,7 @@
                 acikAyrilmaMetin = `${formatDate(D0)} (Adli para cezasından çevrilen hapis doğrudan açık ceza infaz kurumunda infaz edilir.)`;
             }
             if (firarCezaSayisi >= 2 || firarMahsupSayisi >= 2) {
+                erkenAcikMetin = 'Uygulanmaz (açığa ayrılma hakkı yok)';
                 acikAyrilmaMetin = 'Açık Ceza İnfaz Kurumuna Ayrılma Hakkı YOKTUR (2 kez firar nedeniyle — ceza bilgisinde 2 veya daha fazla TCK 292/1-2 mahkumiyeti ya da mahsup tablosunda 2 veya daha fazla "Açık CİK (Firar)" kaydı vardır; ikisi ayrı ayrı değerlendirilir, birbirine eklenmez).';
                 const firarTarihiSonrasi20230731 = firarTarihleri.some(d => d && d > GECICI_10_6_ESIK_TARIHI);
                 if (firarTarihiSonrasi20230731) {
@@ -4126,6 +4184,9 @@
             document.getElementById('repAcikAyrilma').innerText = zimmetKosulluUygulanmaz
                 ? 'Uygulanmaz (5411 S.K. m.167)'
                 : acikAyrilmaMetin;
+            document.getElementById('repErkenAcikAyrilma').innerText = zimmetKosulluUygulanmaz
+                ? 'Uygulanmaz (5411 S.K. m.167)'
+                : erkenAcikMetin;
             document.getElementById('repDsAyrilma').innerText = zimmetKosulluUygulanmaz
                 ? 'Uygulanmaz (5411 S.K. m.167)'
                 : dsAyrilmaMetin;
