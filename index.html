@@ -3479,20 +3479,12 @@
                     capWarningText += `Hükümlünün koşullu salıverilme için infaz kurumunda geçirmesi gereken süre, hesaplanan tutar bu sınırı aştığından, 5275 sayılı Kanun ${maddeRef} maddesi gereğince en fazla ${sttCapDays} gün (${ceilingYil} yıl) olarak hesaplanmıştır. `;
                 }
 
-                // BTT (hakederek tahliye) tavanı: kanunda sadece 'e' kategorisi (birden
-                // fazla süreli ceza) için, kullanıcı onaylı pratik bilgiye göre uygulanır.
-                // ÖNEMLİ: BTT tavanı mükerrerlikten ETKİLENMEZ, her zaman ADİ (42 yıl)
-                // tavanda sabit kalır — gerçek müddetname örneğinde mükerrer kalemler
-                // olsa da BTT tam 42 yıl çıkmıştır, 48 yıl'a hiç çıkarılmamıştır.
-                if (combinationCategory === 'e') {
-                    const bttCeilingYil = BTT_CAP_E_YIL.normal;
-                    const bttCapDays = bttCeilingYil * 365; // Kanuni sabit çevrim
-
-                    if (totalRawDays > bttCapDays) {
-                        effectiveRawDays = bttCapDays;
-                        capWarningText += `Hakederek tahliye (BTT) süresi de aynı madde çerçevesinde en fazla ${bttCeilingYil} yıl ile sınırlı tutulmuştur.`;
-                    }
-                }
+                // BTT (hakederek tahliye) — KULLANICI KARARI (2026-11-11, önceki 42 yıllık
+                // BTT tavanı uygulamasının YERİNE geçer): birden fazla süreli hapis cezası
+                // içtimasında ('e' kategorisi) 28/32 yıl tavanı SADECE koşullu salıverilmeyi
+                // (STT) sınırlar. Hakederek tahliye hiçbir tavana/koşula bağlanmaz; cezaların
+                // TAM gün toplamı (1 yıl=365, 1 ay=30) üzerinden hesaplanır (effectiveRawDays
+                // = totalRawDays olarak kalır). BTT_CAP_E_YIL sabiti artık kullanılmıyor.
             }
 
             // Nihai gün sayıları
