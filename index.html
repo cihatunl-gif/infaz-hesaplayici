@@ -1055,20 +1055,20 @@
         //    ancak "ds2016Grup" suçlarda 01/07/2016'dan ÖNCE işlenmişse 2 yıl.
         // İçtimada (birden fazla suç) EN AZ olan (en kısıtlayıcı) esas alınır.
         const DS_01072016_ESIK_TARIHI = new Date('2016-07-01');
-        // 04/06/2025 sonrası (kullanıcı onayı, 2026-11-12): hükümlü açık ceza infaz kurumundan denetime
+        // 04/06/2025 tarihli düzenleme (kullanıcı onayı, 2026-11-12: tarih ayrımı yapılmadan TÜM hükümlülere uygulanır): hükümlü açık ceza infaz kurumundan denetime
         // ayrılabilmek için, koşullu salıverilme tarihine kadar infaz kurumunda geçirmesi gereken sürenin
         // en az 1/10'unu (5 günden az olmamak üzere) açık ceza infaz kurumunda geçirmiş olmalıdır.
         const ACIKTAN_DS_ESIK_TARIHI = new Date('2025-06-04');
         function aciktaKalmaZorunluGun(sttGun) { return Math.max(5, Math.ceil(sttGun / 10)); }
         // Açıktan denetime ayrılma tarihine 1/10 açıkta kalma şartını uygular. Döner: { tarih, not }
         function aciktaKalmaSartiUygula(dsTarih, acikBaslangic, sttGun) {
-            if (!dsTarih || !acikBaslangic || dsTarih < ACIKTAN_DS_ESIK_TARIHI) return { tarih: dsTarih, not: '' };
+            if (!dsTarih || !acikBaslangic) return { tarih: dsTarih, not: '' };
             const gerekli = aciktaKalmaZorunluGun(sttGun);
             const enErken = addDays(acikBaslangic, gerekli);
             if (enErken > dsTarih) {
-                return { tarih: enErken, not: `04/06/2025 sonrası denetime ayrılmalarda, hükümlünün koşullu salıverilmeye kadar infaz kurumunda geçirmesi gereken sürenin 1/10'u (en az 5 gün) olan ${gerekli} gün açık ceza infaz kurumunda kalması zorunludur; bu nedenle denetimli serbestliğe ayrılma tarihi açığa ayrılma tarihinden (${formatDate(acikBaslangic)}) itibaren ${gerekli} gün sonrasına (${formatDate(enErken)}) ertelenmiştir.` };
+                return { tarih: enErken, not: `Açık ceza infaz kurumundan denetime ayrılabilmek için hükümlünün koşullu salıverilmeye kadar infaz kurumunda geçirmesi gereken sürenin 1/10'u (en az 5 gün) olan ${gerekli} gün açık ceza infaz kurumunda kalması zorunludur; bu nedenle denetimli serbestliğe ayrılma tarihi açığa ayrılma tarihinden (${formatDate(acikBaslangic)}) itibaren ${gerekli} gün sonrasına (${formatDate(enErken)}) ertelenmiştir.` };
             }
-            return { tarih: dsTarih, not: `04/06/2025 sonrası denetime ayrılmalarda, açık ceza infaz kurumunda en az ${gerekli} gün (koşullu salıverilmeye kadar geçirilecek sürenin 1/10'u, en az 5 gün) kalınması zorunludur; bu süre karşılanmaktadır.` };
+            return { tarih: dsTarih, not: `Açık ceza infaz kurumundan denetime ayrılabilmek için açık ceza infaz kurumunda en az ${gerekli} gün (koşullu salıverilmeye kadar geçirilecek sürenin 1/10'u, en az 5 gün) kalınması zorunludur; bu süre karşılanmaktadır.` };
         }
         function dsYilAdayHesapla(r) {
             if (!r.sucTarihiDate) return 1;
