@@ -2028,6 +2028,9 @@
                     // 647 s.K. Ek-2 (1/2 + ayda 6 gün) eski kanun infaz rejimidir; suç maddesi
                     // listesindeki güncel oranla karşılaştırılmaz.
                     if (s.oranParsed === '647') return;
+                    // 108/2 "oran + ek süre" biçimi: belgede yazılı oran (örn. 1/2) bilerek
+                    // korunur; listedeki mükerrer oranıyla (2/3) karşılaştırılıp uyarı verilmez.
+                    if (s.mukerrirTahmin === '1' && s.ekGun > 0) return;
                     const orgutluAutoChk = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
                     const beklenenOran = beklenenOranYatarHesapla(s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAutoChk, dogumTarihiBulundu);
                     if (beklenenOran === null) return;
@@ -3122,9 +3125,20 @@
                     // etkilenmeyen güncel/varsayılan oran — baseOranForMukerrer) zaten
                     // bundan yüksekse (ör. 3/4) o korunur — "bir kademe yükselt" YANLIŞTIR,
                     // düzeltildi. 2. kez mükerrerlikte oran sabit (3/4)'tür.
+                    // 5275 s.K. m.108/2 — "ORAN + EK SÜRE" biçimi (kullanıcı kararı, 2026-11-11:
+                    // "belge nasıl hesaplıyorsa öyle"): tekerrür nedeniyle eklenecek süre,
+                    // tekerrüre esas cezayla SINIRLI olduğunda müddetnamede oran 2/3'e
+                    // çıkarılmaz; satırın KENDİ oranı (örn. 1/2) korunur ve sınırlı ek süre
+                    // (örn. "+ 2 Ay 20 Gün" = 80 gün) ayrıca eklenir. Bu yüzden oranı elle/
+                    // belgeden gelen, 1. kez mükerrer ve "Mükerrir Gün" (ek gün) girilmiş
+                    // satırlarda oran 2/3'e YÜKSELTİLMEZ; yazılı oran + ek gün uygulanır.
+                    // (Gerçek müddetnamede koşullu salıverilme tarihiyle gün gün doğrulandı.)
+                    const ekGunErkenEl = row.querySelector('.penalty-ek-gun');
+                    const ekGunErken = ekGunErkenEl ? (parseInt(ekGunErkenEl.value) || 0) : 0;
+                    const belgeEkSureli = manuelOranMi && mukerrir === '1' && ekGunErken > 0;
                     rowOran = baseOran;
                     if (mukerrir === '1') {
-                        rowOran = Math.max(baseOranForMukerrer, 2 / 3);
+                        rowOran = belgeEkSureli ? baseOran : Math.max(baseOranForMukerrer, 2 / 3);
                     } else if (mukerrir === '2') {
                         rowOran = 0.75;
                     }
@@ -3132,7 +3146,8 @@
                     // İçtima (m.107/3-e) STT tavanında kullanılacak "tekerrür farkı"
                     // (bkz. tekerrurFarkiHesapla) — sadece bu satır mükerrer ise katkı verir.
                     if (mukerrir === '1' || mukerrir === '2') {
-                        tekerrurFarkiToplamGun += tekerrurFarkiHesapla(mukerrir, rowDays, sTarih);
+                        // "Oran + ek süre" biçiminde tekerrür farkı, fiilen eklenen ek gündür.
+                        tekerrurFarkiToplamGun += belgeEkSureli ? ekGunErken : tekerrurFarkiHesapla(mukerrir, rowDays, sTarih);
                     }
 
                     // Küsüratlı yatar gün HER KALEM için kendi içinde hükümlü lehine aşağı
@@ -3176,7 +3191,7 @@
                     // durumu dahil) madde numarasıyla birlikte yazılır:
                     // 107/2 = mükerrir yok, 108/1-2 = 1. kez mükerrer, 108/3 = 2. kez mükerrer.
                     let infazMaddesi = '5275 S.K. 107/2 md.';
-                    if (mukerrir === '1') infazMaddesi = '5275 S.K. 108/1-2 md.';
+                    if (mukerrir === '1') infazMaddesi = belgeEkSureli ? '5275 S.K. 108/2 md.' : '5275 S.K. 108/1-2 md.';
                     else if (mukerrir === '2') infazMaddesi = '5275 S.K. 108/3 md.';
                     else if (orgutlu) infazMaddesi = '5275 S.K. 107/4 md.';
                     // "107/2-g" sadece SUÇU İŞLEYEN ÇOCUKSA (cocuk1089Uygulandi) yazılır —
