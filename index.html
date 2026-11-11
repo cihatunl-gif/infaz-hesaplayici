@@ -208,7 +208,7 @@
                          VARSAYILMAZ; kullanıcıya sorulur. -->
                     <div id="girisGunFarkiBox" class="hidden mt-3 pt-3 border-t border-slate-200 bg-amber-50/60 -mx-4 -mb-4 px-4 pb-4 rounded-b-xl">
                         <p class="text-[11px] font-bold text-amber-800 mb-1.5">
-                            <i class="fa-solid fa-circle-question"></i> Giriş tarihi ile bugün arasında <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> günlük bir süre var. Açık/denetime ayrılma için asgari kapalı kalma şartının sağlanıp sağlanmadığını anlamak için bu süre nerede geçirilmiş?
+                            <i class="fa-solid fa-circle-question"></i> Giriş tarihi ile bugün arasında <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> günlük bir süre var. Açığa ayrılma için asgari kapalı kalma şartının sağlanıp sağlanmadığını anlamak için bu süre nerede geçirilmiş?
                         </p>
                         <select id="girisGunuDurum" onchange="calculateAll()" class="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500">
                             <option value="">— Belirtilmedi (şart sağlandı mı anlaşılamıyor) —</option>
@@ -1055,6 +1055,21 @@
         //    ancak "ds2016Grup" suçlarda 01/07/2016'dan ÖNCE işlenmişse 2 yıl.
         // İçtimada (birden fazla suç) EN AZ olan (en kısıtlayıcı) esas alınır.
         const DS_01072016_ESIK_TARIHI = new Date('2016-07-01');
+        // 04/06/2025 sonrası (kullanıcı onayı, 2026-11-12): hükümlü açık ceza infaz kurumundan denetime
+        // ayrılabilmek için, koşullu salıverilme tarihine kadar infaz kurumunda geçirmesi gereken sürenin
+        // en az 1/10'unu (5 günden az olmamak üzere) açık ceza infaz kurumunda geçirmiş olmalıdır.
+        const ACIKTAN_DS_ESIK_TARIHI = new Date('2025-06-04');
+        function aciktaKalmaZorunluGun(sttGun) { return Math.max(5, Math.ceil(sttGun / 10)); }
+        // Açıktan denetime ayrılma tarihine 1/10 açıkta kalma şartını uygular. Döner: { tarih, not }
+        function aciktaKalmaSartiUygula(dsTarih, acikBaslangic, sttGun) {
+            if (!dsTarih || !acikBaslangic || dsTarih < ACIKTAN_DS_ESIK_TARIHI) return { tarih: dsTarih, not: '' };
+            const gerekli = aciktaKalmaZorunluGun(sttGun);
+            const enErken = addDays(acikBaslangic, gerekli);
+            if (enErken > dsTarih) {
+                return { tarih: enErken, not: `04/06/2025 sonrası denetime ayrılmalarda, hükümlünün koşullu salıverilmeye kadar infaz kurumunda geçirmesi gereken sürenin 1/10'u (en az 5 gün) olan ${gerekli} gün açık ceza infaz kurumunda kalması zorunludur; bu nedenle denetimli serbestliğe ayrılma tarihi açığa ayrılma tarihinden (${formatDate(acikBaslangic)}) itibaren ${gerekli} gün sonrasına (${formatDate(enErken)}) ertelenmiştir.` };
+            }
+            return { tarih: dsTarih, not: `04/06/2025 sonrası denetime ayrılmalarda, açık ceza infaz kurumunda en az ${gerekli} gün (koşullu salıverilmeye kadar geçirilecek sürenin 1/10'u, en az 5 gün) kalınması zorunludur; bu süre karşılanmaktadır.` };
+        }
         function dsYilAdayHesapla(r) {
             if (!r.sucTarihiDate) return 1;
             if (r.sucTarihiDate > DS_30032020_ESIK_TARIHI) return 1;
@@ -3464,7 +3479,7 @@
             // grandTotalMahsupAgirlikli: STT hedefinden düşülecek toplam (Tutukluluk/Açık Çık'ta çocuk yaş katsayılı)
             let grandTotalMahsupDays = 0;
             let grandTotalMahsupAgirlikli = 0;
-            // Açık/denetime ayrılma için asgari kapalı kalma şartına sayılan mahsup günleri:
+            // Açığa ayrılma için asgari kapalı kalma şartına sayılan mahsup günleri:
             // Gözaltı + Tutukluluk (hükümlü bu süreleri kapalı tutukevi/cezaevinde geçirmiş
             // sayılır — kullanıcı onayıyla 2026-11-10'da Gözaltı da bu toplama eklendi,
             // önceden sadece Tutukluluk sayılıyordu). Açık Çık, Konutta İnfaz ve Denetimli
@@ -3768,7 +3783,7 @@
 
             let kapaliKalmaSartMetni;
             if (kapaliSartBelirsiz) {
-                kapaliKalmaSartMetni = `Şart: Açığa/denetime ayrılmadan önce ${kapaliKalmaGerekliGunAciklama} kapalı ceza infaz kurumunda kalınmış olması gerekir. Giriş tarihi (${formatDate(D0)}) ile bugün arasındaki ${girisGunFarki} günün nerede geçirildiği belirtilmediğinden, bu şartın sağlanıp sağlanmadığı TESPİT EDİLEMEMİŞTİR — lütfen yukarıdaki soruyu yanıtlayınız.`;
+                kapaliKalmaSartMetni = `Şart: Açığa ayrılmadan önce ${kapaliKalmaGerekliGunAciklama} kapalı ceza infaz kurumunda kalınmış olması gerekir. Giriş tarihi (${formatDate(D0)}) ile bugün arasındaki ${girisGunFarki} günün nerede geçirildiği belirtilmediğinden, bu şartın sağlanıp sağlanmadığı TESPİT EDİLEMEMİŞTİR — lütfen yukarıdaki soruyu yanıtlayınız.`;
             } else if (kapaliSartSaglandiMi) {
                 kapaliKalmaSartMetni = `Şart SAĞLANMIŞTIR: ${kapaliKalmaGerekliGunAciklama} kapalı kalma şartı karşısında, hükümlü ${kapalidaGecirilenGun} gün kapalı ceza infaz kurumunda kalmıştır.`;
             } else {
@@ -3823,40 +3838,46 @@
                 // alınır ve kapaliKalmaSartMetni bu metinlere EKLENMEZ.
                 const dsKalaGunNet = Math.max(0, dsKalaGun - dsKullanilanGun);
                 const sttDaysApcsiz = Math.max(0, sttDays - apcToplamGun);
-                acikAyrilmaMetin = sttDaysApcsiz > acikKalaGun
-                    ? formatDate(addDays(D0, sttDaysApcsiz - acikKalaGun))
-                    : formatDate(D0);
-                dsAyrilmaMetin = sttDays > dsKalaGunNet
-                    ? formatDate(addDays(sttDate, -dsKalaGunNet))
-                    : formatDate(D0);
-                acikAyrilmaMetin += ` (Müebbete konu suça ve suç tarihine göre STT'den ${acikKalaYilToplamM} yıl kala açığa ayrılma hakkı vardır. Müebbet hapiste asgari kapalı kalma şartı aranmaz.)`;
-                dsAyrilmaMetin += ` (Müebbete konu suça ve suç tarihine göre STT'den ${dsKalaYilToplamM} yıl kala denetimli serbestliğe ayrılma hakkı vardır. Müebbet hapiste asgari kapalı kalma şartı aranmaz.)`;
+                const acikDateM = sttDaysApcsiz > acikKalaGun ? addDays(D0, sttDaysApcsiz - acikKalaGun) : new Date(D0.getTime());
+                // Denetime ayrılmada 1/10 veya 1/3 kapalı kalma şartı ARANMAZ (kullanıcı onayı, 2026-11-12).
+                let dsDateM = sttDays > dsKalaGunNet ? addDays(sttDate, -dsKalaGunNet) : new Date(D0.getTime());
+                const ekNotlarM = [];
                 if (dsKullanilanGun > 0) {
-                    dsAyrilmaMetin += ` (Daha önce denetimli serbestlikte geçirilen ${dsKullanilanGun} gün, ${dsKalaGun} günlük denetim hakkından düşülmüştür; kalan denetim hakkı ${dsKalaGunNet} gündür.)`;
+                    ekNotlarM.push(`Hükümlü daha önce ${dsKullanilanGun} gün denetimli serbestlikte geçirdiğinden, ${dsKalaGun} günlük denetimli serbestlik hakkından ${dsKalaGunNet} gün yararlanabilir.`);
                 }
                 if (apcToplamGun > 0) {
-                    acikAyrilmaMetin += ` (Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.)`;
+                    ekNotlarM.push(`Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.`);
                 }
+                if (!(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) {
+                    const aciktaSonucM = aciktaKalmaSartiUygula(dsDateM, acikDateM, sttDays);
+                    dsDateM = aciktaSonucM.tarih;
+                    if (aciktaSonucM.not) ekNotlarM.push(aciktaSonucM.not);
+                }
+                acikAyrilmaMetin = formatDate(acikDateM);
+                dsAyrilmaMetin = formatDate(dsDateM);
 
                 const notParcalariM = [];
                 if (anyTarihsizM) {
                     notParcalariM.push(`Müebbetteki suçun tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sabit) kabul edilmiştir.`);
                 } else if (allBefore30032020M) {
-                    notParcalariM.push(`Müebbetteki suç 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe ayrılma süresi 3 yıl olarak, açığa ayrılma süresine de +3 yıl eklenerek hesaplanmıştır.`);
+                    notParcalariM.push(`Müebbetteki suç 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe 3 yıl kala ayrılma hakkı vardır; açığa ayrılma süresine de +3 yıl eklenmiştir.`);
                 } else if (anyDs2020IstisnaM) {
-                    notParcalariM.push(`Müebbetteki suç, 30/03/2020 eşikli 3 yıllık denetimli serbestlik ayrıcalığının istisnası kapsamındaki bir suç olduğundan (örn. kasten öldürme, cinsel suç, uyuşturucu imal/ticareti, özel hayatın gizliliği, terör veya eşe/üstsoy/altsoy/kardeşe karşı suçlar), suç tarihi ne olursa olsun denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmıştır.`);
+                    notParcalariM.push(`Müebbetteki suç 30/03/2020 eşikli 3 yıllık ayrıcalığın istisnası kapsamında olduğundan denetimli serbestliğe 1 yıl kala ayrılma hakkı vardır.`);
                 } else {
-                    notParcalariM.push(`Müebbetteki suç 30/03/2020'den sonra işlendiğinden, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmış ve 30/03/2020 eşikli +3 yıllık açığa ayrılma hakkı uygulanmamıştır.`);
+                    notParcalariM.push(`Müebbetteki suç 30/03/2020'den sonra işlendiğinden denetimli serbestliğe 1 yıl kala ayrılma hakkı vardır; 30/03/2020 eşikli +3 yıllık açık hakkı uygulanmamıştır.`);
                 }
                 if (anyIstisnaM) {
-                    notParcalariM.push(`Ayrıca müebbetteki suç, Geçici 10/6. madde (31/07/2023) kapsamındaki istisna suçlardan olduğundan, bu maddeye bağlı +3 yıllık erken açık/denetimli serbestlik hakkı hiç uygulanmamıştır.`);
+                    if (allBeforeGecici106M && !allBefore30032020M) {
+                        notParcalariM.push(`Müebbetteki suç Geçici 10/6. madde istisna suçlarından olduğundan, suç tarihi 31/07/2023 ve öncesi olsa da +3 yıllık açık/denetimli serbestlik hakkı uygulanmamıştır.`);
+                    }
                 } else {
                     if (gecici106UygulanirM) {
-                        notParcalariM.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, suçun tarihi 31/07/2023 ve öncesi olduğundan açığa ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
+                        notParcalariM.push(`Suç 31/07/2023 ve öncesi işlendiğinden Geçici 10/6. madde gereğince açığa ayrılma ve denetimli serbestliğe ayrılma sürelerine +3 yıl eklenmiştir (denetimli serbestlikteki ek hak, en az 3 ay açık ceza infaz kurumunda kalınmış olması şartına bağlıdır).`);
                     } else if (!anyTarihsizM && !allBeforeGecici106M) {
-                        notParcalariM.push(`Suçun tarihi 01/08/2023 veya sonrası olduğundan, Geçici 10/6. madde kapsamındaki +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
+                        notParcalariM.push(`Suç 01/08/2023 veya sonrası işlendiğinden Geçici 10/6. madde kapsamındaki +3 yıllık açık/denetimli serbestlik hakkı uygulanmamıştır.`);
                     }
                 }
+                ekNotlarM.forEach(n => notParcalariM.push(n));
                 acikDsNot = notParcalariM.join(' ');
             } else if (acikDsAdaylar.length > 0) {
                 const temelAcikKala = Math.min(...acikDsAdaylar.map(r => r.acik));
@@ -3954,46 +3975,56 @@
                 const dsKalaGunNet = Math.max(0, dsKalaGun - dsKullanilanGun);
                 // ADLİ PARA CEZASI (kullanıcı kararı, 2026-11-11): adli para cezasından çevrilen
                 // hapis açık ceza infaz kurumunda infaz edilir; bu yüzden AÇIĞA ayrılma tarihi,
-                // toplam cezadan APC günleri DÜŞÜLEREK bulunur (koşullu salıverilmeye kalan
-                // süreden APC günleri çıkarılır, kalan süre üzerinden "STT'ye N yıl kala"
-                // uygulanır). Denetimli serbestlik ve STT/BTT bundan ETKİLENMEZ.
+                // toplam cezadan APC günleri DÜŞÜLEREK bulunur. DS ve STT/BTT bundan ETKİLENMEZ.
                 const sttDaysApcsiz = Math.max(0, sttDays - apcToplamGun);
-                acikAyrilmaMetin = sttDaysApcsiz > acikKalaGun
-                    ? formatDate(addDays(D0, sttDaysApcsiz - acikKalaGun))
-                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
-                dsAyrilmaMetin = sttDays > dsKalaGunNet
-                    ? formatDate(addDays(sttDate, -dsKalaGunNet))
-                    : formatDate(addDays(D0, kapaliKalmaGerekliGun));
-                acikAyrilmaMetin += ` (Bu suça ve suç tarihine göre STT'den ${acikKalaYilToplam} yıl kala açığa ayrılma hakkı vardır.)`;
-                dsAyrilmaMetin += ` (Bu suça ve suç tarihine göre STT'den ${dsKalaYilToplam} yıl kala denetimli serbestliğe ayrılma hakkı vardır.)`;
+                const acikKapaliSartBagladi = !(sttDaysApcsiz > acikKalaGun);
+                const acikDate = acikKapaliSartBagladi
+                    ? addDays(D0, kapaliKalmaGerekliGun)
+                    : addDays(D0, sttDaysApcsiz - acikKalaGun);
+                // Denetime ayrılmada 1/10 veya 1/3 kapalı kalma şartı ARANMAZ (kullanıcı onayı, 2026-11-12).
+                let dsDate = sttDays > dsKalaGunNet ? addDays(sttDate, -dsKalaGunNet) : new Date(D0.getTime());
+                const ekNotlar = [];
                 if (dsKullanilanGun > 0) {
-                    dsAyrilmaMetin += ` (Daha önce denetimli serbestlikte geçirilen ${dsKullanilanGun} gün, ${dsKalaGun} günlük denetim hakkından düşülmüştür; kalan denetim hakkı ${dsKalaGunNet} gündür.)`;
+                    ekNotlar.push(`Hükümlü daha önce ${dsKullanilanGun} gün denetimli serbestlikte geçirdiğinden, ${dsKalaGun} günlük denetimli serbestlik hakkından ${dsKalaGunNet} gün yararlanabilir.`);
                 }
                 if (apcToplamGun > 0) {
-                    acikAyrilmaMetin += ` (Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.)`;
+                    ekNotlar.push(`Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.`);
                 }
+                // 04/06/2025 sonrası: açıktan denetime ayrılmak için açıkta kalma zorunluluğu
+                const acikBaslangicDate = dogrudanAcikDurum === 'dogrudan_acik' ? D0
+                    : (dogrudanAcikDurum === 'dogrudan_acik_3gun' ? addDays(D0, 3) : acikDate);
+                if (!(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) {
+                    const aciktaSonuc = aciktaKalmaSartiUygula(dsDate, acikBaslangicDate, sttDays);
+                    dsDate = aciktaSonuc.tarih;
+                    if (aciktaSonuc.not) ekNotlar.push(aciktaSonuc.not);
+                }
+                acikAyrilmaMetin = formatDate(acikDate);
+                dsAyrilmaMetin = formatDate(dsDate);
 
                 const notParcalari = [];
                 if (anyTarihsiz) {
                     notParcalari.push(`İçtimadaki bir veya daha fazla cezanın suç tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sonrası) kabul edilmiştir.`);
                 } else if (allBefore30032020) {
-                    notParcalari.push(`İçtimadaki suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe ayrılma süresi 3 yıl olarak, açık cezaevine ayrılma süresine de +3 yıl eklenerek hesaplanmıştır.`);
+                    notParcalari.push(`Suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe 3 yıl kala ayrılma hakkı vardır; açığa ayrılma süresine de +3 yıl eklenmiştir.`);
                 } else if (dsKalaTemelYil === 2) {
-                    notParcalari.push(`İçtimadaki suçlar 01/07/2016'dan önce işlenmiş TCK 83, 87/2-d, 94, 95, 96 veya 2937 s. MİT Kanunu suçlarından olduğundan denetimli serbestliğe ayrılma süresi 2 yıl olarak hesaplanmıştır (30/03/2020 eşikli 3 yıllık ayrıcalığın istisnasıdır).`);
+                    notParcalari.push(`Suçlar 01/07/2016'dan önce işlenmiş TCK 83, 87/2-d, 94, 95, 96 veya 2937 s. MİT Kanunu suçlarından olduğundan denetimli serbestliğe 2 yıl kala ayrılma hakkı vardır.`);
                 } else if (anyDs2020Istisna) {
-                    notParcalari.push(`İçtimadaki suçlardan en az biri, 30/03/2020 eşikli 3 yıllık denetimli serbestlik ayrıcalığının istisnası kapsamındaki bir suç olduğundan (örn. kasten öldürme, cinsel suç, uyuşturucu imal/ticareti, özel hayatın gizliliği, terör veya eşe/üstsoy/altsoy/kardeşe karşı suçlar), suç tarihi ne olursa olsun denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmıştır.`);
+                    notParcalari.push(`İçtimada 30/03/2020 eşikli 3 yıllık ayrıcalığın istisnası kapsamında bir suç (kasten öldürme, cinsel suç, uyuşturucu imal/ticareti, özel hayatın gizliliği, terör, eşe/üstsoy/altsoy/kardeşe karşı suç vb.) bulunduğundan denetimli serbestliğe 1 yıl kala ayrılma hakkı vardır.`);
                 } else {
-                    notParcalari.push(`İçtimadaki suçlardan en az biri 30/03/2020'den sonra işlendiğinden, denetimli serbestliğe ayrılma süresi 1 yıl olarak hesaplanmış ve 30/03/2020 eşikli +3 yıllık açık cezaevi hakkı uygulanmamıştır.`);
+                    notParcalari.push(`Suçlardan en az biri 30/03/2020'den sonra işlendiğinden denetimli serbestliğe 1 yıl kala ayrılma hakkı vardır; 30/03/2020 eşikli +3 yıllık açık hakkı uygulanmamıştır.`);
                 }
                 if (anyIstisna106) {
-                    notParcalari.push(`İçtimadaki suçlardan en az biri, Geçici 10/6. madde (31/07/2023) kapsamındaki istisna suçlardan olduğundan, bu maddeye bağlı +3 yıllık erken açık/denetimli serbestlik hakkı hiç uygulanmamıştır.`);
+                    if (allBeforeGecici106 && !allBefore30032020) {
+                        notParcalari.push(`İçtimada Geçici 10/6. madde istisna suçlarından biri bulunduğundan, suç tarihi 31/07/2023 ve öncesi olsa da +3 yıllık açık/denetimli serbestlik hakkı uygulanmamıştır.`);
+                    }
                 } else {
                     if (gecici106Uygulanir) {
-                        notParcalari.push(`Ayrıca 5275 sayılı Kanuna eklenen Geçici 10/6. madde gereğince, içtimadaki suçların tamamının tarihi 31/07/2023 ve öncesi olduğundan açık cezaevine ayrılma süresine +3 yıl, denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir. Denetimli serbestlikteki bu ek hakkın kullanılabilmesi, hükümlünün açık ceza infaz kurumunda en az 3 ay kalmış olması şartına bağlıdır.`);
+                        notParcalari.push(`Suçların tamamı 31/07/2023 ve öncesi işlendiğinden Geçici 10/6. madde gereğince açığa ayrılma ve denetimli serbestliğe ayrılma sürelerine +3 yıl eklenmiştir (denetimli serbestlikteki ek hak, en az 3 ay açık ceza infaz kurumunda kalınmış olması şartına bağlıdır).`);
                     } else if (!anyTarihsiz && !allBeforeGecici106) {
-                        notParcalari.push(`İçtimadaki suçlardan en az birinin tarihi 01/08/2023 veya sonrası olduğundan, Geçici 10/6. madde kapsamındaki +3 yıllık ayrıca erken açık/DS ayrılma hakkı uygulanmamıştır.`);
+                        notParcalari.push(`Suçlardan en az biri 01/08/2023 veya sonrası işlendiğinden Geçici 10/6. madde kapsamındaki +3 yıllık açık/denetimli serbestlik hakkı uygulanmamıştır.`);
                     }
                 }
+                ekNotlar.forEach(n => notParcalari.push(n));
                 if (acikDsAdaylar.some(r => r.eslesme === 'Diğer Suçlar (Varsayılan)')) {
                     notParcalari.push(`UYARI: İçtimadaki bazı suç maddeleri açık süresi tablosunda (ACIK_DS_TABLOSU) bulunamadığından "Diğer Suçlar" genel kuralına (7 yıl açık) göre varsayılan atanmıştır; lütfen madde madde kontrol ediniz.`);
                 }
@@ -4002,9 +4033,9 @@
                     const esasGerekce = hepsiKasitli
                         ? `kasıtlı suçlardan toplam ${toplamSureliHapisGun} gün (3 yıl veya altı) hapis cezasına`
                         : `taksirli suçlardan toplam ${toplamSureliHapisGun} gün (5 yıl veya altı) hapis cezasına`;
-                    notParcalari.unshift(`HÜKÜMLÜ DOĞRUDAN AÇIK CEZA İNFAZ KURUMUNA ALINIR: ${esasGerekce} mahkûm olunmuş, istisna suç işlenmemiş ve 2. kez mükerrirlik bulunmadığından, hükümlü hiç kapalı ceza infaz kurumuna girmeden doğrudan açık ceza infaz kurumuna alınabilir.`);
+                    notParcalari.unshift(`Hükümlü doğrudan açık ceza infaz kurumuna alınır: ${esasGerekce} mahkûm olunmuş, istisna suç işlenmemiş ve 2. kez mükerrirlik bulunmamaktadır.`);
                 } else if (dogrudanAcikDurum === 'dogrudan_acik_3gun') {
-                    notParcalari.unshift(`HÜKÜMLÜ 3 GÜN İÇİNDE AÇIK CEZA İNFAZ KURUMUNA ALINIR: İçtimadaki suçların tamamı 01/07/2016 tarihinden önce işlenmiş, toplam hapis cezası 5 yıldan az olup istisna suç (terör/örgüt, kasten öldürme, cinsel suç, özel hayatın gizliliği, uyuşturucu imal/ticareti) bulunmamakta ve hükümlü iyi hallidir; bu nedenle cezaevine giriş tarihinden itibaren 3 gün içinde açık ceza infaz kurumuna ayrılabilir.`);
+                    notParcalari.unshift(`Hükümlü 3 gün içinde açık ceza infaz kurumuna alınır: suçların tamamı 01/07/2016'dan önce işlenmiş, toplam ceza 5 yıldan az, istisna suç yok ve hükümlü iyi hallidir.`);
                 } else if (dogrudanAcikDurum === 'karma_belirsiz') {
                     notParcalari.unshift(`UYARI: İçtimada hem kasıtlı hem taksirli suç birlikte bulunduğundan, doğrudan açık ceza infaz kurumuna alınma şartı (kasıtlıda 3 yıl, taksirlide 5 yıl) otomatik değerlendirilememiştir; lütfen elle inceleyiniz.`);
                 }
@@ -4012,19 +4043,17 @@
                 acikDsNot = notParcalari.join(' ');
 
                 if (dogrudanAcikDurum === 'dogrudan_acik') {
-                    // Hiç kapalıya girmediğinden "açığa ayrılma" diye bir geçiş yok;
-                    // hükümlü zaten en baştan (D0) açık ceza infaz kurumunda. Kapalı
-                    // kalma şartı (1 ay / 1-10 oranı) da bu kişi için uygulanmaz, çünkü
-                    // bu şart kapalıdan açığa GEÇİŞ için aranır; doğrudan açığa alınan
-                    // hiç kapalıya girmez.
-                    acikAyrilmaMetin = `${formatDate(D0)} (Doğrudan - hiç kapalıya girmeden, infazın başladığı tarihten itibaren açık ceza infaz kurumunda)`;
-                    dsAyrilmaMetin += ` (Kapalı kalma şartı bu hükümlü için uygulanmaz; doğrudan açığa alınmıştır.)`;
+                    // Hiç kapalıya girmediğinden "açığa ayrılma" diye bir geçiş yoktur; kapalı kalma şartı aranmaz.
+                    acikAyrilmaMetin = `${formatDate(D0)} (doğrudan açık ceza infaz kurumuna alınır)`;
                 } else if (dogrudanAcikDurum === 'dogrudan_acik_3gun') {
-                    acikAyrilmaMetin = `${formatDate(addDays(D0, 3))} (01/07/2016 öncesi, 5 yıldan az hapis cezası ve iyi hal nedeniyle, cezaevine girişten itibaren 3 gün içinde açık ceza infaz kurumuna ayrılma hakkı)`;
-                    dsAyrilmaMetin += ` (Kapalı kalma şartı bu hükümlü için uygulanmaz; 3 gün içinde doğrudan açığa alınmıştır.)`;
+                    acikAyrilmaMetin = `${formatDate(addDays(D0, 3))} (cezaevine girişten itibaren 3 gün içinde)`;
                 } else {
-                    acikAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
-                    dsAyrilmaMetin += ` (${kapaliKalmaSartMetni})`;
+                    // Kapalı kalma şartı (1 ay / 1/10 / terörde 1/3) yalnızca AÇIĞA ayrılma içindir ve
+                    // sonucu etkileyebildiğinde yazılır: tarihi belirliyorsa, sağlanmamış/belirsizse,
+                    // terör (1/3) veya 2. kez mükerrirlik (doğrudan açık hakkı yok) durumlarında.
+                    if (acikKapaliSartBagladi || !kapaliSartSaglandiMi || anyTerorDevletSucu || anyIkinciMukerrir) {
+                        acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + (anyIkinciMukerrir ? '2. kez mükerrir olduğundan doğrudan açık ceza infaz kurumuna alınamaz. ' : '') + kapaliKalmaSartMetni;
+                    }
                 }
             }
 
