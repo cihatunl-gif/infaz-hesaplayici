@@ -1622,7 +1622,8 @@
         const MAHSUP_TUR_ESLESME = [
             { re: /KONUTTA\s*[İI]NFAZ|ADL[İI]\s*KONTROL|109\s*\/\s*3/, tur: 'konutta_infaz' },
             { re: /DENET[İI]ML[İI] SERBEST|DENET[İI]MDE GE[CÇ]EN/, tur: 'ds' },
-            { re: /TUTUKLULUK/, tur: 'tutukluluk' },
+            // "Tevkif" (eski müddetname deyimi) = tutuklama; programda "Tutukluluk" olarak geçer (kullanıcı talebi, 2026-11-11).
+            { re: /TUTUKLULUK|TUTUKLAMA|TEVK[İI]F/, tur: 'tutukluluk' },
             { re: /A[CÇ]IK [CÇ]IK/, tur: 'acik_cik' },
             { re: /G[ÖO]ZALTI/, tur: 'gozalti' },
         ];
@@ -1636,8 +1637,15 @@
             // de olabilir ("01-08-2023"); (2) iki tarih arasındaki çizgi çeşitleri (-, –, —)
             // ve boşluk/kısa metin payı 30 karaktere çıkarıldı; (3) başlangıç ile bitiş
             // tarihi çizgi yüzünden ALT SATIRA bölünmüşse satırlar birleştirilir.
-            const rangeRe = /(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}).{0,30}?(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/;
-            const tekTarihRe = /\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{4}/g;
+            // 2026-11-11 (2. düzeltme): bir tarihin İKİ ayırıcısı da AYNI olmalı ve tarihin
+            // önünde/arkasında başka rakam bulunmamalı — aksi halde "2025/1-3614" gibi İlam
+            // numaraları ("25/1-3614") yanlışlıkla tarih sanılıyordu.
+            const TARIH = '(?<!\\d)(\\d{1,2})([\\/.\\-])(\\d{1,2})\\2(\\d{4})(?!\\d)';
+            const TARIH2 = TARIH.replace('\\2', '\\6');
+            const rangeRe = new RegExp(TARIH + '.{0,30}?' + TARIH2);
+            const tekTarihRe = new RegExp(TARIH, 'g');
+            // Tablo hücresinde TEK BAŞINA duran tarih ("21.09.2011").
+            const sadeceTarihRe = new RegExp('^' + TARIH + '$');
             const cizgiSonRe = /[-–—]\s*$/;
             const cizgiBasRe = /^\s*[-–—]/;
 
@@ -1653,7 +1661,7 @@
             let toplamIdx = -1;
             if (headerIdx !== -1) {
                 for (let k = headerIdx + 1; k < lines.length; k++) {
-                    if (/^TOPLAM(\s+MAHSUP)?\s*:?\s*$/i.test(lines[k])) { toplamIdx = k; break; }
+                    if (/^TOPLAM(\s|:|$)/i.test(lines[k])) { toplamIdx = k; break; }
                 }
             }
             // Başlık ve TOPLAM satırı ikisi de bulunduysa SADECE aralarındaki
@@ -1665,17 +1673,35 @@
 
             // Başlangıç tarihi bir satırda, bitiş tarihi (çizgiyle birlikte) sonraki satırda
             // kalmışsa ("01/08/2023 -" + "21/02/2024") ikisi tek satırda birleştirilir.
+            // UDF'te mahsup tablosu ÇİZGİLİ HÜCRELER halindedir: her hücre ayrı satıra düşer
+            // ("Tevkif" / "21.09.2011" / "16.12.2011" / "Tahliye" / "2016/1-485" / "86 Gün").
+            // Art arda gelen, tek başına duran İKİ tarih hücresi başlangıç-bitiş kabul edilir;
+            // hemen ÜSTLERİNDEKİ hücre mahsup türüdür (kullanıcı örnekleri, 2026-11-11).
+            // Bu birleştirme SADECE "MAHSUP BİLGİLERİ" başlığı bulunduysa (o bölümün içinde)
+            // yapılır; başlık yoksa belgenin başka yerindeki tarihler birleştirilmez.
+            const birlestirmeSerbest = headerIdx !== -1;
             const birlesik = [];
             for (let q = 0; q < taranacakSatirlar.length; q++) {
                 let cur = taranacakSatirlar[q];
-                const curTarihSayisi = (cur.match(tekTarihRe) || []).length;
                 const nxt = taranacakSatirlar[q + 1];
-                if (curTarihSayisi === 1 && nxt) {
-                    const nxtTarihSayisi = (nxt.match(tekTarihRe) || []).length;
-                    const nxtSadeceTarih = nxt.replace(tekTarihRe, '').replace(/[\s\-–—]/g, '') === '';
-                    if (nxtTarihSayisi === 1 && (cizgiSonRe.test(cur) || cizgiBasRe.test(nxt) || nxtSadeceTarih)) {
-                        cur = cur + ' ' + nxt;
+                if (birlestirmeSerbest && nxt !== undefined) {
+                    const curT = cur.trim(), nxtT = nxt.trim();
+                    if (sadeceTarihRe.test(curT) && sadeceTarihRe.test(nxtT)) {
+                        const onceki = (taranacakSatirlar[q - 1] || '').trim();
+                        const etiketOlabilir = onceki && !tekTarihRe.test(onceki) && !/:\s*$/.test(onceki)
+                            && !/^\d+\s*G[ÜU]N$/i.test(onceki) && !/^(G[ÜU]N|B[İI]T[İI][ŞS]\s+TAR[İI]H[İI])$/i.test(onceki);
+                        tekTarihRe.lastIndex = 0;
+                        birlesik.push(`${etiketOlabilir ? onceki + ' ' : ''}${curT} - ${nxtT}`);
                         q++;
+                        continue;
+                    }
+                    // Aynı hücrede tire ile bölünüp alt satıra taşmış aralık ("01/08/2023 -" + "21/02/2024").
+                    const curSay = (cur.match(tekTarihRe) || []).length;
+                    const nxtSay = (nxt.match(tekTarihRe) || []).length;
+                    if (curSay === 1 && nxtSay === 1 && (cizgiSonRe.test(cur) || cizgiBasRe.test(nxt))) {
+                        birlesik.push(cur + ' ' + nxt);
+                        q++;
+                        continue;
                     }
                 }
                 birlesik.push(cur);
@@ -1700,8 +1726,8 @@
                     // yol açabiliyordu).
                     tur: eslesen ? eslesen.tur : '',
                     turEslesmedi: !eslesen,
-                    start: `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`,
-                    end: `${m[6]}-${m[5].padStart(2, '0')}-${m[4].padStart(2, '0')}`
+                    start: `${m[4]}-${m[3].padStart(2, '0')}-${m[1].padStart(2, '0')}`,
+                    end: `${m[8]}-${m[7].padStart(2, '0')}-${m[5].padStart(2, '0')}`
                 });
             });
             return satirlar;
