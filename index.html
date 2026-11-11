@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="icon-192.png">
     <title>İNFAZCI - Müddetname Hesaplama (Manuel Suç Maddesi)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -99,6 +102,9 @@
                 <input type="file" id="jsonInput" onchange="importJSON(event)" class="hidden" accept=".json">
                 <button onclick="window.print()" class="px-4 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg shadow-lg shadow-amber-500/20 transition flex items-center gap-1.5">
                     <i class="fa-solid fa-print"></i> Müddetname Raporu (PDF/Yazdır)
+                </button>
+                <button id="btnUygulamaYukle" onclick="uygulamaYukle()" class="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-600/20 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Programı Bilgisayara Yükle
                 </button>
                 <button onclick="exportUdf()" class="px-3 py-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white rounded-lg shadow-lg shadow-sky-600/20 transition flex items-center gap-1.5">
                     <i class="fa-solid fa-file-export"></i> UDF Olarak Kaydet
@@ -4602,6 +4608,56 @@
             };
             reader.readAsText(file);
         }
+    </script>
+    <!-- Güncelleme uyarısı -->
+    <div id="guncellemeUyari" class="hidden fixed bottom-4 right-4 z-50 max-w-sm bg-slate-900 text-white text-xs rounded-xl shadow-2xl p-4 border border-amber-500 print:hidden">
+        <div class="font-bold text-amber-400 mb-1"><i class="fa-solid fa-circle-info"></i> Program güncellendi</div>
+        <div class="mb-2">Yeni sürüm indirildi. Girdiğiniz bilgiler kaybolmasın diye sayfa kendiliğinden yenilenmez; işiniz bitince "Yenile"ye basın. Yenilemeden önce gerekirse UDF olarak kaydedin.</div>
+        <button onclick="location.reload()" class="px-3 py-1 bg-amber-500 text-slate-950 font-bold rounded">Yenile</button>
+        <button onclick="document.getElementById('guncellemeUyari').classList.add('hidden')" class="px-3 py-1 ml-1 text-slate-300">Sonra</button>
+    </div>
+    <script>
+    /* Kurulum (PWA) + otomatik güncelleme + basit kod koruma caydırıcıları */
+    (function () {
+        let kurulumIstegi = null;
+        window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); kurulumIstegi = e; });
+        window.addEventListener('appinstalled', function () {
+            const b = document.getElementById('btnUygulamaYukle'); if (b) b.classList.add('hidden');
+        });
+        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+            const b = document.getElementById('btnUygulamaYukle'); if (b) b.classList.add('hidden');
+        }
+        window.uygulamaYukle = async function () {
+            if (kurulumIstegi) { kurulumIstegi.prompt(); try { await kurulumIstegi.userChoice; } catch (e) {} kurulumIstegi = null; return; }
+            if (location.protocol === 'file:') {
+                alert('Program bilgisayara yüklenebilmesi için web sitesi adresinden (https://...) açılmalıdır. Şu an dosyayı doğrudan açtığınız için kurulum yapılamaz; zaten bilgisayarınızda çalışıyor.');
+                return;
+            }
+            alert('Yükleme penceresi bu tarayıcıda otomatik açılamadı.\n\nChrome/Edge: adres çubuğunun sağındaki "Yükle" (monitör simgeli) düğmesine veya menü (⋮) > "Uygulamayı yükle" seçeneğine tıklayın.\nProgram zaten yüklüyse bu düğme görünmez.');
+        };
+        if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+            window.addEventListener('load', function () {
+                const onceVardi = !!navigator.serviceWorker.controller;
+                navigator.serviceWorker.register('sw.js').then(function (reg) {
+                    reg.update();
+                    setInterval(function () { reg.update(); }, 30 * 60 * 1000);
+                }).catch(function () {});
+                navigator.serviceWorker.addEventListener('controllerchange', function () {
+                    if (onceVardi) { const u = document.getElementById('guncellemeUyari'); if (u) u.classList.remove('hidden'); }
+                });
+            });
+        }
+        /* Kod koruma: tarayıcıdaki kod TAMAMEN gizlenemez; bu sadece sıradan kullanıcıyı caydırır. */
+        if (location.protocol.indexOf('http') === 0) {
+            document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+            document.addEventListener('keydown', function (e) {
+                const k = (e.key || '').toLowerCase();
+                if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].indexOf(k) > -1) || (e.ctrlKey && (k === 'u' || k === 's'))) {
+                    e.preventDefault(); e.stopPropagation();
+                }
+            }, true);
+        }
+    })();
     </script>
 </body>
 </html>
