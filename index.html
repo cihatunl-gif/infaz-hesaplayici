@@ -41,6 +41,14 @@
         }
     </script>
     <style>
+        /* Müddetname raporu, sol taraf aşağı kaydırılırken ekranda sabit kalır (kullanıcı talebi 2026-11-12);
+           rapor ekrandan uzunsa kendi içinde kaydırılır. Yazdırmada bu davranış kapatılır. */
+        @media (min-width: 1024px) {
+            #raporKolon { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 88px); overflow-y: auto; }
+        }
+        @media print {
+            #raporKolon { position: static !important; max-height: none !important; overflow: visible !important; }
+        }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -305,7 +313,7 @@
         </div>
 
         <!-- Right Results Panel & Live Output (5 Columns) - Resmi Müddetname Raporu Şablonu -->
-        <div class="lg:col-span-5 space-y-5">
+        <div id="raporKolon" class="lg:col-span-5 space-y-5">
 
             <!-- Resmi Müddetname Formu (Fotoğraftaki Şablona Tam Uyumlu) -->
             <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs font-sans print-card relative space-y-4">
