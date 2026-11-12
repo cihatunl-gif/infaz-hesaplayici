@@ -1065,7 +1065,8 @@
         //    ancak "ds2016Grup" suçlarda 01/07/2016'dan ÖNCE işlenmişse 2 yıl.
         // İçtimada (birden fazla suç) EN AZ olan (en kısıtlayıcı) esas alınır.
         const DS_01072016_ESIK_TARIHI = new Date('2016-07-01');
-        // 04/06/2025 tarihli düzenleme (kullanıcı onayı, 2026-11-12: tarih ayrımı yapılmadan TÜM hükümlülere uygulanır): hükümlü açık ceza infaz kurumundan denetime
+        // 04/06/2025 tarihli düzenleme (7550 s.K.; kullanıcı talimatı 2026-11-12 akşam: YALNIZCA suç tarihi 04/06/2025'ten SONRA olanlara
+        // uygulanır — içtimada suçlardan biri bile sonra ise veya suç tarihi girilmemişse uygulanır; önceki "herkese uygulanır" kararının yerine geçer): hükümlü açık ceza infaz kurumundan denetime
         // ayrılabilmek için, koşullu salıverilme tarihine kadar infaz kurumunda geçirmesi gereken sürenin
         // en az 1/10'unu (5 günden az olmamak üzere) açık ceza infaz kurumunda geçirmiş olmalıdır.
         const ACIKTAN_DS_ESIK_TARIHI = new Date('2025-06-04');
@@ -1236,12 +1237,32 @@
         // Native <datalist> kendi içinde kaydırma desteklemediği için, TEK bir global kutu
         // (position: fixed) kullanılıyor; bu kutu hiçbir panelin boyutunu etkilemez,
         // sadece ilgili input'un altına geçici olarak konumlanır.
+        function sucAramaNormalize(t) {
+            return (t || '').toLocaleLowerCase('tr-TR')
+                .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                .replace(/â/g, 'a').replace(/î/g, 'i').replace(/û/g, 'u');
+        }
+        // Tarihin yanına yararlanılan süreyi yazar: "25.11.2030 (1+3 YIL)" (kullanıcı talebi, 2026-11-12).
+        function yilEtiketi(temelYil, ekYil) { return ekYil > 0 ? `(${temelYil}+${ekYil} YIL)` : `(${temelYil} YIL)`; }
         function renderSucMaddeSuggestions(inputEl) {
             const box = document.getElementById('globalSucSuggestions');
             if (!box) return;
             activeSucMaddeInput = inputEl;
-            const q = inputEl.value.trim().toLocaleLowerCase('tr-TR');
-            const matches = q ? SUC_MADDE_LISTESI.filter(it => it.madde.toLocaleLowerCase('tr-TR').includes(q)) : SUC_MADDE_LISTESI;
+            // Arama hem madde numarasında hem suçun ADINDA yapılır (kullanıcı talebi, 2026-11-12).
+            // Türkçe harf farkı gözetilmez ("yagma" -> "Yağma"); birden fazla kelime yazılırsa hepsi aranır.
+            const q = sucAramaNormalize(inputEl.value.trim());
+            let matches = SUC_MADDE_LISTESI;
+            if (q) {
+                const kelimeler = q.split(/\s+/).filter(Boolean);
+                const maddeEslesen = [], adEslesen = [];
+                SUC_MADDE_LISTESI.forEach(it => {
+                    const m = sucAramaNormalize(it.madde);
+                    if (m.includes(q)) { maddeEslesen.push(it); return; }
+                    const tum = m + ' ' + sucAramaNormalize(it.aciklama || '');
+                    if (kelimeler.every(k => tum.includes(k))) adEslesen.push(it);
+                });
+                matches = maddeEslesen.concat(adEslesen);
+            }
             if (matches.length === 0) {
                 box.classList.add('hidden');
                 box.innerHTML = '';
@@ -3885,7 +3906,8 @@
                 if (apcToplamGun > 0) {
                     ekNotlarM.push(`Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.`);
                 }
-                if (!anyTerorDevletSucu && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
+                const aciktaSartKapsamM = muebbetAdaylar.some(r => !r.sucTarihiDate || r.sucTarihiDate > ACIKTAN_DS_ESIK_TARIHI);
+                if (aciktaSartKapsamM && !anyTerorDevletSucu && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
                     const aciktaSonucM = aciktaKalmaSartiUygula(dsDateM, acikDateM, sttDays);
                     dsDateM = aciktaSonucM.tarih;
                     if (aciktaSonucM.not) ekNotlarM.push(aciktaSonucM.not);
@@ -3895,8 +3917,8 @@
                     dsDateM = new Date(sttDate.getTime());
                     ekNotlarM.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
-                acikAyrilmaMetin = formatDate(acikDateM);
-                dsAyrilmaMetin = formatDate(dsDateM);
+                acikAyrilmaMetin = `${formatDate(acikDateM)} ${yilEtiketi(temelAcikKalaM, esik30032020EkM + gecici106EkM)}`;
+                dsAyrilmaMetin = `${formatDate(dsDateM)} ${anyTerorDevletSucu ? yilEtiketi(1, 0) : yilEtiketi(dsKalaTemelYilM, gecici106EkM)}`;
                 {
                     const haricNedenM = muebbetAdaylar.map(r => r.erkenHaric).find(x => x);
                     if (haricNedenM) {
@@ -3904,7 +3926,7 @@
                     } else {
                         const erM = erkenAcikHesapla(D0, acikDateM);
                         if (erM) {
-                            erkenAcikMetin = formatDate(erM.tarih);
+                            erkenAcikMetin = `${formatDate(erM.tarih)} (${erM.erkenGun} gün)`;
                             ekNotlarM.push(`Erken açığa ayrılma: 60 puanın tamamı alınırsa kapalıda geçirilecek ${erM.kapaliGun} günün 1/10'u olan ${erM.erkenGun} gün öne çekilerek ${formatDate(erM.tarih)} tarihinde açığa ayrılabilir.`);
                         }
                     }
@@ -4056,7 +4078,8 @@
                 // 04/06/2025 sonrası: açıktan denetime ayrılmak için açıkta kalma zorunluluğu
                 const acikBaslangicDate = dogrudanAcikDurum === 'dogrudan_acik' ? D0
                     : (dogrudanAcikDurum === 'dogrudan_acik_3gun' ? addDays(D0, 3) : acikDate);
-                if (!anyTerorDevletSucu && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
+                const aciktaSartKapsam = acikDsAdaylar.some(r => !r.sucTarihiDate || r.sucTarihiDate > ACIKTAN_DS_ESIK_TARIHI);
+                if (aciktaSartKapsam && !anyTerorDevletSucu && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
                     const aciktaSonuc = aciktaKalmaSartiUygula(dsDate, acikBaslangicDate, sttDays);
                     dsDate = aciktaSonuc.tarih;
                     if (aciktaSonuc.not) ekNotlar.push(aciktaSonuc.not);
@@ -4069,8 +4092,8 @@
                     dsDate = new Date(sttDate.getTime());
                     ekNotlar.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
-                acikAyrilmaMetin = formatDate(acikDate);
-                dsAyrilmaMetin = formatDate(dsDate);
+                acikAyrilmaMetin = `${formatDate(acikDate)} ${yilEtiketi(temelAcikKala, esik30032020Ek + gecici106Ek)}`;
+                dsAyrilmaMetin = `${formatDate(dsDate)} ${anyTerorDevletSucu ? yilEtiketi(1, 0) : yilEtiketi(dsKalaTemelYil, gecici106Ek)}`;
                 {
                     const haricNeden = acikDsAdaylar.map(r => r.erkenHaric).find(x => x);
                     if (haricNeden) {
@@ -4079,7 +4102,7 @@
                         const er = erkenAcikHesapla(D0, acikDateHam);
                         if (er && er.tarih > sttDate) er.tarih = new Date(sttDate.getTime());
                         if (er) {
-                            erkenAcikMetin = formatDate(er.tarih);
+                            erkenAcikMetin = `${formatDate(er.tarih)} (${er.erkenGun} gün)`;
                             ekNotlar.push(`Erken açığa ayrılma: 60 puanın tamamı alınırsa kapalıda geçirilecek ${er.kapaliGun} günün 1/10'u olan ${er.erkenGun} gün öne çekilerek ${formatDate(er.tarih)} tarihinde açığa ayrılabilir.`);
                         }
                     } else {
