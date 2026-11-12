@@ -117,6 +117,10 @@
                 <button onclick="exportUdf()" class="px-3 py-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white rounded-lg shadow-lg shadow-sky-600/20 transition flex items-center gap-1.5">
                     <i class="fa-solid fa-file-export"></i> UDF Olarak Kaydet
                 </button>
+                <button onclick="hatirlaticiPaneliAc()" class="px-3 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-lg shadow-lg shadow-rose-600/20 transition flex items-center gap-1.5" style="position:relative;">
+                    <i class="fa-solid fa-bell"></i> HATIRLATICI
+                    <span id="hatirlaticiRozet" style="display:none; position:absolute; top:-7px; right:-7px; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#facc15; color:#0f172a; font-size:10px; font-weight:800; line-height:18px; text-align:center;"></span>
+                </button>
             </div>
         </div>
     </header>
@@ -443,6 +447,11 @@
             </div>
 
             <!-- Download Actions -->
+            <div class="no-print">
+                <button onclick="hatirlatmaPenceresiAc()" class="w-full mb-2 py-2 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bell"></i> Bu Tarihler Geldiğinde Hatırlat
+                </button>
+            </div>
             <div class="no-print flex gap-2">
                 <button onclick="exportJSON()" class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-download"></i> JSON Dışa Aktar
@@ -506,6 +515,7 @@
             { madde: 'TCK (Mülga) 258/4', aciklama: 'Görevli memura mukavemet', oran: '1/2' },
             { madde: 'TCK 245/1', aciklama: 'Başkasına Ait Banka veya Kredi Kartının İzinsiz Kullanılm...', oran: '1/2' },
             { madde: 'TCK 106/2.a', aciklama: 'Silahla Tehdit', oran: '1/2' },
+            { madde: 'TCK 106/2.d', aciklama: 'Var Olan veya Var Sayılan Suç Örgütlerinin Oluşturdukları Korkutucu Güçten Yararlanarak Tehdit', oran: '1/3' },
             { madde: 'TCK 87/3', aciklama: 'Kemiklerin Kırılmasına Sebebiyet Verecek Şekilde Kasten Y...', oran: '1/2' },
             { madde: 'TCK 204/1', aciklama: 'Resmi Belgede Sahtecilik', oran: '1/2' },
             { madde: 'TCK 142/1.b.2', aciklama: 'Bina İçinde Muhafaza Altına Alınmış Olan Eşya Hakkında Hı...', oran: '1/2' },
@@ -1238,10 +1248,19 @@
         // 149/1-c-f-g ...) suç örgütü adına işlenmiş sayılır; "Örgütlü Suç" kutusu otomatik işaretlenir (2/3 infaz).
         function isOrgutluOtomatikMadde(maddeText) {
             const m = (maddeText || '').trim().toLocaleLowerCase('tr-TR');
+            if (!m) return false;
+            // Kullanıcı kararı (2026-11-12): terör örgütü maddeleri (TCK 314 vb.) AYRI kalır, kutu işaretlenmez.
+            if (isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(maddeText) || isTerorEtkinPismanlikMaddesi(maddeText)) return false;
             if (ORGUTLU_OTOMATIK_MADDELER.includes(m)) return true;
+            if (/^tck\s*220(?!\d)/.test(m)) return true; // TCK 220 seçilince de işaretlenir
+            const bentVar = (govde, bentler) => govde.split(/[^a-zçğıöşü0-9]+/).some(b => bentler.includes(b));
             const y = m.match(/^tck\s*149\/1(?!\d)(.*)$/);
-            if (!y) return false;
-            return y[1].split(/[^a-zçğıöşü0-9]+/).some(b => b === 'f' || b === 'g');
+            if (y && bentVar(y[1], ['f', 'g'])) return true;
+            const t = m.match(/^tck\s*106\/2(?!\d)(.*)$/); // tehdit: (d) bendi = suç örgütünün korkutucu gücünden yararlanma
+            if (t && bentVar(t[1], ['d'])) return true;
+            // Açıklamasında "örgüt" geçen her liste maddesi örgütlü suç gibi işaretlenir ve hesaplanır.
+            const info = findMaddeInfo(maddeText);
+            return !!(info && /örgüt/.test((info.aciklama || '').toLocaleLowerCase('tr-TR')));
         }
         function applyAutoOrgutlu(tr, maddeText) {
             if (!tr || !maddeText) return;
@@ -1249,6 +1268,7 @@
             if (isOrgutluOtomatikMadde(normalized)) {
                 const orgutluCheckbox = tr.querySelector('.penalty-orgutlu');
                 if (orgutluCheckbox) orgutluCheckbox.checked = true;
+                if (typeof refreshEtkinPismanlikGorunum === 'function') refreshEtkinPismanlikGorunum(tr);
             }
         }
 
@@ -1873,7 +1893,7 @@
                     oranParsed: is647Infaz ? '647' : (oranM ? `${oranM[1]}/${oranM[2]}` : ''),
                     // Kullanıcı talimatı (2026-11-12): infaz türünde "5275 S.K. 107/4 md" yazıyorsa suç örgüt
                     // faaliyeti çerçevesinde işlenmiş kabul edilir ve "Örgütlü Suç" kutusu işaretli eklenir.
-                    orgutlu1074: /107\s*\/\s*4(?!\d)/.test(upper),
+                    orgutlu1074: /107\s*\/\s*4(?!\d)/.test(upper) || /107\s*\/\s*2\s*[.\-]?\s*H(?![A-ZÇĞİÖŞÜ])/.test(upper),
                     ekGun: ekGunHesap,
                     // 'sureli' (varsayılan) | 'muebbet' | 'agirlastirilmis_muebbet' | 'adli_para'
                     sureTip: isAgMuebbetSatiri ? 'agirlastirilmis_muebbet'
@@ -3530,7 +3550,9 @@
                     let infazMaddesi = '5275 S.K. 107/2 md.';
                     if (mukerrir === '1') infazMaddesi = belgeEkSureli ? '5275 S.K. 108/2 md.' : '5275 S.K. 108/1-2 md.';
                     else if (mukerrir === '2') infazMaddesi = '5275 S.K. 108/3 md.';
-                    else if (orgutlu) infazMaddesi = '5275 S.K. 107/4 md.';
+                    // Kullanıcı kararı (2026-11-12): örgüt kapsamında işlenen tüm suçlarda satırda "107/2.h.2 cümle" yazar;
+                    // "107/4" yalnızca örgütlü içtima tavanı açıklamasında geçer.
+                    else if (orgutlu) infazMaddesi = '5275 S.K. 107/2.h.2 cümle';
                     // "107/2-g" sadece SUÇU İŞLEYEN ÇOCUKSA (cocuk1089Uygulandi) yazılır —
                     // bu fıkra zaten sadece çocuklara özgüdür; yetişkinde bu maddelerin 3/4
                     // oranı için özel bir atıf yazılmaz (varsayılan "107/2 md." kalır).
@@ -4846,6 +4868,194 @@
                 }
             }, true);
         }
+    })();
+    </script>
+    <!-- ================= HATIRLATICI (kullanıcı talebi, 2026-11-12) ================= -->
+    <div id="hatirlatModal" class="no-print" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,.45); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:760px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
+            <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; font-weight:800; font-size:14px;">Bu Tarihler Geldiğinde Hatırlat</div>
+            <div style="display:flex; flex-wrap:wrap;">
+                <div style="flex:1 1 320px; padding:16px 18px; border-right:1px solid #e2e8f0;">
+                    <div style="font-weight:700; color:#64748b; font-size:11px; margin-bottom:8px;">HATIRLATILACAK TARİHLER</div>
+                    <div id="hatirlatTarihListesi"></div>
+                </div>
+                <div style="flex:1 1 280px; padding:16px 18px;">
+                    <label for="hatirlatAd" style="display:block; font-weight:700; margin-bottom:6px;">Kim olarak hatırlatayım?</label>
+                    <input type="text" id="hatirlatAd" maxlength="60" autocomplete="off" style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:600; outline:none;">
+                    <div style="font-size:11px; color:#64748b; margin-top:6px;">Not: T.C. veya dosya no önerilir.</div>
+                    <div id="hatirlatHata" style="font-size:11px; color:#dc2626; margin-top:6px; min-height:16px;"></div>
+                    <div style="display:flex; gap:8px; margin-top:10px;">
+                        <button onclick="hatirlatmaKaydet()" style="flex:1; background:#e11d48; color:#fff; border:0; border-radius:8px; padding:9px 10px; font-weight:800; font-size:12px; cursor:pointer;">Hatırlatmayı Kaydet</button>
+                        <button onclick="hatirlatModalKapat()" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; border-radius:8px; padding:9px 12px; font-weight:700; font-size:12px; cursor:pointer;">Vazgeç</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="hatirlaticiPanel" class="no-print" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,.45); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:680px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
+            <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-weight:800; font-size:14px;">HATIRLATICI</span>
+                <button onclick="hatirlaticiPaneliKapat()" style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; font-weight:700; font-size:12px; cursor:pointer;">Kapat</button>
+            </div>
+            <div id="hatirlaticiIcerik" style="padding:16px 18px;"></div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        const ANAHTAR = 'infazci_hatirlaticilar_v1';
+        const ALANLAR = [
+            ['repBtt', 'Hakederek Tahliye'],
+            ['repStt', 'Koşullu Salıverilme'],
+            ['repAcikAyrilma', 'Açık Ceza İnfaz Kurumuna Ayrılma'],
+            ['repErkenAcikAyrilma', 'Erken Açığa Ayrılma (60 Puan)'],
+            ['repDsAyrilma', 'Denetimli Serbestliğe Ayrılma']
+        ];
+        let bekleyenTarihler = [];
+        let buOturumdaGosterildi = false;
+
+        function oku() { try { const v = JSON.parse(localStorage.getItem(ANAHTAR) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+        function yaz(liste) { try { localStorage.setItem(ANAHTAR, JSON.stringify(liste)); return true; } catch (e) { return false; } }
+        function bugunStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+        function trTarih(iso) { const p = iso.split('-'); return p[2] + '.' + p[1] + '.' + p[0]; }
+        function el(etiket, stil, metin) { const e = document.createElement(etiket); if (stil) e.style.cssText = stil; if (metin !== undefined) e.textContent = metin; return e; }
+
+        function rapordanTarihleriTopla() {
+            const bugun = bugunStr();
+            return ALANLAR.map(function (a) {
+                const kutu = document.getElementById(a[0]);
+                const metin = kutu ? (kutu.innerText || '').trim() : '';
+                const m = metin.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+                const iso = m ? (m[3] + '-' + m[2] + '-' + m[1]) : '';
+                return { etiket: a[1], metin: metin || '-', tarih: iso, gecmis: !!iso && iso < bugun };
+            });
+        }
+
+        window.hatirlatmaPenceresiAc = function () {
+            if (typeof calculateAll === 'function') calculateAll();
+            const tarihler = rapordanTarihleriTopla();
+            bekleyenTarihler = tarihler.filter(function (t) { return t.tarih && !t.gecmis; });
+            const liste = document.getElementById('hatirlatTarihListesi');
+            liste.innerHTML = '';
+            tarihler.forEach(function (t) {
+                const satir = el('div', 'display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px dashed #e2e8f0;');
+                satir.appendChild(el('span', 'font-weight:600; color:#334155;', t.etiket));
+                let sag = t.metin, renk = '#0369a1';
+                if (!t.tarih) { renk = '#94a3b8'; }
+                else if (t.gecmis) { sag = trTarih(t.tarih) + ' (geçmiş tarih, hatırlatılmaz)'; renk = '#94a3b8'; }
+                satir.appendChild(el('span', 'font-weight:800; text-align:right; color:' + renk + ';', sag));
+                liste.appendChild(satir);
+            });
+            document.getElementById('hatirlatHata').textContent = bekleyenTarihler.length ? '' : 'Hatırlatılacak ileri tarihli bir tarih bulunamadı.';
+            document.getElementById('hatirlatAd').value = '';
+            document.getElementById('hatirlatModal').style.display = 'flex';
+            setTimeout(function () { document.getElementById('hatirlatAd').focus(); }, 50);
+        };
+        window.hatirlatModalKapat = function () { document.getElementById('hatirlatModal').style.display = 'none'; };
+        window.hatirlatmaKaydet = function () {
+            const ad = document.getElementById('hatirlatAd').value.trim();
+            const hata = document.getElementById('hatirlatHata');
+            if (!bekleyenTarihler.length) { hata.textContent = 'Hatırlatılacak ileri tarihli bir tarih bulunamadı.'; return; }
+            if (!ad) { hata.textContent = 'Lütfen hatırlatma için bir ad yazın (T.C. veya dosya no önerilir).'; return; }
+            const liste = oku();
+            liste.push({
+                id: Date.now() + '-' + Math.floor(Math.random() * 100000),
+                ad: ad,
+                olusturma: bugunStr(),
+                tarihler: bekleyenTarihler.map(function (t) { return { etiket: t.etiket, tarih: t.tarih, okundu: false }; })
+            });
+            if (!yaz(liste)) { hata.textContent = 'Hatırlatma bu tarayıcıya kaydedilemedi (depolama kapalı olabilir).'; return; }
+            window.hatirlatModalKapat();
+            rozetGuncelle();
+            window.hatirlaticiPaneliAc();
+        };
+
+        function gelenler(liste) {
+            const bugun = bugunStr(), sonuc = [];
+            liste.forEach(function (h) { (h.tarihler || []).forEach(function (t) { if (t.tarih <= bugun) sonuc.push({ h: h, t: t }); }); });
+            return sonuc;
+        }
+        function rozetGuncelle() {
+            const rozet = document.getElementById('hatirlaticiRozet');
+            if (!rozet) return 0;
+            const n = gelenler(oku()).filter(function (g) { return !g.t.okundu; }).length;
+            rozet.style.display = n > 0 ? 'block' : 'none';
+            rozet.textContent = n > 0 ? String(n) : '';
+            return n;
+        }
+        function paneliCiz() {
+            const kutu = document.getElementById('hatirlaticiIcerik');
+            const liste = oku();
+            kutu.innerHTML = '';
+            const gelen = gelenler(liste);
+            if (gelen.length) {
+                kutu.appendChild(el('div', 'font-weight:700; color:#64748b; font-size:11px; margin-bottom:8px;', 'TARİHİ GELENLER'));
+                gelen.sort(function (a, b) { return a.t.tarih < b.t.tarih ? 1 : -1; }).forEach(function (g) {
+                    const satir = el('div', 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; margin-bottom:6px; border-radius:9px; border:1px solid ' + (g.t.okundu ? '#e2e8f0' : '#fecdd3') + '; background:' + (g.t.okundu ? '#f8fafc' : '#fff1f2') + ';');
+                    const yazi = el('div', 'font-weight:' + (g.t.okundu ? '500' : '700') + '; color:' + (g.t.okundu ? '#64748b' : '#9f1239') + ';');
+                    yazi.textContent = '«' + g.h.ad + '» için ' + g.t.etiket + ' tarihi (' + trTarih(g.t.tarih) + ') geldi.';
+                    satir.appendChild(yazi);
+                    if (!g.t.okundu) {
+                        const btn = el('button', 'flex-shrink:0; background:#e11d48; color:#fff; border:0; border-radius:7px; padding:5px 10px; font-weight:700; font-size:11px; cursor:pointer;', 'Okundu');
+                        btn.onclick = function () { hatirlatmaOkundu(g.h.id, g.t.etiket, g.t.tarih); };
+                        satir.appendChild(btn);
+                    }
+                    kutu.appendChild(satir);
+                });
+            }
+            kutu.appendChild(el('div', 'font-weight:700; color:#64748b; font-size:11px; margin:' + (gelen.length ? '16px' : '0') + ' 0 8px;', 'KAYITLI HATIRLATMALAR'));
+            if (!liste.length) {
+                kutu.appendChild(el('div', 'color:#94a3b8;', 'Kayıtlı hatırlatma yok. Hesaplama yaptıktan sonra "Bu Tarihler Geldiğinde Hatırlat" düğmesiyle ekleyebilirsiniz.'));
+                return;
+            }
+            const bugun = bugunStr();
+            liste.slice().reverse().forEach(function (h) {
+                const kart = el('div', 'border:1px solid #e2e8f0; border-radius:9px; padding:10px 12px; margin-bottom:8px;');
+                const bas = el('div', 'display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;');
+                bas.appendChild(el('span', 'font-weight:800;', h.ad));
+                const sil = el('button', 'background:#f1f5f9; color:#b91c1c; border:1px solid #cbd5e1; border-radius:7px; padding:4px 9px; font-weight:700; font-size:11px; cursor:pointer;', 'Sil');
+                sil.onclick = function () { hatirlatmaSil(h.id); };
+                bas.appendChild(sil);
+                kart.appendChild(bas);
+                (h.tarihler || []).forEach(function (t) {
+                    const s = el('div', 'display:flex; justify-content:space-between; gap:10px; padding:3px 0; font-size:12px;');
+                    s.appendChild(el('span', 'color:#475569;', t.etiket));
+                    s.appendChild(el('span', 'font-weight:700; color:' + (t.tarih <= bugun ? '#be123c' : '#0369a1') + ';', trTarih(t.tarih) + (t.tarih <= bugun ? ' (geldi)' : '')));
+                    kart.appendChild(s);
+                });
+                kart.appendChild(el('div', 'font-size:10px; color:#94a3b8; margin-top:4px;', 'Kayıt tarihi: ' + trTarih(h.olusturma || bugun)));
+                kutu.appendChild(kart);
+            });
+        }
+        function hatirlatmaOkundu(id, etiket, tarih) {
+            const liste = oku();
+            liste.forEach(function (h) { if (h.id === id) (h.tarihler || []).forEach(function (t) { if (t.etiket === etiket && t.tarih === tarih) t.okundu = true; }); });
+            yaz(liste); rozetGuncelle(); paneliCiz();
+        }
+        function hatirlatmaSil(id) {
+            yaz(oku().filter(function (h) { return h.id !== id; }));
+            rozetGuncelle(); paneliCiz();
+        }
+        window.hatirlaticiPaneliAc = function () { paneliCiz(); document.getElementById('hatirlaticiPanel').style.display = 'flex'; };
+        window.hatirlaticiPaneliKapat = function () { document.getElementById('hatirlaticiPanel').style.display = 'none'; };
+
+        // Otomatik uyarı: program açıldığında ve açık kaldığı sürece saat başı kontrol edilir; tarihi gelen
+        // ve henüz "Okundu" denmemiş hatırlatma varsa HATIRLATICI penceresi kendiliğinden açılır.
+        function otomatikKontrol() {
+            const n = rozetGuncelle();
+            if (n > 0 && !buOturumdaGosterildi && document.getElementById('hatirlatModal').style.display !== 'flex') {
+                buOturumdaGosterildi = true;
+                window.hatirlaticiPaneliAc();
+            }
+        }
+        let sonKontrolGunu = bugunStr();
+        setTimeout(otomatikKontrol, 800);
+        setInterval(function () {
+            const g = bugunStr();
+            if (g !== sonKontrolGunu) { sonKontrolGunu = g; buOturumdaGosterildi = false; } // gün değişti: yeni gelenler için tekrar uyar
+            otomatikKontrol();
+        }, 10 * 60 * 1000);
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) { const g = bugunStr(); if (g !== sonKontrolGunu) { sonKontrolGunu = g; buOturumdaGosterildi = false; } otomatikKontrol(); } });
     })();
     </script>
 </body>
