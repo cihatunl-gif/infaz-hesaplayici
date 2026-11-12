@@ -5131,7 +5131,7 @@
         function rozetGuncelle() {
             const rozet = document.getElementById('hatirlaticiRozet');
             if (!rozet) return 0;
-            const n = gelenler(oku()).filter(function (g) { return !g.t.okundu; }).length;
+            const n = gelenler(oku()).length; // kullanıcı talimatı (2026-11-12): okundu denen notlar da SİLİNENE KADAR sayılır ve her açılışta gösterilir
             rozet.style.display = n > 0 ? 'block' : 'none';
             rozet.textContent = n > 0 ? String(n) : '';
             return n;
