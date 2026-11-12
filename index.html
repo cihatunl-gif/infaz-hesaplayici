@@ -41,6 +41,11 @@
         }
     </script>
     <style>
+        /* Üst düğme çubuğu (Sıfırla, Yazdır, UDF, HATIRLATICI ...) sayfa aşağı kaydırılınca da üstte kalır
+           (kullanıcı talebi 2026-11-12). Gövde yüksekliği ekranla sınırlı olduğu için çubuk bir ekran
+           boyu sonra kayboluyordu; yükseklik sınırı kaldırıldı. */
+        html, body { height: auto !important; }
+        body { min-height: 100vh; }
         /* Müddetname raporu, sol taraf aşağı kaydırılırken ekranda sabit kalır (kullanıcı talebi 2026-11-12);
            rapor ekrandan uzunsa kendi içinde kaydırılır. Yazdırmada bu davranış kapatılır. */
         @media (min-width: 1024px) {
@@ -101,7 +106,7 @@
 
             <!-- Header Quick Actions -->
             <div class="flex items-center space-x-2">
-                <button onclick="resetAll()" class="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition flex items-center gap-1.5">
+                <button onclick="resetAll()" class="px-3 py-1.5 text-xs font-bold bg-slate-600 hover:bg-slate-500 text-white rounded-lg shadow-lg shadow-slate-600/20 transition flex items-center gap-1.5">
                     <i class="fa-solid fa-arrow-rotate-left"></i> Sıfırla
                 </button>
                 <input type="file" id="jsonInput" onchange="importJSON(event)" class="hidden" accept=".json">
@@ -161,7 +166,7 @@
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                 <!-- Başlık + Ceza Ekle / Manuel Ekle: sayfa aşağı kaydırıldıkça üstte SABİT kalır (2026-11-11) -->
-                <div class="flex items-center justify-between mb-3" style="position: sticky; top: 0; z-index: 30; background: #ffffff; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <div class="flex items-center justify-between mb-3" style="position: sticky; top: 64px; z-index: 30; background: #ffffff; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
                     <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                         <i class="fa-solid fa-layer-group text-amber-500"></i> Cezalar, Süresiz Hapis & Suç Maddesi (5275 s.K. m.99)
                     </h2>
