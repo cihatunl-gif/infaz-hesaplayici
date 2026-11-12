@@ -487,6 +487,8 @@
             { madde: 'TCK 220/2', aciklama: 'Suç İşlemek Amacıyla Kurulan Örgüte Üye Olma', oran: '1/3' },
             { madde: 'TCK 107/1', aciklama: 'Şantaj', oran: '1/2' },
             { madde: 'TCK 149/1', aciklama: 'Nitelikli Yağma', oran: '1/2' },
+            { madde: 'TCK 149/1-f', aciklama: 'Suç Örgütünün Oluşturduğu Korkutucu Güçten Yararlanarak Yağma', oran: '1/3' },
+            { madde: 'TCK 149/1-g', aciklama: 'Suç Örgütüne Yarar Sağlamak Maksadıyla Yağma', oran: '1/3' },
             { madde: 'TCK 267/1', aciklama: 'İftira', oran: '1/2' },
             { madde: 'TCK 157/1', aciklama: 'Dolandırıcılık', oran: '1/2' },
             { madde: 'TCK 86/1', aciklama: 'Kasten Yaralama', oran: '1/2' },
@@ -1232,10 +1234,19 @@
             'tck 149/1-g',
             'tck 149/1-f-g'
         ];
+        // Kullanıcı talimatı (2026-11-12): TCK 149/1'in (f) veya (g) bendini içeren HER yazım (149/1-f, 149/1.g,
+        // 149/1-c-f-g ...) suç örgütü adına işlenmiş sayılır; "Örgütlü Suç" kutusu otomatik işaretlenir (2/3 infaz).
+        function isOrgutluOtomatikMadde(maddeText) {
+            const m = (maddeText || '').trim().toLocaleLowerCase('tr-TR');
+            if (ORGUTLU_OTOMATIK_MADDELER.includes(m)) return true;
+            const y = m.match(/^tck\s*149\/1(?!\d)(.*)$/);
+            if (!y) return false;
+            return y[1].split(/[^a-zçğıöşü0-9]+/).some(b => b === 'f' || b === 'g');
+        }
         function applyAutoOrgutlu(tr, maddeText) {
             if (!tr || !maddeText) return;
             const normalized = maddeText.trim().toLocaleLowerCase('tr-TR');
-            if (ORGUTLU_OTOMATIK_MADDELER.includes(normalized)) {
+            if (isOrgutluOtomatikMadde(normalized)) {
                 const orgutluCheckbox = tr.querySelector('.penalty-orgutlu');
                 if (orgutluCheckbox) orgutluCheckbox.checked = true;
             }
@@ -2159,7 +2170,7 @@
 
                 const eklenenCezaSatirElemanlari = [];
                 cezaSatirlari.forEach(s => {
-                    const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR')) || !!s.orgutlu1074
+                    const orgutluAuto = isOrgutluOtomatikMadde(s.maddeRaw) || !!s.orgutlu1074
                         || /^tck\s*220(?!\d)/.test(s.maddeRaw.trim().toLocaleLowerCase('tr-TR')); // kullanıcı talimatı (2026-11-12): belgede TCK 220 görülürse örgütlü kutusu işaretlenir
                     // Her satır "manuel oran" olarak eklenir: PDF'te zaten yazan YATAR
                     // oranı (1/2, 2/3, 3/4...) doğrudan kullanılır — programın kendi suç
@@ -2305,7 +2316,7 @@
                     // 108/2 "oran + ek süre" biçimi: belgede yazılı oran (örn. 1/2) bilerek
                     // korunur; listedeki mükerrer oranıyla (2/3) karşılaştırılıp uyarı verilmez.
                     if (s.mukerrirTahmin === '1' && s.ekGun > 0) return;
-                    const orgutluAutoChk = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
+                    const orgutluAutoChk = isOrgutluOtomatikMadde(s.maddeRaw);
                     const beklenenOran = beklenenOranYatarHesapla(s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAutoChk, dogumTarihiBulundu);
                     if (beklenenOran === null) return;
                     const belgedekiOran = oranStrToNum(s.oranParsed);
