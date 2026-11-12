@@ -3214,7 +3214,7 @@
                         hamGun: rowHamGun,
                         orgutlu: orgutlu,
                         orgutluSinif: isOrgutluSucSinifi(sucMadde, orgutlu),
-                        erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, acikDsBilgi.eslesme) || (etkinPismanlikChecked ? 'terör/örgütlü suç' : ''),
+                        erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, acikDsBilgi.eslesme),
                         terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked
                     });
                 }
@@ -3253,7 +3253,7 @@
                         eslesme: muebbetAcikDsBilgi.eslesme,
                         sucTarihiDate: sTarih ? new Date(sTarih) : null,
                         orgutluSinif: isOrgutluSucSinifi(sucMadde, orgutlu),
-                        erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, muebbetAcikDsBilgi.eslesme) || (etkinPismanlikChecked ? 'terör/örgütlü suç' : ''),
+                        erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, muebbetAcikDsBilgi.eslesme),
                         terorDevletSucu: terorDevletSucuRowM
                     });
                 }
@@ -3938,7 +3938,8 @@
 
                 const allBefore30032020M = !anyTarihsizM && !anyDs2020IstisnaM && muebbetAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYilM = Math.min(...muebbetAdaylar.map(dsYilAdayHesapla));
-                const esik30032020EkM = allBefore30032020M ? 3 : 0;
+                // Kullanıcı kararı (2026-11-12): istisna suçlarda (örgütlü suçlar dahil) tarih ayrımı olmaksızın açığa HİÇBİR +3 verilmez; normal açık hakkı neyse o uygulanır.
+                const esik30032020EkM = (allBefore30032020M && !anyIstisnaM) ? 3 : 0;
 
                 const allBeforeGecici106M = !anyTarihsizM && muebbetAdaylar.every(r => r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
                 // Kullanıcı kararı (2026-11-12): Geçici 10/6'nın +3 yılı, 30/03/2020 hakkının ÜSTÜNE ayrıca eklenir.
@@ -4000,7 +4001,7 @@
                 if (anyTarihsizM) {
                     notParcalariM.push(`Müebbetteki suçun tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sabit) kabul edilmiştir.`);
                 } else if (allBefore30032020M) {
-                    notParcalariM.push(`Müebbetteki suç 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe 3 yıl kala ayrılma hakkı vardır; açığa ayrılma süresine de +3 yıl eklenmiştir.`);
+                    notParcalariM.push(`Müebbetteki suç 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe 3 yıl kala ayrılma hakkı vardır${esik30032020EkM > 0 ? '; açığa ayrılma süresine de +3 yıl eklenmiştir' : '; istisna suç bulunduğundan açığa ayrılma süresine +3 yıl eklenmemiştir'}.`);
                 } else if (anyDs2020IstisnaM) {
                     notParcalariM.push(`Müebbetteki suç 30/03/2020 eşikli 3 yıllık ayrıcalığın istisnası kapsamında olduğundan denetimli serbestliğe 1 yıl kala ayrılma hakkı vardır.`);
                 } else {
@@ -4093,7 +4094,8 @@
                 // 3 yıl kala DEĞİLDİR (anyDs2020Istisna kullanılır, anyIstisna106 değil).
                 const allBefore30032020 = !anyTarihsiz && !anyDs2020Istisna && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYil = Math.min(...acikDsAdaylar.map(dsYilAdayHesapla));
-                const esik30032020Ek = allBefore30032020 ? 3 : 0;
+                // Kullanıcı kararı (2026-11-12): istisna suçlarda (örgütlü suçlar dahil) tarih ayrımı olmaksızın açığa HİÇBİR +3 verilmez; normal açık hakkı neyse o uygulanır.
+                const esik30032020Ek = (allBefore30032020 && !anyIstisna106) ? 3 : 0;
 
                 // --- Geçici 10/6. madde (31/07/2023 eşiği, istisna suç listesi var) ---
                 // ÖNEMLİ: 30/03/2020 ve öncesi bir suç tarihi HEM bu eşiğin HEM de
@@ -4181,7 +4183,7 @@
                 if (anyTarihsiz) {
                     notParcalari.push(`İçtimadaki bir veya daha fazla cezanın suç tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sonrası) kabul edilmiştir.`);
                 } else if (allBefore30032020) {
-                    notParcalari.push(`Suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe 3 yıl kala ayrılma hakkı vardır; açığa ayrılma süresine de +3 yıl eklenmiştir.`);
+                    notParcalari.push(`Suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe 3 yıl kala ayrılma hakkı vardır${esik30032020Ek > 0 ? '; açığa ayrılma süresine de +3 yıl eklenmiştir' : '; istisna suç bulunduğundan açığa ayrılma süresine +3 yıl eklenmemiştir'}.`);
                 } else if (dsKalaTemelYil === 2) {
                     notParcalari.push(`Suçlar 01/07/2016'dan önce işlenmiş TCK 83, 87/2-d, 94, 95, 96 veya 2937 s. MİT Kanunu suçlarından olduğundan denetimli serbestliğe 2 yıl kala ayrılma hakkı vardır.`);
                 } else if (anyDs2020Istisna) {
