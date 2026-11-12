@@ -1833,6 +1833,9 @@
                     gun: gunM ? parseInt(gunM[1]) : 0,
                     mukerrirTahmin: tahminEtMukerrirlik(upper),
                     oranParsed: is647Infaz ? '647' : (oranM ? `${oranM[1]}/${oranM[2]}` : ''),
+                    // Kullanıcı talimatı (2026-11-12): infaz türünde "5275 S.K. 107/4 md" yazıyorsa suç örgüt
+                    // faaliyeti çerçevesinde işlenmiş kabul edilir ve "Örgütlü Suç" kutusu işaretli eklenir.
+                    orgutlu1074: /107\s*\/\s*4(?!\d)/.test(upper),
                     ekGun: ekGunHesap,
                     // 'sureli' (varsayılan) | 'muebbet' | 'agirlastirilmis_muebbet' | 'adli_para'
                     sureTip: isAgMuebbetSatiri ? 'agirlastirilmis_muebbet'
@@ -2129,7 +2132,7 @@
 
                 const eklenenCezaSatirElemanlari = [];
                 cezaSatirlari.forEach(s => {
-                    const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR'));
+                    const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR')) || !!s.orgutlu1074;
                     // Her satır "manuel oran" olarak eklenir: PDF'te zaten yazan YATAR
                     // oranı (1/2, 2/3, 3/4...) doğrudan kullanılır — programın kendi suç
                     // maddesi listesinden tahmin etmesi beklenmez (liste eksik/hatalı
@@ -3186,7 +3189,9 @@
                     // olsun bu satır için açık süresi 2 yıl kalaya ve istisna
                     // bayrakları true'ya sabitlenir (1/3 kapalı kalma şartı, terorDevletSucu
                     // bayrağı üzerinden ayrıca uygulanır).
-                    if (orgutlu) acikDsBilgi = { ...acikDsBilgi, istisna106: true }; // örgütlü suç: +3 (Geçici 10/6) yok
+                    // Kullanıcı kararı (2026-11-12): "Örgütlü Suç" kutusu işaretliyse açığa ayrılma HER ZAMAN 1 yıl kaladır
+                    // (etkin pişmanlık işaretliyse aşağıda 2 yıla çıkar); +3 hakkı yoktur.
+                    if (orgutlu) acikDsBilgi = { ...acikDsBilgi, acik: 1, istisna106: true };
                     if (etkinPismanlikChecked) {
                         acikDsBilgi = { ...acikDsBilgi, acik: 2, istisna106: true, ds2020Istisna: true, eslesme: 'TCK 221 Etkin Pişmanlık', teyitli: true };
                     }
@@ -3239,6 +3244,8 @@
                     let muebbetAcik;
                     if (terorDevletSucuRowM) {
                         muebbetAcik = 2;
+                    } else if (orgutlu) {
+                        muebbetAcik = 1; // kullanıcı kararı (2026-11-12): örgütlü suç kutusu işaretliyse açık her zaman 1 yıl kala
                     } else if (muebbetAcikDsBilgi.eslesme === 'TCK 82/1-d') {
                         muebbetAcik = 3;
                     } else {
