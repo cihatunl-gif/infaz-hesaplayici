@@ -3968,7 +3968,7 @@
 
                 const allBefore30032020M = !anyTarihsizM && !anyDs2020IstisnaM && muebbetAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYilHamM = Math.min(...muebbetAdaylar.map(dsYilAdayHesapla));
-                const kadinCocukDsM = kadinCocuk06Aktif && !anyTerorDevletSucu && dsKalaTemelYilHamM < 2;
+                const kadinCocukDsM = kadinCocuk06Aktif && dsKalaTemelYilHamM < 2; // terör suçları DAHİL (kullanıcı kararı 2026-11-12)
                 const dsKalaTemelYilM = kadinCocukDsM ? 2 : dsKalaTemelYilHamM;
                 // Kullanıcı kararı (2026-11-12): istisna suçlarda (örgütlü suçlar dahil) tarih ayrımı olmaksızın açığa HİÇBİR +3 verilmez; normal açık hakkı neyse o uygulanır.
                 const esik30032020EkM = (allBefore30032020M && !anyIstisnaM) ? 3 : 0;
@@ -3981,7 +3981,7 @@
                 // Kullanıcı kararı (2026-11-12 gece): AÇIK için +3 yıl yalnızca BİR KEZ verilir (30/03/2020 ve Geçici 10/6 üst üste binmez); DENETİMDE 30/03/2020'nin 3 yılı ayrı haktır, üstüne Geçici 10/6'nın +3'ü bir kez eklenir (3+3).
                 const acikEkYilM = Math.max(esik30032020EkM, gecici106EkM);
                 const acikKalaYilToplamM = temelAcikKalaM + acikEkYilM;
-                const dsKalaYilToplamM = anyTerorDevletSucu ? 1 : dsKalaTemelYilM + gecici106EkM; // terör: zamansız, koşulsuz 1 yıl
+                const dsKalaYilToplamM = anyTerorDevletSucu ? (kadinCocukDsM ? 2 : 1) : dsKalaTemelYilM + gecici106EkM; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplamM * 365;
                 const dsKalaGun = dsKalaYilToplamM * 365;
 
@@ -4015,7 +4015,7 @@
                     ekNotlarM.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
                 acikAyrilmaMetin = `${formatDate(acikDateM)} ${yilEtiketi(temelAcikKalaM, acikEkYilM)}`;
-                dsAyrilmaMetin = `${formatDate(dsDateM)} ${anyTerorDevletSucu ? yilEtiketi(1, 0) : yilEtiketi(dsKalaTemelYilM, gecici106EkM)}`;
+                dsAyrilmaMetin = `${formatDate(dsDateM)} ${anyTerorDevletSucu ? yilEtiketi(kadinCocukDsM ? 2 : 1, 0) : yilEtiketi(dsKalaTemelYilM, gecici106EkM)}`;
                 {
                     const haricNedenM = muebbetAdaylar.map(r => r.erkenHaric).find(x => x);
                     if (haricNedenM) {
@@ -4127,7 +4127,7 @@
                 // 3 yıl kala DEĞİLDİR (anyDs2020Istisna kullanılır, anyIstisna106 değil).
                 const allBefore30032020 = !anyTarihsiz && !anyDs2020Istisna && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
                 const dsKalaTemelYilHam = Math.min(...acikDsAdaylar.map(dsYilAdayHesapla));
-                const kadinCocukDs = kadinCocuk06Aktif && !anyTerorDevletSucu && dsKalaTemelYilHam < 2;
+                const kadinCocukDs = kadinCocuk06Aktif && dsKalaTemelYilHam < 2; // terör suçları DAHİL (kullanıcı kararı 2026-11-12)
                 const dsKalaTemelYil = kadinCocukDs ? 2 : dsKalaTemelYilHam;
                 // Kullanıcı kararı (2026-11-12): istisna suçlarda (örgütlü suçlar dahil) tarih ayrımı olmaksızın açığa HİÇBİR +3 verilmez; normal açık hakkı neyse o uygulanır.
                 const esik30032020Ek = (allBefore30032020 && !anyIstisna106) ? 3 : 0;
@@ -4148,7 +4148,7 @@
                 // Kullanıcı kararı (2026-11-12 gece): AÇIK için +3 yıl yalnızca BİR KEZ verilir (30/03/2020 ve Geçici 10/6 üst üste binmez); DENETİMDE 30/03/2020'nin 3 yılı ayrı haktır, üstüne Geçici 10/6'nın +3'ü bir kez eklenir (3+3).
                 const acikEkYil = Math.max(esik30032020Ek, gecici106Ek);
                 const acikKalaYilToplam = temelAcikKala + acikEkYil;
-                const dsKalaYilToplam = anyTerorDevletSucu ? 1 : dsKalaTemelYil + gecici106Ek; // terör: zamansız, koşulsuz 1 yıl
+                const dsKalaYilToplam = anyTerorDevletSucu ? (kadinCocukDs ? 2 : 1) : dsKalaTemelYil + gecici106Ek; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplam * 365;
                 const dsKalaGun = dsKalaYilToplam * 365;
 
@@ -4197,7 +4197,7 @@
                     ekNotlar.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
                 acikAyrilmaMetin = `${formatDate(acikDate)} ${yilEtiketi(temelAcikKala, acikEkYil)}`;
-                dsAyrilmaMetin = `${formatDate(dsDate)} ${anyTerorDevletSucu ? yilEtiketi(1, 0) : yilEtiketi(dsKalaTemelYil, gecici106Ek)}`;
+                dsAyrilmaMetin = `${formatDate(dsDate)} ${anyTerorDevletSucu ? yilEtiketi(kadinCocukDs ? 2 : 1, 0) : yilEtiketi(dsKalaTemelYil, gecici106Ek)}`;
                 {
                     const haricNeden = acikDsAdaylar.map(r => r.erkenHaric).find(x => x);
                     if (haricNeden) {
