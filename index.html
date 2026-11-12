@@ -3890,6 +3890,11 @@
                     dsDateM = aciktaSonucM.tarih;
                     if (aciktaSonucM.not) ekNotlarM.push(aciktaSonucM.not);
                 }
+                // EMNİYET KONTROLÜ (kullanıcı onayı, 2026-11-12): denetim tarihi koşullu salıverilme tarihini geçemez.
+                if (dsDateM > sttDate) {
+                    dsDateM = new Date(sttDate.getTime());
+                    ekNotlarM.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
+                }
                 acikAyrilmaMetin = formatDate(acikDateM);
                 dsAyrilmaMetin = formatDate(dsDateM);
                 {
@@ -4026,10 +4031,19 @@
                 // hapis açık ceza infaz kurumunda infaz edilir; bu yüzden AÇIĞA ayrılma tarihi,
                 // toplam cezadan APC günleri DÜŞÜLEREK bulunur. DS ve STT/BTT bundan ETKİLENMEZ.
                 const sttDaysApcsiz = Math.max(0, sttDays - apcToplamGun);
-                const acikKapaliSartBagladi = !(sttDaysApcsiz > acikKalaGun);
-                const acikDate = acikKapaliSartBagladi
-                    ? addDays(D0, kapaliKalmaGerekliGun)
-                    : addDays(D0, sttDaysApcsiz - acikKalaGun);
+                // DÜZELTME (kullanıcı onayı, 2026-11-12): asgari kapalı kalma şartında (1 ay / 1/10 / terörde 1/3)
+                // girişten ÖNCE kapalıda geçen mahsup günleri (tutukluluk + gözaltı) gerekli süreden DÜŞÜLÜR.
+                // Açığa ayrılma tarihi = "koşulluya X yıl kala" tarihi ile "kapalı kalma şartının dolduğu"
+                // tarihten hangisi DAHA GEÇ ise odur (önceden mahsup hiç düşülmüyor ve iki şarttan yalnızca
+                // biri tarihe yansıtılıyordu).
+                const acikKalaTarihi = sttDaysApcsiz > acikKalaGun ? addDays(D0, sttDaysApcsiz - acikKalaGun) : new Date(D0.getTime());
+                const kapaliSartKalanGun = Math.max(0, kapaliKalmaGerekliGun - tutuklulukToplamGun);
+                const kapaliSartTarihi = addDays(D0, kapaliSartKalanGun);
+                const acikKapaliSartBagladi = !(sttDaysApcsiz > acikKalaGun) || kapaliSartTarihi > acikKalaTarihi;
+                const acikDateHam = kapaliSartTarihi > acikKalaTarihi ? kapaliSartTarihi : acikKalaTarihi;
+                // EMNİYET KONTROLÜ: açığa ayrılma tarihi koşullu salıverilme tarihini geçemez.
+                const acikSttyiAsti = acikDateHam > sttDate;
+                const acikDate = acikSttyiAsti ? new Date(sttDate.getTime()) : acikDateHam;
                 // Denetime ayrılmada 1/10 veya 1/3 kapalı kalma şartı ARANMAZ (kullanıcı onayı, 2026-11-12).
                 let dsDate = sttDays > dsKalaGunNet ? addDays(sttDate, -dsKalaGunNet) : new Date(D0.getTime());
                 const ekNotlar = [];
@@ -4047,6 +4061,14 @@
                     dsDate = aciktaSonuc.tarih;
                     if (aciktaSonuc.not) ekNotlar.push(aciktaSonuc.not);
                 }
+                // EMNİYET KONTROLÜ (kullanıcı onayı, 2026-11-12): açık/denetim tarihi koşullu salıverilme tarihini geçemez.
+                if (acikSttyiAsti) {
+                    ekNotlar.push(`UYARI: Asgari kapalı kalma şartı koşullu salıverilme tarihinden (${formatDate(sttDate)}) sonra dolduğundan (${formatDate(acikDateHam)}), açığa ayrılma tarihi koşullu salıverilme tarihiyle sınırlandırılmıştır; hükümlü açığa ayrılmadan koşullu salıverilir.`);
+                }
+                if (dsDate > sttDate) {
+                    dsDate = new Date(sttDate.getTime());
+                    ekNotlar.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
+                }
                 acikAyrilmaMetin = formatDate(acikDate);
                 dsAyrilmaMetin = formatDate(dsDate);
                 {
@@ -4054,7 +4076,8 @@
                     if (haricNeden) {
                         erkenAcikMetin = `Uygulanmaz (${haricNeden} nedeniyle)`;
                     } else if (dogrudanAcikDurum === 'kapali_baslar') {
-                        const er = erkenAcikHesapla(D0, acikDate);
+                        const er = erkenAcikHesapla(D0, acikDateHam);
+                        if (er && er.tarih > sttDate) er.tarih = new Date(sttDate.getTime());
                         if (er) {
                             erkenAcikMetin = formatDate(er.tarih);
                             ekNotlar.push(`Erken açığa ayrılma: 60 puanın tamamı alınırsa kapalıda geçirilecek ${er.kapaliGun} günün 1/10'u olan ${er.erkenGun} gün öne çekilerek ${formatDate(er.tarih)} tarihinde açığa ayrılabilir.`);
