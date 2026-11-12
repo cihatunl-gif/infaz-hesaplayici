@@ -195,11 +195,21 @@
                             <input type="date" id="infazBaslangic" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
                         </div>
                         <div>
-                            <label class="block text-slate-500 mb-1 font-bold">Doğum Tarihi</label>
-                            <input type="date" id="hukumluDogumTarihi" onchange="calculateAll()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
+                            <label class="block text-slate-500 mb-1 font-bold">Doğum Tarihi / Cinsiyet</label>
+                            <div class="flex gap-2">
+                                <input type="date" id="hukumluDogumTarihi" onchange="calculateAll()" class="flex-1 min-w-0 bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
+                                <select id="hukumluCinsiyet" onchange="cinsiyetGorunumGuncelle(); calculateAll();" class="w-28 bg-slate-50 border border-slate-300 rounded px-2 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
+                                    <option value="">Cinsiyet</option>
+                                    <option value="erkek">Erkek</option>
+                                    <option value="kadin">Kadın</option>
+                                </select>
+                            </div>
+                            <label id="kadinCocuk06Wrap" class="hidden flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-600 font-semibold">
+                                <input type="checkbox" id="kadinCocuk06" onchange="calculateAll()" class="accent-amber-500"> 0-6 yaş grubunda çocuğu var
+                            </label>
                         </div>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır.</p>
+                    <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır. Cinsiyet "Kadın" seçilip 0-6 yaş grubunda çocuğu olduğu işaretlenirse denetimli serbestlik koşullu salıverilmeye 2 yıl kala hesaplanır.</p>
 
                     <!-- 01/07/2016 öncesi işlenmiş, 5 yıldan az hapis cezalı (istisna suçlar
                          hariç) hükümlülerin "3 gün içinde doğrudan açık" hakkı (R11,
@@ -272,7 +282,7 @@
             <div id="dogumTarihiUyariBanner" class="hidden bg-sky-50 border border-sky-300 text-sky-800 text-xs rounded-xl p-3 flex items-start justify-between gap-2">
                 <div class="flex items-start gap-2">
                     <i class="fa-solid fa-circle-info mt-0.5"></i>
-                    <span>Yaşa bağlı hesaplama parametreleri (çocuk yaş indirimi) mevcut, ancak Doğum Tarihi girilmedi. Hükümlü suç/infaz sürecinde çocuk veya genç yaşta ise koşullu salıverilme hesabı eksik kalabilir.</span>
+                    <span>Yaşa bağlı hesaplama parametreleri (çocuk yaş indirimi) mevcut, ancak Doğum Tarihi girilmedi. Hükümlü suç/infaz sürecinde çocuk veya genç yaşta ise koşullu salıverilme hesabı eksik kalabilir. Cinsiyet seçimi de yapılmalıdır; cinsiyet denetimli serbestlik şartlarını değiştirebilir (0-6 yaş grubunda çocuğu bulunan kadın hükümlü, koşullu salıverilmesine 2 yıl kala denetimli serbestlikten yararlanır).</span>
                 </div>
                 <button onclick="dogumTarihiUyarisiniKaldir()" class="shrink-0 px-2 py-1 bg-sky-100 hover:bg-sky-200 border border-sky-300 rounded font-semibold whitespace-nowrap">Uyarıyı Kaldır</button>
             </div>
@@ -1130,6 +1140,15 @@
             if (/^tck\s*86\/3-b/.test(m) || /^tck\s*82\/1-d\s*,\s*e/.test(m) || /^tck\s*82\/1-e/.test(m)) return 'beden/ruh bakımından savunamayacak kişiye karşı suç';
             if (eslesme === 'TCK 82/1-d' || eslesme === 'TCK 86/3-a' || eslesme === 'TCK 96/2-b') return 'eşe karşı suç';
             return '';
+        }
+        // Cinsiyet "Kadın" seçilince "0-6 yaş grubunda çocuğu var" kutusu görünür.
+        function cinsiyetGorunumGuncelle() {
+            const c = document.getElementById('hukumluCinsiyet');
+            const w = document.getElementById('kadinCocuk06Wrap');
+            const k = document.getElementById('kadinCocuk06');
+            if (!c || !w) return;
+            if (c.value === 'kadin') { w.classList.remove('hidden'); }
+            else { w.classList.add('hidden'); if (k) k.checked = false; }
         }
         function dsYilAdayHesapla(r) {
             if (r.terorDevletSucu) return 1; // terör: zamansız ve koşulsuz 1 yıl
@@ -2132,7 +2151,8 @@
 
                 const eklenenCezaSatirElemanlari = [];
                 cezaSatirlari.forEach(s => {
-                    const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR')) || !!s.orgutlu1074;
+                    const orgutluAuto = ORGUTLU_OTOMATIK_MADDELER.includes(s.maddeRaw.trim().toLocaleLowerCase('tr-TR')) || !!s.orgutlu1074
+                        || /^tck\s*220(?!\d)/.test(s.maddeRaw.trim().toLocaleLowerCase('tr-TR')); // kullanıcı talimatı (2026-11-12): belgede TCK 220 görülürse örgütlü kutusu işaretlenir
                     // Her satır "manuel oran" olarak eklenir: PDF'te zaten yazan YATAR
                     // oranı (1/2, 2/3, 3/4...) doğrudan kullanılır — programın kendi suç
                     // maddesi listesinden tahmin etmesi beklenmez (liste eksik/hatalı
@@ -3110,6 +3130,9 @@
             // satır döngüsünden ÖNCE burada okunur ki her satırın kendi suç tarihiyle
             // karşılaştırılabilsin. Hükümlü suç tarihinde 18 yaşını doldurmamışsa bu
             // maddelerdeki sabit 3/4 oranı yerine 2/3 uygulanır (bkz. is108_9Maddesi).
+            // Kullanıcı talimatı (2026-11-12): 0-6 yaş grubunda çocuğu bulunan kadın hükümlü, koşullu salıverilmesine
+            // 2 yıl veya daha az kala denetimli serbestlikten yararlanır (5275 s.K. 105/A-3).
+            const kadinCocuk06Aktif = (document.getElementById('hukumluCinsiyet') || {}).value === 'kadin' && !!(document.getElementById('kadinCocuk06') || {}).checked;
             const dogumTarihiStr1089 = document.getElementById('hukumluDogumTarihi') ? document.getElementById('hukumluDogumTarihi').value : '';
             const dogumTarihi1089 = dogumTarihiStr1089 ? new Date(dogumTarihiStr1089) : null;
             const yas18Tarihi1089 = dogumTarihi1089 ? yilEkleGercek(dogumTarihi1089, 18) : null;
@@ -3944,7 +3967,9 @@
                 const anyTarihsizM = muebbetAdaylar.some(r => !r.sucTarihiDate);
 
                 const allBefore30032020M = !anyTarihsizM && !anyDs2020IstisnaM && muebbetAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
-                const dsKalaTemelYilM = Math.min(...muebbetAdaylar.map(dsYilAdayHesapla));
+                const dsKalaTemelYilHamM = Math.min(...muebbetAdaylar.map(dsYilAdayHesapla));
+                const kadinCocukDsM = kadinCocuk06Aktif && !anyTerorDevletSucu && dsKalaTemelYilHamM < 2;
+                const dsKalaTemelYilM = kadinCocukDsM ? 2 : dsKalaTemelYilHamM;
                 // Kullanıcı kararı (2026-11-12): istisna suçlarda (örgütlü suçlar dahil) tarih ayrımı olmaksızın açığa HİÇBİR +3 verilmez; normal açık hakkı neyse o uygulanır.
                 const esik30032020EkM = (allBefore30032020M && !anyIstisnaM) ? 3 : 0;
 
@@ -4005,6 +4030,7 @@
                 }
 
                 const notParcalariM = [];
+                if (kadinCocukDsM) ekNotlarM.push(`Hükümlü 0-6 yaş grubunda çocuğu bulunan kadın olduğundan denetimli serbestliğe koşullu salıverilmeye 2 yıl kala ayrılma hakkı esas alınmıştır (5275 s.K. 105/A-3).`);
                 if (anyTarihsizM) {
                     notParcalariM.push(`Müebbetteki suçun tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sabit) kabul edilmiştir.`);
                 } else if (allBefore30032020M) {
@@ -4100,7 +4126,9 @@
                 // 30/03/2020 öncesi işlenmiş olsalar bile denetime HER ZAMAN 1 yıl kaladır,
                 // 3 yıl kala DEĞİLDİR (anyDs2020Istisna kullanılır, anyIstisna106 değil).
                 const allBefore30032020 = !anyTarihsiz && !anyDs2020Istisna && acikDsAdaylar.every(r => r.sucTarihiDate <= DS_30032020_ESIK_TARIHI);
-                const dsKalaTemelYil = Math.min(...acikDsAdaylar.map(dsYilAdayHesapla));
+                const dsKalaTemelYilHam = Math.min(...acikDsAdaylar.map(dsYilAdayHesapla));
+                const kadinCocukDs = kadinCocuk06Aktif && !anyTerorDevletSucu && dsKalaTemelYilHam < 2;
+                const dsKalaTemelYil = kadinCocukDs ? 2 : dsKalaTemelYilHam;
                 // Kullanıcı kararı (2026-11-12): istisna suçlarda (örgütlü suçlar dahil) tarih ayrımı olmaksızın açığa HİÇBİR +3 verilmez; normal açık hakkı neyse o uygulanır.
                 const esik30032020Ek = (allBefore30032020 && !anyIstisna106) ? 3 : 0;
 
@@ -4187,11 +4215,12 @@
                 }
 
                 const notParcalari = [];
+                if (kadinCocukDs) ekNotlar.push(`Hükümlü 0-6 yaş grubunda çocuğu bulunan kadın olduğundan denetimli serbestliğe koşullu salıverilmeye 2 yıl kala ayrılma hakkı esas alınmıştır (5275 s.K. 105/A-3).`);
                 if (anyTarihsiz) {
                     notParcalari.push(`İçtimadaki bir veya daha fazla cezanın suç tarihi girilmediğinden, 30/03/2020 ve Geçici 10/6. madde (31/07/2023) eşiklerine bağlı +3 yıllık haklar değerlendirilememiş, denetimli serbestlik süresi 1 yıl (sonrası) kabul edilmiştir.`);
                 } else if (allBefore30032020) {
                     notParcalari.push(`Suçların tamamı 30/03/2020 ve öncesi işlendiğinden denetimli serbestliğe 3 yıl kala ayrılma hakkı vardır${esik30032020Ek > 0 ? '; açığa ayrılma süresine de +3 yıl eklenmiştir' : '; istisna suç bulunduğundan açığa ayrılma süresine +3 yıl eklenmemiştir'}.`);
-                } else if (dsKalaTemelYil === 2) {
+                } else if (dsKalaTemelYilHam === 2) {
                     notParcalari.push(`Suçlar 01/07/2016'dan önce işlenmiş TCK 83, 87/2-d, 94, 95, 96 veya 2937 s. MİT Kanunu suçlarından olduğundan denetimli serbestliğe 2 yıl kala ayrılma hakkı vardır.`);
                 } else if (anyDs2020Istisna) {
                     notParcalari.push(`İçtimada 30/03/2020 eşikli 3 yıllık ayrıcalığın istisnası kapsamında bir suç (kasten öldürme, cinsel suç, uyuşturucu imal/ticareti, özel hayatın gizliliği, terör, eşe/üstsoy/altsoy/kardeşe karşı suç vb.) bulunduğundan denetimli serbestliğe 1 yıl kala ayrılma hakkı vardır.`);
@@ -4466,6 +4495,16 @@
 
         // Reset All Data
         function resetAll() {
+            // Kullanıcı talimatı (2026-11-12): "Dosya Seç" altındaki önceki yüklemeden kalan sonuç/hata listesi de temizlenir.
+            const pdfSonucReset = document.getElementById('pdfFillSonuc');
+            if (pdfSonucReset) { pdfSonucReset.innerHTML = ''; pdfSonucReset.classList.add('hidden'); }
+            const dosyaInputReset = document.querySelector('input[type="file"][onchange^="muddetnameDosyasindanDoldur"]');
+            if (dosyaInputReset) dosyaInputReset.value = '';
+            const cinsiyetReset = document.getElementById('hukumluCinsiyet');
+            if (cinsiyetReset) cinsiyetReset.value = '';
+            const kadinCocukReset = document.getElementById('kadinCocuk06');
+            if (kadinCocukReset) kadinCocukReset.checked = false;
+            cinsiyetGorunumGuncelle();
             document.getElementById('hukumluDogumTarihi').value = '';
             dogumTarihiUyarisiKaldirildiMi = false;
             const dogumTarihiUyariBannerReset = document.getElementById('dogumTarihiUyariBanner');
@@ -4674,6 +4713,8 @@
 
             const data = {
                 hukumluDogumTarihi: document.getElementById('hukumluDogumTarihi').value,
+                hukumluCinsiyet: (document.getElementById('hukumluCinsiyet') || {}).value || '',
+                kadinCocuk06: !!(document.getElementById('kadinCocuk06') || {}).checked,
                 infazBaslangic: document.getElementById('infazBaslangic').value,
                 aciklamaManuel: (document.getElementById('aciklamaManuel') || {}).value || "",
                 hesaplamaYontemi: hesaplamaYontemi,
@@ -4705,6 +4746,9 @@
                     const data = JSON.parse(e.target.result);
 
                     if (data.hukumluDogumTarihi !== undefined) document.getElementById('hukumluDogumTarihi').value = data.hukumluDogumTarihi;
+                    document.getElementById('hukumluCinsiyet').value = data.hukumluCinsiyet || '';
+                    cinsiyetGorunumGuncelle();
+                    document.getElementById('kadinCocuk06').checked = !!data.kadinCocuk06 && data.hukumluCinsiyet === 'kadin';
                     if (data.infazBaslangic) document.getElementById('infazBaslangic').value = data.infazBaslangic;
                     if (data.aciklamaManuel !== undefined) {
                         const aciklamaEl = document.getElementById('aciklamaManuel');
