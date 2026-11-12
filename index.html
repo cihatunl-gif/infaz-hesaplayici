@@ -1112,12 +1112,20 @@
             if (tarih < d0) tarih = new Date(d0.getTime());
             return { tarih: tarih, kapaliGun: kapaliGun, erkenGun: erkenGun };
         }
-        // Erken açığa ayrılma HESAPLANMAYACAK suç grupları: terör, örgütlü suçlar, cinsel (TCK 102-103),
+        // Erken açığa ayrılma HESAPLANMAYACAK suç grupları: terör, cinsel (TCK 102-103),
         // eşe karşı suçlar, beden/ruh bakımından savunamayacak kişiye karşı suçlar. Neden metni döner ('' = serbest).
+        // Örgütlü suç sınıfı: "örgütlü suç" kutusu işaretli satır, TCK 220, TCK 221, örgütlü yağma (TCK 149/1-f, 149/1-g).
+        // Kullanıcı kararı (2026-11-12): bu sınıfta Geçici 10/6 +3 yıl hakkı YOK; erken açığa ayrılma hakkı VAR;
+        // suç 30/03/2020 öncesi ise denetim 3 yıl (madde tablosundaki değer); denetime ayrılmada açığa ayrılma
+        // şartlarına uygunluk (açıkta 1/10 kalma şartı) ARANMAZ.
+        function isOrgutluSucSinifi(sucMadde, orgutlu) {
+            const m = (sucMadde || '').trim().toLocaleLowerCase('tr-TR');
+            return !!(orgutlu || /^tck\s*22[01]\b/.test(m) || /^tck\s*149\/1[-.]?[^,]*[fg]/.test(m) || /^tck\s*149\/1-f|^tck\s*149\/1-g/.test(m));
+        }
         function erkenAcikHaricNeden(sucMadde, orgutlu, eslesme) {
             const m = (sucMadde || '').trim().toLocaleLowerCase('tr-TR');
             if (isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || isTerorEtkinPismanlikMaddesi(sucMadde)) return 'terör suçu';
-            if (orgutlu || /^tck\s*22[01]\b/.test(m) || /^tck\s*149\/1[-.]?[^,]*[fg]/.test(m) || /^tck\s*149\/1-f|^tck\s*149\/1-g/.test(m)) return 'örgütlü suç';
+            // (2026-11-12) Örgütlü suçlar erken açığa ayrılmadan YARARLANIR — eski "örgütlü suç" hariç tutması kaldırıldı.
             if (/^tck\s*10[23]\b/.test(m)) return 'cinsel suç (TCK 102/103)';
             if (/^tck\s*86\/3-b/.test(m) || /^tck\s*82\/1-d\s*,\s*e/.test(m) || /^tck\s*82\/1-e/.test(m)) return 'beden/ruh bakımından savunamayacak kişiye karşı suç';
             if (eslesme === 'TCK 82/1-d' || eslesme === 'TCK 86/3-a' || eslesme === 'TCK 96/2-b') return 'eşe karşı suç';
@@ -3178,6 +3186,7 @@
                     // olsun bu satır için açık süresi 2 yıl kalaya ve istisna
                     // bayrakları true'ya sabitlenir (1/3 kapalı kalma şartı, terorDevletSucu
                     // bayrağı üzerinden ayrıca uygulanır).
+                    if (orgutlu) acikDsBilgi = { ...acikDsBilgi, istisna106: true }; // örgütlü suç: +3 (Geçici 10/6) yok
                     if (etkinPismanlikChecked) {
                         acikDsBilgi = { ...acikDsBilgi, acik: 2, istisna106: true, ds2020Istisna: true, eslesme: 'TCK 221 Etkin Pişmanlık', teyitli: true };
                     }
@@ -3204,6 +3213,7 @@
                         sucTuru: isMaddeTaksirli(sucMadde) ? 'taksirli' : 'kasitli',
                         hamGun: rowHamGun,
                         orgutlu: orgutlu,
+                        orgutluSinif: isOrgutluSucSinifi(sucMadde, orgutlu),
                         erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, acikDsBilgi.eslesme) || (etkinPismanlikChecked ? 'terör/örgütlü suç' : ''),
                         terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked
                     });
@@ -3221,6 +3231,7 @@
                 // (açık kala yıl) değerini düzeltmemizi istedi, başka bir şey değil.
                 if (sureTip === 'muebbet') {
                     let muebbetAcikDsBilgi = getAcikDsBilgi(sucMadde);
+                    if (orgutlu) muebbetAcikDsBilgi = { ...muebbetAcikDsBilgi, istisna106: true }; // örgütlü suç: +3 (Geçici 10/6) yok
                     if (etkinPismanlikChecked) {
                         muebbetAcikDsBilgi = { ...muebbetAcikDsBilgi, istisna106: true, ds2020Istisna: true, eslesme: 'TCK 221 Etkin Pişmanlık', teyitli: true };
                     }
@@ -3241,6 +3252,7 @@
                         ds2016Grup: muebbetAcikDsBilgi.ds2016Grup,
                         eslesme: muebbetAcikDsBilgi.eslesme,
                         sucTarihiDate: sTarih ? new Date(sTarih) : null,
+                        orgutluSinif: isOrgutluSucSinifi(sucMadde, orgutlu),
                         erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, muebbetAcikDsBilgi.eslesme) || (etkinPismanlikChecked ? 'terör/örgütlü suç' : ''),
                         terorDevletSucu: terorDevletSucuRowM
                     });
@@ -3959,7 +3971,7 @@
                     ekNotlarM.push(`Adli para cezasından çevrilen ${apcToplamGun} gün açık ceza infaz kurumunda infaz edildiğinden, açığa ayrılma tarihi bu günler toplam cezadan düşülerek hesaplanmıştır.`);
                 }
                 const aciktaTabanM = aciktaSartTabani(muebbetAdaylar, sttDays, effectiveYatarGun);
-                if (aciktaTabanM.kapsam && !anyTerorDevletSucu && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
+                if (aciktaTabanM.kapsam && !anyTerorDevletSucu && !muebbetAdaylar.some(r => r.orgutluSinif) && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
                     const aciktaSonucM = aciktaKalmaSartiUygula(dsDateM, acikDateM, aciktaTabanM.gun);
                     dsDateM = aciktaSonucM.tarih;
                     if (aciktaSonucM.not) ekNotlarM.push(aciktaSonucM.not + (aciktaTabanM.kismi ? ` Bu süre yalnızca 04/06/2025'ten sonra işlenen suçlara ait cezaların koşullu salıverilmeye kadar infaz edilecek ${aciktaTabanM.gun} günü üzerinden hesaplanmıştır.` : ''));
@@ -4134,7 +4146,7 @@
                 const acikBaslangicDate = dogrudanAcikDurum === 'dogrudan_acik' ? D0
                     : (dogrudanAcikDurum === 'dogrudan_acik_3gun' ? addDays(D0, 3) : acikDate);
                 const aciktaTaban = aciktaSartTabani(acikDsAdaylar, sttDays, effectiveYatarGun);
-                if (aciktaTaban.kapsam && !anyTerorDevletSucu && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
+                if (aciktaTaban.kapsam && !anyTerorDevletSucu && !acikDsAdaylar.some(r => r.orgutluSinif) && !(firarCezaSayisi >= 2 || firarMahsupSayisi >= 2)) { // terör: açıkta kalma şartı aranmaz
                     const aciktaSonuc = aciktaKalmaSartiUygula(dsDate, acikBaslangicDate, aciktaTaban.gun);
                     dsDate = aciktaSonuc.tarih;
                     if (aciktaSonuc.not) ekNotlar.push(aciktaSonuc.not + (aciktaTaban.kismi ? ` Bu süre yalnızca 04/06/2025'ten sonra işlenen suçlara ait cezaların koşullu salıverilmeye kadar infaz edilecek ${aciktaTaban.gun} günü üzerinden hesaplanmıştır.` : ''));
