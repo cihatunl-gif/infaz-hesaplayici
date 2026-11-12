@@ -3933,7 +3933,9 @@
                 const gecici106UygulanirM = !anyIstisnaM && allBeforeGecici106M;
                 const gecici106EkM = gecici106UygulanirM ? 3 : 0;
 
-                const acikKalaYilToplamM = temelAcikKalaM + esik30032020EkM + gecici106EkM;
+                // Kullanıcı kararı (2026-11-12 gece): AÇIK için +3 yıl yalnızca BİR KEZ verilir (30/03/2020 ve Geçici 10/6 üst üste binmez); DENETİMDE 30/03/2020'nin 3 yılı ayrı haktır, üstüne Geçici 10/6'nın +3'ü bir kez eklenir (3+3).
+                const acikEkYilM = Math.max(esik30032020EkM, gecici106EkM);
+                const acikKalaYilToplamM = temelAcikKalaM + acikEkYilM;
                 const dsKalaYilToplamM = anyTerorDevletSucu ? 1 : dsKalaTemelYilM + gecici106EkM; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplamM * 365;
                 const dsKalaGun = dsKalaYilToplamM * 365;
@@ -3967,7 +3969,7 @@
                     dsDateM = new Date(sttDate.getTime());
                     ekNotlarM.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
-                acikAyrilmaMetin = `${formatDate(acikDateM)} ${yilEtiketi(temelAcikKalaM, esik30032020EkM, gecici106EkM)}`;
+                acikAyrilmaMetin = `${formatDate(acikDateM)} ${yilEtiketi(temelAcikKalaM, acikEkYilM)}`;
                 dsAyrilmaMetin = `${formatDate(dsDateM)} ${anyTerorDevletSucu ? yilEtiketi(1, 0) : yilEtiketi(dsKalaTemelYilM, gecici106EkM)}`;
                 {
                     const haricNedenM = muebbetAdaylar.map(r => r.erkenHaric).find(x => x);
@@ -3998,7 +4000,7 @@
                     }
                 } else {
                     if (gecici106UygulanirM) {
-                        notParcalariM.push(`Suç 31/07/2023 ve öncesi işlendiğinden Geçici 10/6. madde gereğince açığa ayrılma ve denetimli serbestliğe ayrılma sürelerine +3 yıl eklenmiştir (denetimli serbestlikteki ek hak, en az 3 ay açık ceza infaz kurumunda kalınmış olması şartına bağlıdır).`);
+                        notParcalariM.push(`Suç 31/07/2023 ve öncesi işlendiğinden Geçici 10/6. madde gereğince ${allBefore30032020M ? 'denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir; açığa ayrılmadaki +3 yıl yalnızca bir kez uygulanır' : 'açığa ayrılma ve denetimli serbestliğe ayrılma sürelerine +3 yıl eklenmiştir'} (denetimli serbestlikteki ek hak, en az 3 ay açık ceza infaz kurumunda kalınmış olması şartına bağlıdır).`);
                     } else if (!anyTarihsizM && !allBeforeGecici106M) {
                         notParcalariM.push(`Suç 01/08/2023 veya sonrası işlendiğinden Geçici 10/6. madde kapsamındaki +3 yıllık açık/denetimli serbestlik hakkı uygulanmamıştır.`);
                     }
@@ -4095,7 +4097,9 @@
                 const gecici106Uygulanir = !anyIstisna106 && allBeforeGecici106;
                 const gecici106Ek = gecici106Uygulanir ? 3 : 0;
 
-                const acikKalaYilToplam = temelAcikKala + esik30032020Ek + gecici106Ek;
+                // Kullanıcı kararı (2026-11-12 gece): AÇIK için +3 yıl yalnızca BİR KEZ verilir (30/03/2020 ve Geçici 10/6 üst üste binmez); DENETİMDE 30/03/2020'nin 3 yılı ayrı haktır, üstüne Geçici 10/6'nın +3'ü bir kez eklenir (3+3).
+                const acikEkYil = Math.max(esik30032020Ek, gecici106Ek);
+                const acikKalaYilToplam = temelAcikKala + acikEkYil;
                 const dsKalaYilToplam = anyTerorDevletSucu ? 1 : dsKalaTemelYil + gecici106Ek; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplam * 365;
                 const dsKalaGun = dsKalaYilToplam * 365;
@@ -4144,7 +4148,7 @@
                     dsDate = new Date(sttDate.getTime());
                     ekNotlar.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
-                acikAyrilmaMetin = `${formatDate(acikDate)} ${yilEtiketi(temelAcikKala, esik30032020Ek, gecici106Ek)}`;
+                acikAyrilmaMetin = `${formatDate(acikDate)} ${yilEtiketi(temelAcikKala, acikEkYil)}`;
                 dsAyrilmaMetin = `${formatDate(dsDate)} ${anyTerorDevletSucu ? yilEtiketi(1, 0) : yilEtiketi(dsKalaTemelYil, gecici106Ek)}`;
                 {
                     const haricNeden = acikDsAdaylar.map(r => r.erkenHaric).find(x => x);
@@ -4180,7 +4184,7 @@
                     }
                 } else {
                     if (gecici106Uygulanir) {
-                        notParcalari.push(`Suçların tamamı 31/07/2023 ve öncesi işlendiğinden Geçici 10/6. madde gereğince açığa ayrılma ve denetimli serbestliğe ayrılma sürelerine +3 yıl eklenmiştir (denetimli serbestlikteki ek hak, en az 3 ay açık ceza infaz kurumunda kalınmış olması şartına bağlıdır).`);
+                        notParcalari.push(`Suçların tamamı 31/07/2023 ve öncesi işlendiğinden Geçici 10/6. madde gereğince ${allBefore30032020 ? 'denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir; açığa ayrılmadaki +3 yıl yalnızca bir kez uygulanır' : 'açığa ayrılma ve denetimli serbestliğe ayrılma sürelerine +3 yıl eklenmiştir'} (denetimli serbestlikteki ek hak, en az 3 ay açık ceza infaz kurumunda kalınmış olması şartına bağlıdır).`);
                     } else if (!anyTarihsiz && !allBeforeGecici106) {
                         notParcalari.push(`Suçlardan en az biri 01/08/2023 veya sonrası işlendiğinden Geçici 10/6. madde kapsamındaki +3 yıllık açık/denetimli serbestlik hakkı uygulanmamıştır.`);
                     }
