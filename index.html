@@ -4033,14 +4033,13 @@
                 let dogrudanAcikDurum = 'kapali_baslar'; // 'dogrudan_acik' | 'kapali_baslar' | 'karma_belirsiz'
                 if (anyIstisna106 || anyIkinciMukerrir) {
                     dogrudanAcikDurum = 'kapali_baslar';
-                } else if (hepsiKasitli) {
-                    dogrudanAcikDurum = (toplamSureliHapisGun <= 3 * 365) ? 'dogrudan_acik' : 'kapali_baslar';
                 } else if (hepsiTaksirli) {
                     dogrudanAcikDurum = (toplamSureliHapisGun <= 5 * 365) ? 'dogrudan_acik' : 'kapali_baslar';
                 } else {
-                    // İçtimada hem kasıtlı hem taksirli suç karışık: kanun bu karma
-                    // durumu ayrı düzenlemediğinden otomatik karar verilmez.
-                    dogrudanAcikDurum = 'karma_belirsiz';
+                    // Kullanıcı kararı (2026-11-12): içtimada taksirli olmayan TEK bir suç bile varsa
+                    // işlem ona göre (kasıtlı kuralı, toplam 3 yıl) yapılır; 5 yıllık taksirli kuralı
+                    // yalnızca cezaların TAMAMI taksirli suçtan ise uygulanır. ("karma_belirsiz" artık üretilmez.)
+                    dogrudanAcikDurum = (toplamSureliHapisGun <= 3 * 365) ? 'dogrudan_acik' : 'kapali_baslar';
                 }
 
                 /* ====================================================================
@@ -4195,7 +4194,7 @@
                 }
 
                 if (dogrudanAcikDurum === 'dogrudan_acik') {
-                    const esasGerekce = hepsiKasitli
+                    const esasGerekce = !hepsiTaksirli
                         ? `kasıtlı suçlardan toplam ${toplamSureliHapisGun} gün (3 yıl veya altı) hapis cezasına`
                         : `taksirli suçlardan toplam ${toplamSureliHapisGun} gün (5 yıl veya altı) hapis cezasına`;
                     notParcalari.unshift(`Hükümlü doğrudan açık ceza infaz kurumuna alınır: ${esasGerekce} mahkûm olunmuş, istisna suç işlenmemiş ve 2. kez mükerrirlik bulunmamaktadır.`);
