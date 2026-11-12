@@ -5136,32 +5136,36 @@
             rozet.textContent = n > 0 ? String(n) : '';
             return n;
         }
-        // Kullanıcı talimatı (2026-11-12): pencerede YALNIZCA günü gelmiş (ve henüz "Okundu" denmemiş) hatırlatmalar
-        // görünür; günü gelmeyen kayıtlar listelenmez (binlerce kayıtta liste kalabalık olmasın).
+        // Kullanıcı talimatı (2026-11-12): pencerede YALNIZCA günü gelmiş hatırlatmalar görünür (günü gelmeyenler listelenmez).
+        // "Okundu" denen not SİLİNMEZ, gri olarak görünmeye devam eder; yalnızca "Sil" denince o not silinir
+        // (kişinin günü gelmemiş diğer tarihleri hatırlatılmaya devam eder).
         function paneliCiz() {
             const kutu = document.getElementById('hatirlaticiIcerik');
             const liste = oku();
             kutu.innerHTML = '';
-            const gelen = gelenler(liste).filter(function (g) { return !g.t.okundu; });
+            const gelen = gelenler(liste);
             kutu.appendChild(el('div', 'font-weight:700; color:#64748b; font-size:11px; margin-bottom:8px;', 'GÜNÜ GELENLER'));
             if (!gelen.length) {
                 kutu.appendChild(el('div', 'color:#94a3b8;', 'Günü gelen hatırlatma yok.'));
             }
-            gelen.sort(function (a, b) { return a.t.tarih < b.t.tarih ? 1 : -1; }).forEach(function (g) {
-                const satir = el('div', 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; margin-bottom:6px; border-radius:9px; border:1px solid #fecdd3; background:#fff1f2;');
-                const yazi = el('div', 'font-weight:700; color:#9f1239;');
+            gelen.sort(function (x, y) { if (!!x.t.okundu !== !!y.t.okundu) return x.t.okundu ? 1 : -1; return x.t.tarih < y.t.tarih ? 1 : -1; }).forEach(function (g) {
+                const ok = !!g.t.okundu;
+                const satir = el('div', 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; margin-bottom:6px; border-radius:9px; border:1px solid ' + (ok ? '#e2e8f0' : '#fecdd3') + '; background:' + (ok ? '#f8fafc' : '#fff1f2') + ';');
+                const yazi = el('div', 'font-weight:' + (ok ? '500' : '700') + '; color:' + (ok ? '#64748b' : '#9f1239') + ';');
                 const kalan = kalanGun(g.t.tarih);
-                yazi.textContent = kalan > 0
+                yazi.textContent = (kalan > 0
                     ? '«' + g.h.ad + '» için ' + g.t.etiket + ' tarihine (' + trTarih(g.t.tarih) + ') ' + kalan + ' gün kaldı.'
-                    : '«' + g.h.ad + '» için ' + g.t.etiket + ' tarihi (' + trTarih(g.t.tarih) + ') geldi.';
+                    : '«' + g.h.ad + '» için ' + g.t.etiket + ' tarihi (' + trTarih(g.t.tarih) + ') geldi.') + (ok ? ' (okundu)' : '');
                 satir.appendChild(yazi);
                 const dugmeler = el('div', 'display:flex; gap:6px; flex-shrink:0;');
-                const btn = el('button', 'background:#e11d48; color:#fff; border:0; border-radius:7px; padding:5px 10px; font-weight:700; font-size:11px; cursor:pointer;', 'Okundu');
-                btn.onclick = function () { hatirlatmaOkundu(g.h.id, g.t.etiket, g.t.tarih); };
-                dugmeler.appendChild(btn);
-                const sil = el('button', 'background:#f1f5f9; color:#b91c1c; border:1px solid #cbd5e1; border-radius:7px; padding:5px 10px; font-weight:700; font-size:11px; cursor:pointer;', 'Kaydı Sil');
-                sil.title = 'Bu kişinin kalan tüm tarihleri için hatırlatmayı tamamen siler';
-                sil.onclick = function () { hatirlatmaSil(g.h.id); };
+                if (!ok) {
+                    const btn = el('button', 'background:#e11d48; color:#fff; border:0; border-radius:7px; padding:5px 10px; font-weight:700; font-size:11px; cursor:pointer;', 'Okundu');
+                    btn.onclick = function () { hatirlatmaOkundu(g.h.id, g.t.etiket, g.t.tarih); };
+                    dugmeler.appendChild(btn);
+                }
+                const sil = el('button', 'background:#f1f5f9; color:#b91c1c; border:1px solid #cbd5e1; border-radius:7px; padding:5px 10px; font-weight:700; font-size:11px; cursor:pointer;', 'Sil');
+                sil.title = 'Yalnızca bu notu siler; kişinin diğer tarihleri hatırlatılmaya devam eder';
+                sil.onclick = function () { hatirlatmaNotSil(g.h.id, g.t.etiket, g.t.tarih); };
                 dugmeler.appendChild(sil);
                 satir.appendChild(dugmeler);
                 kutu.appendChild(satir);
@@ -5171,10 +5175,13 @@
         function hatirlatmaOkundu(id, etiket, tarih) {
             const liste = oku();
             liste.forEach(function (h) { if (h.id === id) (h.tarihler || []).forEach(function (t) { if (t.etiket === etiket && t.tarih === tarih) t.okundu = true; }); });
-            yaz(liste.filter(function (h) { return (h.tarihler || []).some(function (t) { return !t.okundu; }); })); rozetGuncelle(); paneliCiz(); // tüm tarihleri okunan kayıt silinir
+            yaz(liste); rozetGuncelle(); paneliCiz();
         }
-        function hatirlatmaSil(id) {
-            yaz(oku().filter(function (h) { return h.id !== id; }));
+        // Yalnızca o notu (o tarihi) siler; kişinin hiç tarihi kalmadıysa kaydı da kaldırılır.
+        function hatirlatmaNotSil(id, etiket, tarih) {
+            const liste = oku();
+            liste.forEach(function (h) { if (h.id === id) h.tarihler = (h.tarihler || []).filter(function (t) { return !(t.etiket === etiket && t.tarih === tarih); }); });
+            yaz(liste.filter(function (h) { return (h.tarihler || []).length > 0; }));
             rozetGuncelle(); paneliCiz();
         }
         window.hatirlaticiPaneliAc = function () { paneliCiz(); document.getElementById('hatirlaticiPanel').style.display = 'flex'; };
