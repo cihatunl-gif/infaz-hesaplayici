@@ -4890,6 +4890,17 @@
             </div>
         </div>
     </div>
+    <!-- Hatırlatma dosyası seçimi / bilgi penceresi (kullanıcı talebi, 2026-11-12) -->
+    <div id="hatirlatDosyaModal" class="no-print" style="display:none; position:fixed; inset:0; z-index:1001; background:rgba(15,23,42,.45); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:560px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
+            <div id="hatirlatDosyaBaslik" style="padding:14px 18px; border-bottom:1px solid #e2e8f0; font-weight:800; font-size:14px;"></div>
+            <div style="padding:16px 18px;">
+                <div id="hatirlatDosyaMetin" style="line-height:1.6; white-space:pre-line;"></div>
+                <div id="hatirlatDosyaHata" style="font-size:12px; color:#dc2626; margin-top:8px; min-height:16px; font-weight:600;"></div>
+                <div id="hatirlatDosyaDugmeler" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+            </div>
+        </div>
+    </div>
     <div id="hatirlaticiPanel" class="no-print" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,.45); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); align-items:center; justify-content:center; padding:16px;">
         <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:680px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
             <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between;">
@@ -4913,7 +4924,116 @@
         let buOturumdaGosterildi = false;
 
         function oku() { try { const v = JSON.parse(localStorage.getItem(ANAHTAR) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
-        function yaz(liste) { try { localStorage.setItem(ANAHTAR, JSON.stringify(liste)); return true; } catch (e) { return false; } }
+        function yaz(liste) {
+            try { localStorage.setItem(ANAHTAR, JSON.stringify(liste)); localStorage.setItem(KIRLI, '1'); } catch (e) { return false; }
+            dosyayaAktar(); // izin varsa hemen dosyaya da yazılır; yoksa bir sonraki onayda yazılır
+            return true;
+        }
+
+        /* ---------- HATIRLATMA DOSYASI (kullanıcı talebi, 2026-11-12) ----------
+           Hatırlatmalar, kullanıcının bilgisayarında KENDİ SEÇTİĞİ bir dosyada tutulur; böylece güncelleme,
+           tarayıcı verilerinin silinmesi, format veya bilgisayar değişikliğinde dosya korunduğu sürece kaybolmaz.
+           Tarayıcıdaki kopya (localStorage) yalnızca program açılır açılmaz uyarı verebilmek içindir.
+           Bu özellik bilgisayardaki Chrome/Edge'de çalışır; desteklenmeyen tarayıcıda eski yöntem (yalnız tarayıcı) sürer. */
+        const KIRLI = 'infazci_hatirlatici_kirli_v1'; // tarayıcıdaki kopyada dosyaya henüz yazılmamış değişiklik var
+        const DOSYA_DESTEK = typeof window.showSaveFilePicker === 'function' && typeof window.showOpenFilePicker === 'function' && typeof indexedDB !== 'undefined';
+        const DOSYA_TURLERI = [{ description: 'İNFAZCI hatırlatma dosyası', accept: { 'application/json': ['.json'] } }];
+        let dosyaH = null, dosyaHYuklendi = false;
+
+        function idbAc() { return new Promise(function (res, rej) { const r = indexedDB.open('infazci_hatirlatici', 1); r.onupgradeneeded = function () { r.result.createObjectStore('kv'); }; r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); }; }); }
+        async function idbOku(k) { try { const db = await idbAc(); return await new Promise(function (res, rej) { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = function () { res(q.result || null); }; q.onerror = function () { rej(q.error); }; }); } catch (e) { return null; } }
+        async function idbYaz(k, v) { try { const db = await idbAc(); await new Promise(function (res, rej) { const t = db.transaction('kv', 'readwrite'); if (v === null) t.objectStore('kv').delete(k); else t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = function () { rej(t.error); }; t.onabort = function () { rej(t.error); }; }); return true; } catch (e) { return false; } }
+        async function handleGetir() { if (!dosyaHYuklendi) { dosyaH = await idbOku('dosya'); dosyaHYuklendi = true; } return dosyaH; }
+        async function izinDurumu(h, iste) {
+            try { let d = await h.queryPermission({ mode: 'readwrite' }); if (d !== 'granted' && iste) d = await h.requestPermission({ mode: 'readwrite' }); return d; } catch (e) { return 'denied'; }
+        }
+        async function dosyadanOku(h) {
+            const metin = (await (await h.getFile()).text()).trim();
+            if (!metin) return [];
+            const v = JSON.parse(metin);
+            const l = Array.isArray(v) ? v : (v && Array.isArray(v.hatirlaticilar) ? v.hatirlaticilar : null);
+            if (!l) throw new Error('bicim');
+            return l.filter(function (h2) { return h2 && h2.id && Array.isArray(h2.tarihler); });
+        }
+        async function dosyayaYaz(h, liste) {
+            const w = await h.createWritable();
+            await w.write(JSON.stringify({ uygulama: 'INFAZCI', tur: 'hatirlatici', surum: 1, guncelleme: new Date().toISOString(), hatirlaticilar: liste }, null, 1));
+            await w.close();
+        }
+        function birlestir(a, b) {
+            const harita = {}, sira = [];
+            a.concat(b).forEach(function (h) {
+                if (!harita[h.id]) { harita[h.id] = JSON.parse(JSON.stringify(h)); sira.push(h.id); return; }
+                (h.tarihler || []).forEach(function (t) { harita[h.id].tarihler.forEach(function (m) { if (m.etiket === t.etiket && m.tarih === t.tarih && t.okundu) m.okundu = true; }); });
+            });
+            return sira.map(function (id) { return harita[id]; });
+        }
+        // İzin zaten varsa sessizce dosyaya yazar (onay penceresi çıkarmaz).
+        async function dosyayaAktar() {
+            if (!DOSYA_DESTEK) return;
+            try {
+                const h = await handleGetir();
+                if (!h || await izinDurumu(h, false) !== 'granted') return;
+                await dosyayaYaz(h, oku());
+                localStorage.removeItem(KIRLI);
+            } catch (e) { /* bir sonraki onayda yeniden denenir */ }
+        }
+        // Dosya ile tarayıcıdaki kopyayı eşitler (izin verilmiş olmalı). Bekleyen değişiklik varsa dosyaya yazılır, yoksa dosya esas alınır.
+        async function esitle(h) {
+            if (localStorage.getItem(KIRLI)) { await dosyayaYaz(h, oku()); localStorage.removeItem(KIRLI); }
+            else { localStorage.setItem(ANAHTAR, JSON.stringify(await dosyadanOku(h))); }
+        }
+        function dosyaPenceresi(baslik, metin, dugmeler, hata) {
+            document.getElementById('hatirlatDosyaBaslik').textContent = baslik;
+            document.getElementById('hatirlatDosyaMetin').textContent = metin;
+            document.getElementById('hatirlatDosyaHata').textContent = hata || '';
+            const kutu = document.getElementById('hatirlatDosyaDugmeler');
+            kutu.innerHTML = '';
+            dugmeler.forEach(function (d) {
+                const b = el('button', (d.ana ? 'background:#e11d48; color:#fff; border:0;' : 'background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;') + ' border-radius:8px; padding:9px 12px; font-weight:800; font-size:12px; cursor:pointer;', d.yazi);
+                b.onclick = d.tikla;
+                kutu.appendChild(b);
+            });
+            document.getElementById('hatirlatDosyaModal').style.display = 'flex';
+        }
+        function dosyaPenceresiKapat() { document.getElementById('hatirlatDosyaModal').style.display = 'none'; }
+        function dosyaSecimAc(hata) {
+            dosyaPenceresi('Hatırlatma Dosyası',
+                'Hatırlatmalarınız bilgisayarınızda sizin seçeceğiniz bir dosyada saklanır.\n\n• İlk kez kullanıyorsanız "Yeni Dosya Oluştur" ile dosyanın kaydedileceği yeri seçiniz.\n• Daha önce oluşturduğunuz bir hatırlatma dosyanız varsa "Var Olan Dosyamı Seç" ile o dosyayı gösteriniz; kayıtlı hatırlatmalarınız geri gelir.',
+                [
+                    { yazi: 'Yeni Dosya Oluştur', ana: true, tikla: function () { hatirlatDosyaSec('yeni'); } },
+                    { yazi: 'Var Olan Dosyamı Seç', ana: true, tikla: function () { hatirlatDosyaSec('mevcut'); } },
+                    { yazi: 'Vazgeç', tikla: dosyaPenceresiKapat }
+                ], hata);
+        }
+        async function hatirlatDosyaSec(tur) {
+            const hataEl = document.getElementById('hatirlatDosyaHata');
+            hataEl.textContent = '';
+            let h;
+            try {
+                if (tur === 'mevcut') h = (await window.showOpenFilePicker({ types: DOSYA_TURLERI, multiple: false }))[0];
+                else h = await window.showSaveFilePicker({ suggestedName: 'infazci-hatirlatmalar.json', types: DOSYA_TURLERI });
+            } catch (e) { return; } // kullanıcı dosya seçmekten vazgeçti
+            try {
+                if (await izinDurumu(h, true) !== 'granted') { hataEl.textContent = 'Dosyaya yazma onayı verilmedi. Lütfen yeniden deneyip onay veriniz.'; return; }
+                let dosyadaki;
+                try { dosyadaki = await dosyadanOku(h); }
+                catch (e) { hataEl.textContent = 'Seçilen dosya bir hatırlatma dosyası değil. Lütfen doğru dosyayı seçiniz ya da yeni bir dosya oluşturunuz.'; return; }
+                const birlesik = birlestir(dosyadaki, oku());
+                await dosyayaYaz(h, birlesik);
+                localStorage.setItem(ANAHTAR, JSON.stringify(birlesik));
+                localStorage.removeItem(KIRLI);
+                dosyaH = h; dosyaHYuklendi = true;
+                await idbYaz('dosya', h);
+                rozetGuncelle();
+                dosyaPenceresi('Bu Dosyayı Koruyunuz',
+                    'Hatırlatma dosyanız: ' + (h.name || '') + (dosyadaki.length ? '\n(Dosyadan ' + dosyadaki.length + ' kayıtlı hatırlatma yüklendi.)' : '') +
+                    '\n\nLütfen bu dosyayı koruyunuz. Bilgisayarınızda herhangi bir değişiklik olması durumunda (format, bilgisayar değişikliği, programın yeniden yüklenmesi vb.) bu dosyayı saklayıp, yeniden yapacağınız ilk hatırlatmada bu dosyayı seçiniz. Bu şekilde hatırlatmalarınız silinmez, yeniden hatırlatmaya devam eder.',
+                    [{ yazi: 'Anladım', ana: true, tikla: function () { dosyaPenceresiKapat(); asilPencereAc(); } }]);
+            } catch (e) {
+                hataEl.textContent = 'Dosya kullanılamadı. Lütfen başka bir yer seçerek yeniden deneyiniz.';
+            }
+        }
         function bugunStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
         function trTarih(iso) { const p = iso.split('-'); return p[2] + '.' + p[1] + '.' + p[0]; }
         function el(etiket, stil, metin) { const e = document.createElement(etiket); if (stil) e.style.cssText = stil; if (metin !== undefined) e.textContent = metin; return e; }
@@ -4929,7 +5049,31 @@
             });
         }
 
-        window.hatirlatmaPenceresiAc = function () {
+        window.hatirlatmaPenceresiAc = async function () {
+            if (!DOSYA_DESTEK) { asilPencereAc(); return; } // desteklemeyen tarayıcı: yalnızca tarayıcıda saklanır
+            const h = await handleGetir();
+            if (!h) { dosyaSecimAc(''); return; } // ilk hatırlatma: dosya seçtirilir
+            // Program yeniden açıldıysa tarayıcı dosya için onay ister; onay "Hatırlat"a ilk tıklamada alınır.
+            if (await izinDurumu(h, true) !== 'granted') {
+                dosyaPenceresi('Onay Gerekli',
+                    'Hatırlatma dosyanıza (' + (h.name || '') + ') erişim onayı verilmedi. Hatırlatma ekleyebilmek için "Yeniden Dene"ye basıp tarayıcının sorduğu onayı veriniz.',
+                    [
+                        { yazi: 'Yeniden Dene', ana: true, tikla: function () { dosyaPenceresiKapat(); window.hatirlatmaPenceresiAc(); } },
+                        { yazi: 'Başka Dosya Seç', tikla: function () { dosyaSecimAc(''); } },
+                        { yazi: 'Vazgeç', tikla: dosyaPenceresiKapat }
+                    ]);
+                return;
+            }
+            try { await esitle(h); }
+            catch (e) {
+                dosyaH = null; await idbYaz('dosya', null);
+                dosyaSecimAc('Hatırlatma dosyanız bulunamadı veya okunamadı. Lütfen dosyayı yeniden seçiniz.');
+                return;
+            }
+            rozetGuncelle();
+            asilPencereAc();
+        };
+        function asilPencereAc() {
             if (typeof calculateAll === 'function') calculateAll();
             const tarihler = rapordanTarihleriTopla();
             bekleyenTarihler = tarihler.filter(function (t) { return t.tarih && !t.gecmis; });
@@ -4948,7 +5092,7 @@
             document.getElementById('hatirlatAd').value = '';
             document.getElementById('hatirlatModal').style.display = 'flex';
             setTimeout(function () { document.getElementById('hatirlatAd').focus(); }, 50);
-        };
+        }
         window.hatirlatModalKapat = function () { document.getElementById('hatirlatModal').style.display = 'none'; };
         window.hatirlatmaKaydet = function () {
             const ad = document.getElementById('hatirlatAd').value.trim();
@@ -5022,7 +5166,7 @@
                 satir.appendChild(dugmeler);
                 kutu.appendChild(satir);
             });
-            kutu.appendChild(el('div', 'font-size:11px; color:#94a3b8; margin-top:12px;', 'Toplam ' + liste.length + ' kayıtlı hatırlatma var. Günü gelmeyenler burada gösterilmez.'));
+            kutu.appendChild(el('div', 'font-size:11px; color:#94a3b8; margin-top:12px;', 'Toplam ' + liste.length + ' kayıtlı hatırlatma var. Günü gelmeyenler burada gösterilmez.' + (dosyaH && dosyaH.name ? ' Hatırlatma dosyası: ' + dosyaH.name : '')));
         }
         function hatirlatmaOkundu(id, etiket, tarih) {
             const liste = oku();
@@ -5046,7 +5190,11 @@
             }
         }
         let sonKontrolGunu = bugunStr();
-        setTimeout(otomatikKontrol, 800);
+        // Açılışta: dosya izni kalıcı olarak verilmişse sessizce eşitlenir (onay penceresi çıkarılmaz), sonra uyarı kontrolü yapılır.
+        (async function () {
+            try { if (DOSYA_DESTEK) { const h = await handleGetir(); if (h && await izinDurumu(h, false) === 'granted') await esitle(h); } } catch (e) { /* dosya yoksa tarayıcıdaki kopya kullanılır */ }
+            setTimeout(otomatikKontrol, 800);
+        })();
         setInterval(function () {
             const g = bugunStr();
             if (g !== sonKontrolGunu) { sonKontrolGunu = g; buOturumdaGosterildi = false; } // gün değişti: yeni gelenler için tekrar uyar
