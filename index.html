@@ -136,12 +136,12 @@
             <!-- Müddetname PDF'inden Otomatik Doldurma -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2 mb-2">
-                    <i class="fa-solid fa-file-pdf text-amber-500"></i> Müddetname PDF/UDF'inden Otomatik Doldur
+                    <i class="fa-solid fa-file-pdf text-amber-500"></i> Müddetname PDF/UDF/TIF'inden Otomatik Doldur
                 </h2>
                 <p class="text-[10px] text-slate-400 mb-2">
-                    <i class="fa-solid fa-circle-info"></i> Hem bilgisayardan hazırlanmış (metin tabanlı) müddetname PDF'leri hem de UYAP UDF dosyaları desteklenir; iyi taranmış PDF'ler de yazı tanıma ile okunabilir, ancak rakamlar yanlış okunabileceğinden sonuç mutlaka belgeyle karşılaştırılmalıdır (fotoğraf, eğik veya soluk taramalar okunamayabilir). Yüklendiğinde mevcut ceza ve mahsup satırları SİLİNİP dosyadan okunan bilgilerle değiştirilir — hesaplamadan önce tüm satırları kontrol edin.
+                    <i class="fa-solid fa-circle-info"></i> Hem bilgisayardan hazırlanmış (metin tabanlı) müddetname PDF'leri hem de UYAP UDF dosyaları desteklenir; iyi taranmış PDF'ler ile TIF, JPG ve PNG resim dosyaları da yazı tanıma ile okunabilir, ancak rakamlar yanlış okunabileceğinden sonuç mutlaka belgeyle karşılaştırılmalıdır (fotoğraf, eğik veya soluk taramalar okunamayabilir). Yüklendiğinde mevcut ceza ve mahsup satırları SİLİNİP dosyadan okunan bilgilerle değiştirilir — hesaplamadan önce tüm satırları kontrol edin.
                 </p>
-                <input type="file" accept="application/pdf,.udf" onchange="muddetnameDosyasindanDoldur(this)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-700 hover:file:bg-amber-500/20 border border-slate-300 rounded-lg cursor-pointer">
+                <input type="file" accept="application/pdf,.udf,.tif,.tiff,.jpg,.jpeg,.png" onchange="muddetnameDosyasindanDoldur(this)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-700 hover:file:bg-amber-500/20 border border-slate-300 rounded-lg cursor-pointer">
                 <div id="pdfFillSonuc" class="hidden mt-2 text-[11px] leading-relaxed"></div>
             </div>
 
@@ -1428,10 +1428,9 @@
             }
             return tesseractYukleniyor;
         }
-        async function extractPdfLinesOcr(dosya, ilerleme) {
+        // Ortak yazı tanıma döngüsü: sayfaCanvasGetir(p) her sayfa için bir <canvas> döndürür.
+        async function ocrSayfalar(sayfaSayisi, sayfaCanvasGetir, ilerleme) {
             await tesseractYukle();
-            const pdf = await pdfjsLib.getDocument({ data: await dosya.arrayBuffer() }).promise;
-            const sayfaSayisi = Math.min(pdf.numPages, OCR_AZAMI_SAYFA);
             let sayfaNo = 0;
             const worker = await Tesseract.createWorker('tur', 1, {
                 logger: m => { if (m && m.status === 'recognizing text') ilerleme(sayfaNo, sayfaSayisi, Math.round((m.progress || 0) * 100)); }
@@ -1441,13 +1440,7 @@
                 for (let p = 1; p <= sayfaSayisi; p++) {
                     sayfaNo = p;
                     ilerleme(p, sayfaSayisi, 0);
-                    const page = await pdf.getPage(p);
-                    const genislik = page.getViewport({ scale: 1 }).width || 600;
-                    const viewport = page.getViewport({ scale: Math.min(4, Math.max(2, 2200 / genislik)) }); // ~2200 piksel genişlik: küçük rakamlar net okunur
-                    const canvas = document.createElement('canvas');
-                    canvas.width = Math.ceil(viewport.width);
-                    canvas.height = Math.ceil(viewport.height);
-                    await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+                    const canvas = await sayfaCanvasGetir(p);
                     const sonuc = await worker.recognize(canvas);
                     ((sonuc && sonuc.data && sonuc.data.text) || '').split(/\r?\n/).forEach(t => {
                         t = t.replace(/[|¦]/g, ' ').replace(/\s+/g, ' ').trim(); // tablo çizgileri "|" olarak okunabilir
@@ -1459,6 +1452,68 @@
                 try { await worker.terminate(); } catch (e) { /* yoksay */ }
             }
             return lines;
+        }
+        async function extractPdfLinesOcr(dosya, ilerleme) {
+            const pdf = await pdfjsLib.getDocument({ data: await dosya.arrayBuffer() }).promise;
+            return ocrSayfalar(Math.min(pdf.numPages, OCR_AZAMI_SAYFA), async (p) => {
+                const page = await pdf.getPage(p);
+                const genislik = page.getViewport({ scale: 1 }).width || 600;
+                const viewport = page.getViewport({ scale: Math.min(4, Math.max(2, 2200 / genislik)) }); // ~2200 piksel genişlik: küçük rakamlar net okunur
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.ceil(viewport.width);
+                canvas.height = Math.ceil(viewport.height);
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+                return canvas;
+            }, ilerleme);
+        }
+
+        /* ---------- RESİM DOSYALARI: TIF / JPG / PNG (kullanıcı onayı, 2026-11-13) ----------
+           Resim olarak taranmış/çekilmiş müddetnameler de aynı yazı tanıma yolundan okunur. Tarayıcılar TIF'i
+           kendiliğinden açamadığı için TIF dosyaları UTIF.js ile çözülür (çok sayfalı TIF desteklenir). */
+        function betikYukle(adresler) {
+            return adresler.reduce((onceki, adres) => onceki.catch(() => new Promise((res, rej) => {
+                const sc = document.createElement('script');
+                sc.src = adres; sc.onload = () => res(); sc.onerror = () => { sc.remove(); rej(new Error('yuklenemedi')); };
+                document.head.appendChild(sc);
+            })), Promise.reject(new Error('bos')));
+        }
+        async function utifYukle() {
+            if (window.UTIF) return;
+            // Bazı TIF'ler "deflate" sıkıştırmalıdır; UTIF bunun için pako'yu kullanır (yüklenemezse yalnız o tür TIF'ler açılmaz).
+            if (!window.pako) { try { await betikYukle(['https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js']); } catch (e) { /* yoksay */ } }
+            try { await betikYukle(['https://cdn.jsdelivr.net/npm/utif@3/UTIF.js', 'https://cdn.jsdelivr.net/gh/photopea/UTIF.js/UTIF.js']); }
+            catch (e) { throw new Error('TIF okuma bileşeni indirilemedi; internet bağlantınızı kontrol edip yeniden deneyiniz.'); }
+            if (!window.UTIF) throw new Error('TIF okuma bileşeni yüklenemedi.');
+        }
+        // Küçük resimler yazı tanımada kötü sonuç verir: genişlik ~2000 pikselin altındaysa büyütülür.
+        function canvasaCiz(kaynak, w, h) {
+            const olcek = w < 1500 ? Math.min(3, 2000 / w) : 1;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(w * olcek); canvas.height = Math.round(h * olcek);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(kaynak, 0, 0, canvas.width, canvas.height);
+            return canvas;
+        }
+        async function extractResimLinesOcr(dosya, tifMi, ilerleme) {
+            if (!tifMi) {
+                const bmp = await createImageBitmap(dosya);
+                return ocrSayfalar(1, async () => canvasaCiz(bmp, bmp.width, bmp.height), ilerleme);
+            }
+            await utifYukle();
+            const buf = await dosya.arrayBuffer();
+            const ifdler = UTIF.decode(buf).filter(ifd => ifd && (ifd.t256 || ifd.width)); // t256 = genişlik etiketi olan (gerçek sayfa) kayıtlar
+            if (!ifdler.length) throw new Error('TIF dosyasında okunabilir sayfa bulunamadı.');
+            return ocrSayfalar(Math.min(ifdler.length, OCR_AZAMI_SAYFA), async (p) => {
+                const ifd = ifdler[p - 1];
+                UTIF.decodeImage(buf, ifd);
+                const rgba = UTIF.toRGBA8(ifd);
+                const ham = document.createElement('canvas');
+                ham.width = ifd.width; ham.height = ifd.height;
+                ham.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.length), ifd.width, ifd.height), 0, 0);
+                return canvasaCiz(ham, ifd.width, ifd.height);
+            }, ilerleme);
         }
         // Belgenin KENDİ yazdığı koşullu salıverilme / hakederek tahliye tarihini bulur (OCR sonrası karşılaştırma için).
         function belgedekiTarihBul(lines, desen) {
@@ -2180,7 +2235,10 @@
             if (!dosya) return;
             const adLower = (dosya.name || '').toLocaleLowerCase('tr-TR');
             const isUdf = adLower.endsWith('.udf');
-            const turEtiket = isUdf ? 'UDF' : 'PDF';
+            const resimUzanti = (adLower.match(/\.(tiff?|jpe?g|png)$/) || [])[1] || '';
+            const isResim = !!resimUzanti;
+            const isTif = /^tiff?$/.test(resimUzanti);
+            const turEtiket = isUdf ? 'UDF' : (isResim ? (isTif ? 'TIF' : (resimUzanti === 'png' ? 'PNG' : 'JPG')) : 'PDF');
             const goster = (html, renk) => {
                 if (!sonucBox) return;
                 sonucBox.classList.remove('hidden');
@@ -2188,15 +2246,23 @@
             };
             goster(`<i class="fa-solid fa-spinner fa-spin"></i> ${turEtiket} okunuyor...`);
             try {
-                let lines = isUdf ? await extractUdfLines(dosya) : await extractPdfLines(dosya);
-                // PDF'te (neredeyse) hiç metin yoksa belge TARANMIŞTIR: yazı tanıma (OCR) ile okunur.
+                const ocrIlerleme = (sayfa, toplam, yuzde) => {
+                    goster(`<i class="fa-solid fa-spinner fa-spin"></i> Taranmış belge okunuyor: sayfa ${sayfa}/${toplam}${yuzde ? ` (%${yuzde})` : ''}... Lütfen bekleyiniz.`);
+                };
                 let taranmisBelge = false;
-                if (!isUdf && lines.join('').replace(/\s/g, '').length < 40) {
+                let lines;
+                if (isResim) { // TIF / JPG / PNG: her zaman yazı tanıma ile okunur
+                    taranmisBelge = true;
+                    goster(`<i class="fa-solid fa-spinner fa-spin"></i> Resim dosyası; yazı tanıma bileşeni hazırlanıyor (ilk kullanımda indirme birkaç dakika sürebilir)...`);
+                    lines = await extractResimLinesOcr(dosya, isTif, ocrIlerleme);
+                } else {
+                    lines = isUdf ? await extractUdfLines(dosya) : await extractPdfLines(dosya);
+                }
+                // PDF'te (neredeyse) hiç metin yoksa belge TARANMIŞTIR: yazı tanıma (OCR) ile okunur.
+                if (!isUdf && !isResim && lines.join('').replace(/\s/g, '').length < 40) {
                     taranmisBelge = true;
                     goster(`<i class="fa-solid fa-spinner fa-spin"></i> Bu PDF taranmış bir belge; yazı tanıma bileşeni hazırlanıyor (ilk kullanımda indirme birkaç dakika sürebilir)...`);
-                    lines = await extractPdfLinesOcr(dosya, (sayfa, toplam, yuzde) => {
-                        goster(`<i class="fa-solid fa-spinner fa-spin"></i> Taranmış belge okunuyor: sayfa ${sayfa}/${toplam}${yuzde ? ` (%${yuzde})` : ''}... Lütfen bekleyiniz.`);
-                    });
+                    lines = await extractPdfLinesOcr(dosya, ocrIlerleme);
                 }
                 if (lines.length === 0) {
                     goster(`<i class="fa-solid fa-circle-exclamation"></i> Bu ${turEtiket}'ten hiç metin okunamadı.${isUdf ? '' : ' Taranmış belgede de yazı tanınamadı; tarama soluk, eğik veya fotoğraf olabilir. Lütfen bilgileri elle giriniz.'}`, 'text-red-600 font-semibold');
@@ -2474,7 +2540,7 @@
                     }).join('');
                     sonucBox.insertAdjacentHTML('afterbegin',
                         `<div id="taranmisBelgeUyari" style="border:2px solid #dc2626; background:#fef2f2; color:#991b1b; border-radius:8px; padding:8px 10px; margin-bottom:8px;">` +
-                        `<div style="font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Bu belge TARANMIŞ PDF'ten yazı tanıma ile okundu. Rakam ve harfler yanlış okunmuş olabilir; lütfen her satırı belgeyle karşılaştırınız.</div>` +
+                        `<div style="font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> Bu belge ${isResim ? 'RESİM DOSYASINDAN (' + turEtiket + ')' : 'TARANMIŞ PDF\'ten'} yazı tanıma ile okundu. Rakam ve harfler yanlış okunmuş olabilir; lütfen her satırı belgeyle karşılaştırınız.</div>` +
                         `<ul class="mt-1 list-disc list-inside">${karsilastir}</ul></div>`);
                 }
             } catch (err) {
