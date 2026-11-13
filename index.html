@@ -1310,6 +1310,15 @@
             if (tarihEl.value && tarihEl.value < '2005-06-01') wrap.classList.remove('hidden');
             else wrap.classList.add('hidden');
         }
+        // 2026-11-13 (kullanıcı): mağduru her zaman çocuk olan maddeler (TCK 103) seçilince "Mağdur çocuk" kutusu kendiliğinden işaretlenir.
+        function isMagdurCocukOtomatikMadde(maddeText) {
+            return /^tck\s*103(?!\d)/.test((maddeText || '').trim().toLocaleLowerCase('tr-TR'));
+        }
+        function applyAutoMagdurCocuk(tr, maddeText) {
+            if (!tr || !isMagdurCocukOtomatikMadde(maddeText)) return;
+            const cb = tr.querySelector('.penalty-magdur-cocuk');
+            if (cb) cb.checked = true;
+        }
         function applyAutoOrgutlu(tr, maddeText) {
             if (!tr || !maddeText) return;
             const normalized = maddeText.trim().toLocaleLowerCase('tr-TR');
@@ -1362,6 +1371,7 @@
                 oranSelect.value = indirimToYatarOranStr(info.oran);
             }
             applyAutoOrgutlu(tr, inputEl.value);
+            applyAutoMagdurCocuk(tr, inputEl.value);
             applyZimmetUyari(tr, inputEl.value);
             refreshEtkinPismanlikGorunum(tr);
             renderSucMaddeSuggestions(inputEl);
@@ -1424,6 +1434,7 @@
             const oranSelect = tr ? tr.querySelector('.penalty-oran') : null;
             if (oranSelect && itemEl.dataset.oran) oranSelect.value = indirimToYatarOranStr(itemEl.dataset.oran);
             applyAutoOrgutlu(tr, itemEl.dataset.madde);
+            applyAutoMagdurCocuk(tr, itemEl.dataset.madde);
             applyZimmetUyari(tr, itemEl.dataset.madde);
             refreshEtkinPismanlikGorunum(tr);
             if (box) box.classList.add('hidden');
@@ -2852,17 +2863,19 @@
                değeriyle aynı (48 yıl) varsayıldı; tek başına mükerrir müebbet örneğiyle
                teyit edilmesi gerekiyor.
            ====================================================== */
-        function getSuresizSTTYil(sureTip, mukerrir, orgutlu) {
+        // 2026-11-13 (kullanıcı): çocuğa karşı işlenen suçtan (18/06/2014 ve sonrası) AM 39 / müebbet 33 yıl koşullu,
+        // hakederek bunların 2 katı (78 / 66). Mükerrir müebbet hakederek de 66 yıl (önceki teyitsiz 48'in yerine).
+        function getSuresizSTTYil(sureTip, mukerrir, orgutlu, magdurCocuk) {
             const isAgMuebbet = (sureTip === 'agirlastirilmis_muebbet');
-            if (mukerrir !== 'yok') return isAgMuebbet ? 39 : 33;
+            if (mukerrir !== 'yok' || magdurCocuk) return isAgMuebbet ? 39 : 33;
             if (orgutlu) return isAgMuebbet ? 36 : 30;
             return isAgMuebbet ? 30 : 24;
         }
-        function getSuresizBTTYil(sureTip, mukerrir, orgutlu) {
+        function getSuresizBTTYil(sureTip, mukerrir, orgutlu, magdurCocuk) {
             const isAgMuebbet = (sureTip === 'agirlastirilmis_muebbet');
             // AM: 78 yıl 3 gerçek örnekle doğrulandı. Müebbet (33 yıl STT) için hâlâ
             // teyit yok, örgütlü değeriyle (48) aynı varsayılıyor — bkz. yukarıdaki not.
-            if (mukerrir !== 'yok') return isAgMuebbet ? 78 : 48; // AM: DOĞRULANDI. Müebbet: *** TEYİT GEREKİYOR ***
+            if (mukerrir !== 'yok' || magdurCocuk) return isAgMuebbet ? 78 : 66;
             if (orgutlu) return isAgMuebbet ? 72 : 48;
             return isAgMuebbet ? 60 : 36;
         }
@@ -2936,6 +2949,13 @@
                 mukerrirSelect.classList.toggle('opacity-40', isAdliPara || isOzelInfaz);
                 if (isAdliPara || isOzelInfaz) mukerrirSelect.value = 'yok';
             }
+            const magdurWrap = tr.querySelector('.penalty-magdur-cocuk-wrap');
+            if (magdurWrap) {
+                magdurWrap.classList.toggle('hidden', !isSuresiz);
+                const mc = magdurWrap.querySelector('.penalty-magdur-cocuk');
+                if (mc && !isSuresiz) mc.checked = false;
+                if (mc && isSuresiz && sucMaddeInput && isMagdurCocukOtomatikMadde(sucMaddeInput.value)) mc.checked = true;
+            }
             if (orgutluCheckbox) {
                 orgutluCheckbox.disabled = isOzelInfaz;
                 if (isOzelInfaz) orgutluCheckbox.checked = false;
@@ -2945,7 +2965,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false) {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false, magdurCocuk = false) {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -3026,6 +3046,10 @@
                     <label class="flex items-center gap-1.5 text-[10px] text-slate-500 pt-0.5">
                         <input type="checkbox" class="penalty-orgutlu accent-amber-500" onchange="refreshEtkinPismanlikGorunum(this.closest('tr')); calculateAll();" ${orgutlu ? 'checked' : ''}>
                         Örgütlü Suç (5275 s.K. m.107/4)
+                    </label>
+                    <label class="flex items-center gap-1.5 text-[10px] text-slate-500 pt-0.5 penalty-magdur-cocuk-wrap ${(sureTip === 'muebbet' || sureTip === 'agirlastirilmis_muebbet') ? '' : 'hidden'}">
+                        <input type="checkbox" class="penalty-magdur-cocuk accent-amber-500" onchange="calculateAll();" ${(magdurCocuk || isMagdurCocukOtomatikMadde(sucMadde)) ? 'checked' : ''}>
+                        Mağdur Çocuk (koşullu: Ağ. Müebbet 39 / Müebbet 33 yıl)
                     </label>
                     <label class="flex items-center gap-1.5 text-[10px] text-amber-700 pt-0.5 penalty-etkin-pismanlik-wrap ${(orgutlu || isTerorEtkinPismanlikMaddesi(sucMadde)) ? '' : 'hidden'}">
                         <input type="checkbox" class="penalty-etkin-pismanlik accent-amber-500" ${etkinPismanlik ? 'checked' : ''}>
@@ -3416,6 +3440,9 @@
                 const sTarih = row.querySelector('.penalty-suc-tarihi').value;
                 const orgutluEl = row.querySelector('.penalty-orgutlu');
                 const orgutlu = orgutluEl ? orgutluEl.checked : false;
+                const magdurCocukEl = row.querySelector('.penalty-magdur-cocuk');
+                // 18/06/2014 öncesi işlenen suçlarda hesap değişmez (kullanıcı, 2026-11-13).
+                const magdurCocuk = !!(magdurCocukEl && magdurCocukEl.checked && sTarih && sTarih >= '2014-06-18');
                 const etkinPismanlikEl = row.querySelector('.penalty-etkin-pismanlik');
                 const etkinPismanlikChecked = (orgutlu || isTerorEtkinPismanlikMaddesi(sucMadde)) && etkinPismanlikEl ? etkinPismanlikEl.checked : false;
                 const isOzelInfazRow = OZEL_INFAZ_TIPLERI.includes(sureTip);
@@ -3566,8 +3593,8 @@
                     if (sureTip === 'muebbet') mCount++; else amCount++;
 
                     // 5275 s.K. m.107/2, m.107/4, m.108/1 gereği SABİT yıl sayıları (oran DEĞİL)
-                    const sttYil = getSuresizSTTYil(sureTip, mukerrir, orgutlu);
-                    const bttYil = getSuresizBTTYil(sureTip, mukerrir, orgutlu);
+                    const sttYil = getSuresizSTTYil(sureTip, mukerrir, orgutlu, magdurCocuk);
+                    const bttYil = getSuresizBTTYil(sureTip, mukerrir, orgutlu, magdurCocuk);
 
                     rowDays = bttYil * 365;      // BTT (hakederek tahliye) - bihakkın süre
                     rowYatarGun = sttYil * 365;  // STT (koşullu salıverilme)
@@ -3582,7 +3609,7 @@
                     // kalemin kendi sabit STT/BTT değeri doğrudan sonuç oluyor. Bu yüzden bu
                     // satır mükerrerse, en yüksek süresiz STT/BTT'yi ayrıca takip ediyoruz
                     // (bkz. aşağıdaki combinationCategory a/b/c/d bloğu).
-                    if (mukerrir !== 'yok') {
+                    if (mukerrir !== 'yok' || magdurCocuk) {
                         hasMukerrerSuresiz = true;
                         if (rowYatarGun > maxMukerrerSuresizYatarGun) maxMukerrerSuresizYatarGun = rowYatarGun;
                         if (rowDays > maxMukerrerSuresizRawDays) maxMukerrerSuresizRawDays = rowDays;
@@ -5000,6 +5027,7 @@
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
                     etkinPismanlik: row.querySelector('.penalty-etkin-pismanlik') ? row.querySelector('.penalty-etkin-pismanlik').checked : false,
+                    magdurCocuk: row.querySelector('.penalty-magdur-cocuk') ? row.querySelector('.penalty-magdur-cocuk').checked : false,
                     apcGun: row.querySelector('.penalty-apc-gun') ? (parseInt(row.querySelector('.penalty-apc-gun').value) || 0) : 0,
                     zimmetOdeme: row.querySelector('.penalty-zimmet-odeme') ? row.querySelector('.penalty-zimmet-odeme').value : ''
                 });
@@ -5061,7 +5089,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik);
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik, !!p.magdurCocuk);
                         });
                     }
 
