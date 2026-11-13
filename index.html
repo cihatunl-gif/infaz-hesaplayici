@@ -667,7 +667,7 @@
             { madde: 'TCK 102/1-1. cümle', aciklama: 'Basit Cinsel Saldırı', oran: '1/3' },
             // 2026-11-13 (kullanıcı talebi): TCK 102'nin eksik fıkra/bentleri — 102/2-1. cümle dışındakilerin hepsi 2/3
             { madde: 'TCK 102/1-2. cümle', aciklama: 'Sarkıntılık Düzeyinde Cinsel Saldırı', oran: '1/3' },
-            { madde: 'TCK 102/2-2. cümle', aciklama: 'Eşe Karşı Nitelikli Cinsel Saldırı', oran: '1/3' },
+            { madde: 'TCK 102/2-2. cümle', aciklama: 'Eşe Karşı Nitelikli Cinsel Saldırı', oran: '1/4', tarihEsikli: { tarih: '2014-06-28', oncekiOran: '1/3' } }, // 2026-11-13: 102/2'lerin tamamı 18 yaş üstüne 3/4
             { madde: 'TCK 102/3-a', aciklama: 'Kendisini Savunamayacak Kişiye Karşı Cinsel Saldırı', oran: '1/3' },
             { madde: 'TCK 102/3-b', aciklama: 'Kamu Görevi, Vesayet veya Hizmet İlişkisinin Nüfuzunu Kötüye Kullanarak Cinsel Saldırı', oran: '1/3' },
             { madde: 'TCK 102/3-c', aciklama: 'Üçüncü Derece Dahil Kan veya Kayın Hısımına ya da Üvey Ana-Baba, Üvey Kardeş, Evlat Edinen veya Evlatlık Tarafından Cinsel Saldırı', oran: '1/3' },
@@ -837,7 +837,7 @@
         function is108_9Maddesi(maddeText) {
             if (!maddeText) return false;
             const m = maddeText.trim().toLocaleLowerCase('tr-TR');
-            return (/^tck\s*102\/2\b/.test(m) && !/^tck\s*102\/2\s*[-.]?\s*2\s*\.?\s*c/.test(m)) || // 102/2-2. cümle (eşe karşı) 2/3 — kullanıcı, 2026-11-13
+            return /^tck\s*102\/2\b/.test(m) || // 2026-11-13 (kullanıcı): 102/2'lerin tamamı (2. cümle dahil) 18 yaş üstüne 3/4, çocukta 2/3
                    /^tck\s*103\b/.test(m) ||
                    /^tck\s*104\/[23]/.test(m) ||
                    /^tck\s*188\b/.test(m) ||
