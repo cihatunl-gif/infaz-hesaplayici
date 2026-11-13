@@ -4060,8 +4060,11 @@
                 // BTT (hakederek tahliye) — KULLANICI KARARI (2026-11-13, 11/11'deki "tavansız" kararının YERİNE geçer):
                 // birden fazla süreli hapis içtimasında ('e') koşullu tavanı 28 yıl ise hakederek tavanı 56 yıl,
                 // 32 yıl ise (mükerrir veya örgütlü) 64 yıldır. Raporda erken olan (tavanlı) tarih önce, tavansız tarih parantezde.
-                if (combinationCategory === 'e') {
-                    const bttCapYil = (hasMukerrer || tier === 'orgutlu') ? BTT_CAP_E_YIL.mukerrer : BTT_CAP_E_YIL.normal;
+                // 2026-11-13 (kullanıcı): hakederek tavanı her içtima kategorisinde koşullu tavanının 2 katıdır
+                // (28→56, 32→64, örgütlü 2 AM 40→80 ...). Mükerrir 'e' içtimasında koşullu tavanı 32 yıl sayılır.
+                {
+                    const kosulluTavanYil = (combinationCategory === 'e' && hasMukerrer) ? COMBINATION_CAP_MUKERRER_E_YIL : COMBINATION_CAP_YIL[tier][combinationCategory];
+                    const bttCapYil = kosulluTavanYil * 2;
                     if (totalRawDays > bttCapYil * 365) {
                         bttTavansizRawDays = totalRawDays;
                         effectiveRawDays = bttCapYil * 365;
