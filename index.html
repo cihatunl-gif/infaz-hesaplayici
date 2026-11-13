@@ -2721,7 +2721,7 @@
             mukerrer_e: "m.108/1-c"
         };
         const COMBINATION_CAP_MUKERRER_E_YIL = 32; // 108/1'in kendi tavanı — mükerrer "tekerrür farkı" toplamı bu tavanı aşamaz
-        const BTT_CAP_E_YIL = { normal: 42, mukerrer: 48 };
+        const BTT_CAP_E_YIL = { normal: 56, mukerrer: 64 }; // 2026-11-13 (kullanıcı): koşullu 28 yıl → hakederek 56 yıl; koşullu 32 yıl (mükerrir/örgütlü) → 64 yıl
 
         /* ======================================================
            "TEKERRÜR FARKI" (Yargıtay uygulaması — kullanıcı onaylı,
@@ -4000,6 +4000,7 @@
             // 2026-11-13 (kullanıcı kararı): mükerrir içtimada program "28 yıl + tekerrür farkı" ile hesaplamaya
             // devam eder; düz 32 yıl (STT) / 48 yıl (BTT) tavanına göre çıkan tarih yanında parantezle gösterilir.
             let mukerrerTavanKiyasi = false;
+            let bttTavansizRawDays = 0; // 2026-11-13: hakederek tavanı bağlandıysa tavansız toplam gün
 
             // 3713 s.K. m.17: terör suçundan Ağırlaştırılmış Müebbet alan hükümlü için
             // koşullu salıverilme hükümleri hiç uygulanmaz; ceza ölünceye kadar devam eder.
@@ -4056,12 +4057,17 @@
                     capWarningText += `Hükümlünün koşullu salıverilme için infaz kurumunda geçirmesi gereken süre, hesaplanan tutar bu sınırı aştığından, 5275 sayılı Kanun ${maddeRef} maddesi gereğince en fazla ${sttCapDays} gün (${ceilingYil} yıl) olarak hesaplanmıştır. `;
                 }
 
-                // BTT (hakederek tahliye) — KULLANICI KARARI (2026-11-11, önceki 42 yıllık
-                // BTT tavanı uygulamasının YERİNE geçer): birden fazla süreli hapis cezası
-                // içtimasında ('e' kategorisi) 28/32 yıl tavanı SADECE koşullu salıverilmeyi
-                // (STT) sınırlar. Hakederek tahliye hiçbir tavana/koşula bağlanmaz; cezaların
-                // TAM gün toplamı (1 yıl=365, 1 ay=30) üzerinden hesaplanır (effectiveRawDays
-                // = totalRawDays olarak kalır). BTT_CAP_E_YIL sabiti artık kullanılmıyor.
+                // BTT (hakederek tahliye) — KULLANICI KARARI (2026-11-13, 11/11'deki "tavansız" kararının YERİNE geçer):
+                // birden fazla süreli hapis içtimasında ('e') koşullu tavanı 28 yıl ise hakederek tavanı 56 yıl,
+                // 32 yıl ise (mükerrir veya örgütlü) 64 yıldır. Raporda erken olan (tavanlı) tarih önce, tavansız tarih parantezde.
+                if (combinationCategory === 'e') {
+                    const bttCapYil = (hasMukerrer || tier === 'orgutlu') ? BTT_CAP_E_YIL.mukerrer : BTT_CAP_E_YIL.normal;
+                    if (totalRawDays > bttCapYil * 365) {
+                        bttTavansizRawDays = totalRawDays;
+                        effectiveRawDays = bttCapYil * 365;
+                        capWarningText += `Hakederek tahliye süresi, koşullu salıverilme tavanı ${bttCapYil / 2} yıl olduğundan ${bttCapYil} yıl ile sınırlandırılmıştır. `;
+                    }
+                }
             }
 
             // Nihai gün sayıları
@@ -4098,15 +4104,12 @@
                 stt32Date = new Date(D0.getTime());
                 stt32Date.setDate(stt32Date.getDate() + stt32Days);
             }
-            if (combinationCategory === 'e' && hasMukerrer && effectiveRawDays > BTT_CAP_E_YIL.mukerrer * 365) {
-                btt48Date = new Date(D0.getTime());
-                btt48Date.setDate(btt48Date.getDate() + Math.max(0, BTT_CAP_E_YIL.mukerrer * 365 - grandTotalMahsupDays));
+            if (bttTavansizRawDays > 0) {
+                btt48Date = new Date(D0.getTime()); // (ad korunuyor) tavansız hakederek tarihi
+                btt48Date.setDate(btt48Date.getDate() + Math.max(0, bttTavansizRawDays - grandTotalMahsupDays));
             }
             if (stt32Date) {
                 capWarningText += `Koşullu salıverilme tarihindeki iki tarihin farkı: ilk tarih (${formatDate(sttDate)}), mükerrirlikte hükümlü lehine olan "28 yıl + tekerrür farkı" yöntemiyle (${Math.floor(effectiveYatarGun)} gün) hesaplanmıştır; parantez içindeki tarih (${formatDate(stt32Date)}) ise 5275 sayılı Kanun m.108/1-c'deki 32 yıllık tavanın doğrudan uygulanması hâlinde çıkan tarihtir. Cumhuriyet Başsavcılığı müddetnamesinde 32 yıllık tavan esas alınmış olabilir. `;
-            }
-            if (btt48Date) {
-                capWarningText += `Hakederek tahliye tarihindeki iki tarihin farkı: ilk tarih (${formatDate(bttDate)}), cezaların tam gün toplamı üzerinden hiçbir tavan uygulanmadan hesaplanmıştır; parantez içindeki tarih (${formatDate(btt48Date)}) ise mükerrirlikte hakederek tahliye için 48 yıllık tavanın uygulanması hâlinde çıkan tarihtir. Cumhuriyet Başsavcılığı müddetnamesinde 48 yıllık tavan esas alınmış olabilir. `;
             }
 
             // 28/32 yıl tavanı bağlandıysa (sttTavanBagladi), tavan uygulanmasaydı
@@ -4632,7 +4635,7 @@
                 document.getElementById('repBtt').innerText = 'Ölünceye Kadar';
                 document.getElementById('repStt').innerText = 'Uygulanmaz (3713 S.K. m.17)';
             } else {
-                document.getElementById('repBtt').innerText = formatDate(bttDate) + (btt48Date ? ` (48 tavan ${formatDate(btt48Date)})` : '');
+                document.getElementById('repBtt').innerText = formatDate(bttDate) + (btt48Date && btt48Date > bttDate ? ` (tavansız ${formatDate(btt48Date)})` : '');
                 // 5411 S.K. m.167: zimmet borcu/tazminatı ödenmediğinden koşullu
                 // salıverilme hükümleri uygulanmaz; hükümlü BTT'ye kadar (tam infaz) yatar.
                 document.getElementById('repStt').innerText = zimmetKosulluUygulanmaz
