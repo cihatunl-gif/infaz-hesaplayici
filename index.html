@@ -64,15 +64,26 @@
         /* Kapalı ilam yalnız yazı yüksekliği kadar yer tutar: çöp kutusu ve numara aynı satırda, numara en sonda. */
         tr.ilam-kapali > td { padding-top: 1px !important; padding-bottom: 1px !important; vertical-align: middle !important; }
         tr.ilam-kapali > td:last-child > div { flex-direction: row !important; min-height: 0 !important; gap: 6px; justify-content: flex-end !important; align-items: center !important; }
-        /* Rapor kağıdı (2026-11-14): tek sayfaya sığması için satır araları ve yazılar sıkıştırıldı, iki noktalar sola çekildi. */
-        #printSheet { padding: 10px 12px !important; }
-        #printSheet > * + * { margin-top: 3px !important; }
-        #printSheet td, #printSheet th { padding-top: 0 !important; padding-bottom: 0 !important; line-height: 1.2 !important; font-size: 10px !important; font-family: inherit !important; }
+        /* Rapor kağıdı (2026-11-14): tek sayfaya sığıyorsa FERAH durur (rapor-sik-0); ikinci sayfaya taşacaksa
+           önce orta (rapor-sik-1), o da yetmezse sıkı (rapor-sik-2) düzene geçer — bkz. raporSikligiAyarla. */
+        #printSheet td, #printSheet th { font-family: inherit !important; }
         #printSheet tr > td:first-child { white-space: nowrap; }
         #printSheet td.w-1\/3 { width: 1% !important; }
-        #printSheet h4 { line-height: 1.2; margin: 0; }
-        #printSheet p { line-height: 1.2; }
-        @page { size: A4; margin: 8mm 10mm; }
+        #printSheet h4 { margin: 0; }
+        /* Zabıt katibi ve savcı adının ÜSTÜNDE her zaman imza için boşluk bırakılır. */
+        #printSheet .imza-bosluk { height: 34px; }
+        #printSheet.rapor-sik-1 .imza-bosluk { height: 28px; }
+        #printSheet.rapor-sik-2 .imza-bosluk { height: 22px; }
+        #printSheet.rapor-sik-0 { padding: 22px 24px !important; }
+        #printSheet.rapor-sik-0 > * + * { margin-top: 10px !important; }
+        #printSheet.rapor-sik-0 td, #printSheet.rapor-sik-0 th { padding-top: 2px !important; padding-bottom: 2px !important; line-height: 1.35 !important; font-size: 11px !important; }
+        #printSheet.rapor-sik-1 { padding: 14px 16px !important; }
+        #printSheet.rapor-sik-1 > * + * { margin-top: 6px !important; }
+        #printSheet.rapor-sik-1 td, #printSheet.rapor-sik-1 th { padding-top: 1px !important; padding-bottom: 1px !important; line-height: 1.25 !important; font-size: 10.5px !important; }
+        #printSheet.rapor-sik-2 { padding: 10px 12px !important; }
+        #printSheet.rapor-sik-2 > * + * { margin-top: 3px !important; }
+        #printSheet.rapor-sik-2 td, #printSheet.rapor-sik-2 th { padding-top: 0 !important; padding-bottom: 0 !important; line-height: 1.2 !important; font-size: 10px !important; }
+        #printSheet.rapor-sik-2 p, #printSheet.rapor-sik-2 h4 { line-height: 1.2; }
         tr.ilam-kapali .ilam-ozet-satir { display: block; }
         tr.ilam-kapali > td:not(:last-child) > *:not(.ilam-ozet-satir):not(.satir-hata-notu) { display: none !important; }
 
@@ -392,7 +403,7 @@
         <div id="raporKolon" class="lg:col-span-5 space-y-5">
 
             <!-- Resmi Müddetname Formu (Fotoğraftaki Şablona Tam Uyumlu) -->
-            <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs print-card relative space-y-4" style="font-family: 'Times New Roman', Times, serif;">
+            <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs print-card relative space-y-4 rapor-sik-0" style="font-family: 'Times New Roman', Times, serif;">
 
                 <!-- Başlık (örnek UYAP müddetnamesi düzeni — 2026-11-14) -->
                 <div class="text-center">
@@ -520,11 +531,13 @@
                         <tbody>
                             <tr class="align-top">
                                 <td class="text-center" style="width:38%">
+                                    <div class="imza-bosluk"></div>
                                     <p class="font-bold" id="repKatipAd"></p>
                                     <p class="font-bold italic" id="repKatipUnvan"></p>
                                 </td>
                                 <td class="text-center" style="width:24%"><p id="repTarihAlani">.../.../....</p></td>
                                 <td class="text-center" style="width:38%">
+                                    <div class="imza-bosluk"></div>
                                     <p class="font-bold" id="repSavciAd"></p>
                                     <p class="font-bold" id="repSavciUnvan">CUMHURİYET SAVCISI</p>
                                 </td>
@@ -1457,6 +1470,32 @@
             const kapali = tr.classList.toggle('ilam-kapali');
             const h = tr.children;
             if (h.length >= 4) { h[0].colSpan = kapali ? 3 : 1; h[1].style.display = kapali ? 'none' : ''; h[2].style.display = kapali ? 'none' : ''; }
+        }
+        // Rapor kağıdının sıklığı: A4'e (yazdırma boşlukları dahil) sığan EN FERAH düzen seçilir; sayfa
+        // boşluğu da buna göre ayarlanır. Ekrandaki kağıt A4'ten dar olduğundan ölçüm temkinlidir.
+        function raporSikligiAyarla() {
+            const kagit = document.getElementById('printSheet');
+            if (!kagit) return;
+            const kenar = ['15mm 15mm', '10mm 12mm', '8mm 10mm'];
+            const boyut = [[210 - 30, 297 - 30], [210 - 24, 297 - 20], [210 - 20, 297 - 16]]; // yazdırılabilir alan (mm): en, boy
+            const px = mm => mm * 96 / 25.4;
+            const eskiEn = kagit.style.width, eskiMax = kagit.style.maxWidth;
+            let secilen = 2;
+            for (let s = 0; s <= 2; s++) {
+                kagit.classList.remove('rapor-sik-0', 'rapor-sik-1', 'rapor-sik-2');
+                kagit.classList.add('rapor-sik-' + s);
+                // Kağıt bir an için yazdırma genişliğine getirilip yüksekliği ölçülür (ekrana yansımaz).
+                kagit.style.maxWidth = 'none';
+                kagit.style.width = px(boyut[s][0]) + 'px';
+                const sigar = kagit.scrollHeight <= px(boyut[s][1]);
+                if (sigar) { secilen = s; break; }
+            }
+            kagit.style.width = eskiEn; kagit.style.maxWidth = eskiMax;
+            kagit.classList.remove('rapor-sik-0', 'rapor-sik-1', 'rapor-sik-2');
+            kagit.classList.add('rapor-sik-' + secilen);
+            let st = document.getElementById('raporSayfaKenari');
+            if (!st) { st = document.createElement('style'); st.id = 'raporSayfaKenari'; document.head.appendChild(st); }
+            st.textContent = `@page { size: A4; margin: ${kenar[secilen]}; }`;
         }
         function kutuOzetGuncelle() {
             const kopya = (ozetId, kaynakId, basliklar) => {
@@ -5227,6 +5266,7 @@
 
             kutuOzetGuncelle();
             belgeKiyasGuncelle(grandTotalMahsupDays);
+            raporSikligiAyarla();
 
             // Ekrandaki uyarı kutusu (Hesapla anında görünür)
             const warningBanner = document.getElementById('capWarningBanner');
@@ -5682,9 +5722,9 @@
             // İmza: Zabıt Katibi — tarih — Cumhuriyet Savcısı
             els += '<table tableName="Sabit" columnCount="3" columnSpans="140,111,10" border="borderNone" borderSpec="31" borderColor="-16777216" borderStyle="borderStyle-plain" borderWidth="1.0" rowSpans="428">';
             els += '<row rowType="dataRow" rowName="row1" columnSpans="140,140,111,10" border="borderNone" borderWidth="0.5" height="0.0">';
-            els += '<cell border="borderNone" borderWidth="0.5">' + para([{ t: al('repKatipAd'), b: true }], { align: 1 }) + para([{ t: al('repKatipUnvan'), b: true, i: true }], { align: 1 }) + '</cell>';
+            els += '<cell border="borderNone" borderWidth="0.5">' + para('', { align: 1 }) + para('', { align: 1 }) + para([{ t: al('repKatipAd'), b: true }], { align: 1 }) + para([{ t: al('repKatipUnvan'), b: true, i: true }], { align: 1 }) + '</cell>';
             els += '<cell border="borderNone" borderWidth="0.5">' + para(al('repTarihAlani'), { align: 1 }) + '</cell>';
-            els += '<cell border="borderNone" borderWidth="0.5">' + para([{ t: al('repSavciAd'), b: true }], { align: 1 }) + para([{ t: al('repSavciUnvan'), b: true }], { align: 1 }) + '</cell>';
+            els += '<cell border="borderNone" borderWidth="0.5">' + para('', { align: 1 }) + para('', { align: 1 }) + para([{ t: al('repSavciAd'), b: true }], { align: 1 }) + para([{ t: al('repSavciUnvan'), b: true }], { align: 1 }) + '</cell>';
             els += '</row></table>';
             if (A.ara) els += para('', { align: 1 });
 
@@ -5738,7 +5778,7 @@
                 tarihler.forEach(h => { satir += Math.max(1, sar(h[1] || '', en * 0.55)); });
                 satir += 2 + 1;
                 mahsuplar.forEach(h => { satir += Math.max(1, ...h.slice(0, 6).map(t => sar(t, en / 6))); });
-                satir += 2 + 1 + (notlar.length ? notlar.reduce((n, s) => n + sar(s, en), 0) : 1) + 1;
+                satir += 4 + 1 + (notlar.length ? notlar.reduce((n, s) => n + sar(s, en), 0) : 1) + 1;
                 if (A.ara) satir += 6;
                 return satir * satirYuk + 9 * 3;
             };
