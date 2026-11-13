@@ -1310,6 +1310,14 @@
             if (tarihEl.value && tarihEl.value < '2005-06-01') wrap.classList.remove('hidden');
             else wrap.classList.add('hidden');
         }
+        // 2026-11-13 (kullanıcı): "1. Tekerrür" seçilince tekerrüre esas ilamın süresi (yıl/ay/gün) kutusu açılır.
+        function tekerrurKutuGuncelle(tr) {
+            if (!tr) return;
+            const wrap = tr.querySelector('.penalty-tekilam-wrap');
+            const sel = tr.querySelector('.penalty-mukerrir');
+            if (!wrap || !sel) return;
+            if (sel.value === '1') wrap.classList.remove('hidden'); else wrap.classList.add('hidden');
+        }
         // 2026-11-13 (kullanıcı): mağduru her zaman çocuk olan maddeler (TCK 103) seçilince "Mağdur çocuk" kutusu kendiliğinden işaretlenir.
         function isMagdurCocukOtomatikMadde(maddeText) {
             return /^tck\s*103(?!\d)/.test((maddeText || '').trim().toLocaleLowerCase('tr-TR'));
@@ -2965,7 +2973,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false, magdurCocuk = false) {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false, magdurCocuk = false, tekIlam = null) {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -3037,11 +3045,20 @@
                     </div>
                     <div class="flex items-center gap-1">
                         <span class="text-[10px] text-slate-500 w-16">Mükerrir mi?</span>
-                        <select class="penalty-mukerrir w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold">
+                        <select class="penalty-mukerrir w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold" onchange="tekerrurKutuGuncelle(this.closest('tr'))">
                             <option value="yok" ${mukerrir === 'yok' ? 'selected' : ''}>Tekerrür Yok</option>
                             <option value="1" ${mukerrir === '1' ? 'selected' : ''}>1. Tekerrür</option>
                             <option value="2" ${mukerrir === '2' ? 'selected' : ''}>2. Tekerrür</option>
                         </select>
+                    </div>
+                    <div class="penalty-tekilam-wrap pt-0.5 ${mukerrir === '1' ? '' : 'hidden'}">
+                        <div class="text-[10px] text-slate-500">Tekerrüre esas (mükerrir yapan) ilamın hapis süresi:</div>
+                        <div class="flex items-center gap-1 pt-0.5">
+                            <input type="number" min="0" placeholder="Yıl" value="${tekIlam && tekIlam.y ? tekIlam.y : ''}" title="Mükerrir yapan ilamın hapis süresi (yıl)" class="penalty-tekilam-yil w-12 bg-slate-50 border border-slate-300 rounded px-1 py-1 outline-none font-semibold text-amber-700 text-center">
+                            <input type="number" min="0" placeholder="Ay" value="${tekIlam && tekIlam.a ? tekIlam.a : ''}" title="ay" class="penalty-tekilam-ay w-12 bg-slate-50 border border-slate-300 rounded px-1 py-1 outline-none font-semibold text-amber-700 text-center">
+                            <input type="number" min="0" placeholder="Gün" value="${tekIlam && tekIlam.g ? tekIlam.g : ''}" title="gün" class="penalty-tekilam-gun w-12 bg-slate-50 border border-slate-300 rounded px-1 py-1 outline-none font-semibold text-amber-700 text-center">
+                        </div>
+                        <div class="text-[9px] text-slate-400 leading-tight pt-0.5">Boş bırakılırsa 2/3 uygulanır. Dolu ve ilam süresi 2/3 ile 1/2 arasındaki farktan kısaysa "1/2 + ilam süresi" hesaplanır.</div>
                     </div>
                     <label class="flex items-center gap-1.5 text-[10px] text-slate-500 pt-0.5">
                         <input type="checkbox" class="penalty-orgutlu accent-amber-500" onchange="refreshEtkinPismanlikGorunum(this.closest('tr')); calculateAll();" ${orgutlu ? 'checked' : ''}>
@@ -3732,11 +3749,27 @@
                         rowOran = 0.75;
                     }
 
+                    // 2026-11-13 (kullanıcı): 1. tekerrürde tekerrüre esas ilamın süresi girilmişse ve bu süre
+                    // (2/3 - satırın kendi oranı) farkından KISAYSA, 2/3 yerine "satırın oranı (1/2) + ilam süresi (gün)"
+                    // uygulanır; ilam süresi fark kadar veya fazlaysa 2/3 aynen kalır (ek süre farkı aşamaz).
+                    // Kutu boşsa eski davranış (2/3) değişmez.
+                    let tekerrurIlamEk = 0;
+                    if (mukerrir === '1' && !belgeEkSureli && baseOranForMukerrer < 2 / 3) {
+                        const tY = parseInt((row.querySelector('.penalty-tekilam-yil') || {}).value) || 0;
+                        const tA = parseInt((row.querySelector('.penalty-tekilam-ay') || {}).value) || 0;
+                        const tG = parseInt((row.querySelector('.penalty-tekilam-gun') || {}).value) || 0;
+                        const tekIlamGun = tY * 365 + tA * 30 + tG;
+                        if (tekIlamGun > 0 && tekIlamGun < rowDays * (2 / 3 - baseOranForMukerrer)) {
+                            rowOran = baseOranForMukerrer;
+                            tekerrurIlamEk = tekIlamGun;
+                        }
+                    }
+
                     // İçtima (m.107/3-e) STT tavanında kullanılacak "tekerrür farkı"
                     // (bkz. tekerrurFarkiHesapla) — sadece bu satır mükerrer ise katkı verir.
                     if (mukerrir === '1' || mukerrir === '2') {
                         // "Oran + ek süre" biçiminde tekerrür farkı, fiilen eklenen ek gündür.
-                        tekerrurFarkiToplamGun += belgeEkSureli ? ekGunErken : tekerrurFarkiHesapla(mukerrir, rowDays, sTarih);
+                        tekerrurFarkiToplamGun += belgeEkSureli ? ekGunErken : (tekerrurIlamEk > 0 ? tekerrurIlamEk : tekerrurFarkiHesapla(mukerrir, rowDays, sTarih));
                     }
 
                     // Küsüratlı yatar gün HER KALEM için kendi içinde hükümlü lehine aşağı
@@ -3780,7 +3813,7 @@
                     // durumu dahil) madde numarasıyla birlikte yazılır:
                     // 107/2 = mükerrir yok, 108/1-2 = 1. kez mükerrer, 108/3 = 2. kez mükerrer.
                     let infazMaddesi = '5275 S.K. 107/2 md.';
-                    if (mukerrir === '1') infazMaddesi = belgeEkSureli ? '5275 S.K. 108/2 md.' : '5275 S.K. 108/1-2 md.';
+                    if (mukerrir === '1') infazMaddesi = (belgeEkSureli || tekerrurIlamEk > 0) ? '5275 S.K. 108/2 md.' : '5275 S.K. 108/1-2 md.';
                     else if (mukerrir === '2') infazMaddesi = '5275 S.K. 108/3 md.';
                     // Kullanıcı kararı (2026-11-12): örgüt kapsamında işlenen tüm suçlarda satırda "107/2.h.2 cümle" yazar;
                     // "107/4" yalnızca örgütlü içtima tavanı açıklamasında geçer.
@@ -3807,7 +3840,7 @@
                     // Bitişik modda da ek gün oranla çarpılmaz; grup toplamından bağımsız,
                     // ayrıca toplanıp forEach sonrasında totalYatarGun'a eklenir.
                     const ekGunInput = row.querySelector('.penalty-ek-gun');
-                    const ekGun = ekGunInput ? (parseInt(ekGunInput.value) || 0) : 0;
+                    const ekGun = (ekGunInput ? (parseInt(ekGunInput.value) || 0) : 0) + tekerrurIlamEk;
                     if (ekGun > 0) {
                         if (hesaplamaYontemi === 'bitisik') {
                             bitisikEkGunToplam += ekGun;
@@ -5025,6 +5058,7 @@
                     ekGun: row.querySelector('.penalty-ek-gun') ? (parseInt(row.querySelector('.penalty-ek-gun').value) || 0) : 0,
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
+                    tekIlam: { y: parseInt((row.querySelector('.penalty-tekilam-yil') || {}).value) || 0, a: parseInt((row.querySelector('.penalty-tekilam-ay') || {}).value) || 0, g: parseInt((row.querySelector('.penalty-tekilam-gun') || {}).value) || 0 },
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
                     etkinPismanlik: row.querySelector('.penalty-etkin-pismanlik') ? row.querySelector('.penalty-etkin-pismanlik').checked : false,
                     magdurCocuk: row.querySelector('.penalty-magdur-cocuk') ? row.querySelector('.penalty-magdur-cocuk').checked : false,
@@ -5089,7 +5123,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik, !!p.magdurCocuk);
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik, !!p.magdurCocuk, p.tekIlam || null);
                         });
                     }
 
