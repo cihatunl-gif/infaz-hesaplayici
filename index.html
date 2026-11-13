@@ -2718,8 +2718,8 @@
             if (mCount >= 2) return 'b';
             if (amCount >= 1 && sCount >= 1) return 'c';
             if (mCount >= 1 && sCount >= 1) return 'd';
-            if (sCount >= 2) return 'e';
-            return null; // Tek ceza - kombinasyon tavanı uygulanmaz
+            if (sCount >= 1) return 'e'; // 2026-11-13 (kullanıcı): ceza tek de olsa 28/32 yıl tavanına bağlanır
+            return null;
         }
 
         const COMBINATION_CAP_YIL = {
