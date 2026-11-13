@@ -142,6 +142,7 @@
                     <i class="fa-solid fa-circle-info"></i> Hem bilgisayardan hazırlanmış (metin tabanlı) müddetname PDF'leri hem de UYAP UDF dosyaları desteklenir; iyi taranmış PDF'ler ile TIF, JPG ve PNG resim dosyaları da yazı tanıma ile okunabilir, ancak rakamlar yanlış okunabileceğinden sonuç mutlaka belgeyle karşılaştırılmalıdır (fotoğraf, eğik veya soluk taramalar okunamayabilir). Yüklendiğinde mevcut ceza ve mahsup satırları SİLİNİP dosyadan okunan bilgilerle değiştirilir — hesaplamadan önce tüm satırları kontrol edin.
                 </p>
                 <input type="file" accept="application/pdf,.udf,.tif,.tiff,.jpg,.jpeg,.png" onchange="muddetnameDosyasindanDoldur(this)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-700 hover:file:bg-amber-500/20 border border-slate-300 rounded-lg cursor-pointer">
+                <p class="mt-1.5 text-[11px] font-bold" style="color:#15803d;"><i class="fa-solid fa-circle-check"></i> Daha önce hesaplanmış müddetnameyi UDF olarak seçerseniz tüm bilgiler otomatik dolar.</p>
                 <div id="pdfFillSonuc" class="hidden mt-2 text-[11px] leading-relaxed"></div>
             </div>
 
@@ -163,19 +164,34 @@
                         <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Cezaevi Hükümlü Defter Numarası</span><input type="text" id="evrakDefterNo" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info"></i> Doğum tarihi aşağıdaki "Doğum Tarihi / Cinsiyet" kutusundan alınır. UDF/PDF yüklenince bu alanlar belgeden doldurulur; boş gelenler elle yazılabilir.</p>
-                    <button type="button" onclick="savcilikPenceresiAc()" class="mt-2 px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded font-semibold text-slate-700"><i class="fa-solid fa-building-columns"></i> Savcılık / İmza Bilgileri</button>
                 </div>
             </details>
 
             <!-- Ceza Bilgileri (hükmü veren mahkeme, karar bilgisi) (2026-11-14); CEZASI'nı program kendisi yazar -->
             <details id="cezaBilgiKutu" class="bg-white border border-slate-200 rounded-xl shadow-sm">
                 <summary class="cursor-pointer select-none px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                    <i class="fa-solid fa-scale-balanced text-amber-500"></i> Ceza Bilgileri (Mahkeme)
+                    <i class="fa-solid fa-scale-balanced text-amber-500"></i> Ceza Bilgileri (Mahkeme) · Savcılık / İmza Bilgileri
                     <span class="text-[10px] font-normal normal-case tracking-normal text-slate-400">(tıklayınca açılır / kapanır)</span>
                 </summary>
                 <div class="px-3 pb-3 text-xs space-y-2">
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Hükmü Veren Mahkeme</span><input type="text" id="evrakMahkeme" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Mahkeme Karar Bilgisi</span><input type="text" id="evrakKarar" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                    <div class="pt-2 mt-1 border-t border-slate-200">
+                        <div class="text-slate-500 font-bold uppercase tracking-wider text-[10px] mb-1"><i class="fa-solid fa-building-columns text-amber-500"></i> Savcılık / İmza Bilgileri <span class="font-normal normal-case tracking-normal text-slate-400">(bu bilgisayarda saklanır, her müddetnameye yazılır)</span></div>
+                        <label class="block mb-2"><span class="block text-slate-500 mb-0.5 font-bold">Cumhuriyet Başsavcılığı</span><input type="text" data-alan="savcilik" placeholder="Örn: Kayseri Cumhuriyet Başsavcılığı" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <label class="block col-span-2"><span class="block text-slate-500 mb-0.5 font-bold">Zabıt Katibi Adı Soyadı</span><input type="text" data-alan="katipAd" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
+                            <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Sicil No</span><input type="text" data-alan="katipSicil" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
+                            <label class="block col-span-2"><span class="block text-slate-500 mb-0.5 font-bold">Cumhuriyet Savcısı Adı Soyadı</span><input type="text" data-alan="savciAd" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
+                            <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Sicil No</span><input type="text" data-alan="savciSicil" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 mb-0.5">
+                            <span class="text-slate-500 font-bold">Hazır Açıklama Şablonu</span>
+                            <button type="button" onclick="document.getElementById('aciklamaSablonInput').click()" class="px-2 py-0.5 text-[11px] bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold">Dosyadan Yükle (UDF / Word / txt)</button>
+                            <input type="file" id="aciklamaSablonInput" accept=".udf,.txt,.docx" class="hidden" onchange="aciklamaSablonEkle(this)">
+                        </div>
+                        <textarea rows="3" data-alan="sablon" id="savcilikSablon" placeholder="&quot;Otomatik açıklama&quot; işaretlendiğinde NOT bölümünün en altına eklenecek hazır açıklamanız." class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></textarea>
+                    </div>
                 </div>
             </details>
 
@@ -231,18 +247,20 @@
             <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
                 <!-- Başlık + Ceza Ekle / Manuel Ekle: sayfa aşağı kaydırıldıkça üstte SABİT kalır (2026-11-11) -->
                 <div class="flex items-center justify-between mb-3" style="position: sticky; top: 64px; z-index: 30; background: #ffffff; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-amber-500"></i> İlam Bilgileri
+                    <h2 onclick="kutuAcKapa('ilam')" title="Tıklayınca açılır / kapanır" class="cursor-pointer select-none text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                        <i id="ilamOk" class="fa-solid fa-chevron-down text-slate-400"></i> <i class="fa-solid fa-layer-group text-amber-500"></i> İlam Bilgileri
                     </h2>
                     <div class="flex items-center gap-1.5">
-                        <button onclick="addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
+                        <button onclick="kutuAcKapa('ilam', true); addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Ceza Ekle
                         </button>
                     </div>
                 </div>
 
+                <!-- Kutu kapalıyken: sağdaki rapordaki ceza satırlarının aynısı (özet) -->
+                <div id="ilamOzet" class="hidden overflow-x-auto"></div>
                 <!-- Dynamic Penalty Table -->
-                <div class="overflow-x-auto">
+                <div id="ilamGovde" class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
                             <tr class="text-slate-500 border-b border-slate-200 bg-slate-100">
@@ -268,11 +286,12 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="font-bold text-amber-800"><i class="fa-solid fa-circle-question"></i> Girişten bugüne <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> gün geçti. Bu süre nerede geçti?</span>
                         <select id="girisGunuDurum" class="hidden">
-                            <option value=""></option><option value="tamamen_kapali"></option><option value="kismen_disarida"></option><option value="mahsup"></option>
+                            <option value=""></option><option value="tamamen_kapali"></option><option value="acik"></option><option value="denetim"></option><option value="mahsup"></option>
                         </select>
-                        <div class="flex gap-1" title="Açığa ayrılmada asgari kapalı kalma şartı için sorulur">
-                            <button type="button" data-giris="tamamen_kapali" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Tamamı kapalıda</button>
-                            <button type="button" data-giris="kismen_disarida" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Tamamı açıkta</button>
+                        <div class="flex flex-wrap gap-1" title="Bu süre seçtiğiniz yerde geçmiş sayılır">
+                            <button type="button" data-giris="tamamen_kapali" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Kapalı cezaevinde</button>
+                            <button type="button" data-giris="acik" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Açık cezaevinde</button>
+                            <button type="button" data-giris="denetim" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Denetimde</button>
                             <button type="button" data-giris="mahsup" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Mahsuba işleyeceğim</button>
                         </div>
                     </div>
@@ -280,13 +299,15 @@
                 <!-- Mahsup Aralıkları Tablosu (Boş Başlangıç) -->
                 <div>
                     <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                            <i class="fa-solid fa-calendar-check text-amber-500"></i> Mahsup Bilgisi
+                        <h2 onclick="kutuAcKapa('mahsup')" title="Tıklayınca açılır / kapanır" class="cursor-pointer select-none text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                            <i id="mahsupOk" class="fa-solid fa-chevron-down text-slate-400"></i> <i class="fa-solid fa-calendar-check text-amber-500"></i> Mahsup Bilgisi
                         </h2>
-                        <button onclick="addMahsupRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
+                        <button onclick="kutuAcKapa('mahsup', true); addMahsupRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Mahsup Ekle
                         </button>
                     </div>
+                    <div id="mahsupOzet" class="hidden overflow-x-auto"></div>
+                    <div id="mahsupGovde">
 
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs border-collapse">
@@ -312,7 +333,6 @@
                         <p class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Tarih Çakışması Uyarısı</p>
                         <ul id="mahsupCakismaUyariListesi" class="list-disc list-inside space-y-0.5"></ul>
                     </div>
-                </div>
                 <!-- 01/07/2016 öncesi işlenmiş, 5 yıldan az hapis cezalı (istisna suçlar
                      hariç) hükümlülerin "3 gün içinde doğrudan açık" hakkı (R11,
                      kullanıcı onayı 2026-11-10) için iyi hal bilgisi. -->
@@ -320,6 +340,8 @@
                     <input type="checkbox" id="hukumluIyiHalli" onchange="calculateAll()" class="accent-amber-500">
                     Hükümlü İyi Hallidir (01/07/2016 öncesi, 5 yıldan az hapis cezalarında "3 gün içinde doğrudan açık" hakkı değerlendirmesi için)
                 </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Kanuni Üst Sınır Uyarısı (STT/BTT 28/32/42/48 yıl vb. - m.107/3, m.107/4, m.108/1-c) -->
@@ -339,9 +361,10 @@
 
             <!-- Açıklama (Manuel Not) -->
             <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
+                <h2 onclick="kutuAcKapa('aciklama')" title="Tıklayınca açılır / kapanır" class="cursor-pointer select-none text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <i id="aciklamaOk" class="fa-solid fa-chevron-down text-slate-400"></i> <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
                 </h2>
+                <div id="aciklamaGovde" class="mt-2">
                 <textarea id="aciklamaManuel" rows="4" onchange="calculateAll()" placeholder="Müddetnamenin NOT bölümüne eklenecek açıklamanızı buraya yazabilirsiniz." class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
                 <label class="flex items-start gap-1.5 text-[11px] text-slate-600 mt-2 font-semibold">
                     <input type="checkbox" id="otomatikAciklama" onchange="otomatikAciklamaDegisti()" class="accent-amber-500 mt-0.5">
@@ -353,13 +376,7 @@
                     <div class="font-bold mb-0.5"><i class="fa-solid fa-circle-info"></i> <span id="bilgiNotuBaslik">Programın açıklaması</span></div>
                     <div class="whitespace-pre-line leading-relaxed" id="bilgiNotuMetin"></div>
                 </div>
-            </div>
-
-            <!-- Hesapla Butonu -->
-            <div>
-                <button onclick="calculateAll()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-xl shadow-amber-500/20 transition flex items-center justify-center gap-2 uppercase tracking-wide">
-                    <i class="fa-solid fa-calculator text-base"></i> Hesapla ve Müddetname Oluştur
-                </button>
+                </div>
             </div>
 
         </div>
@@ -1406,13 +1423,35 @@
             if (ek) ek.value = 0;
             calculateAll(); // oran kutusu programın belirlediği orana göre yeniden doldurulur
         }
-        // Girişten bugüne geçen sürenin nerede geçtiği: 3 düğme (kapalıda / açıkta / mahsuba işlenecek).
-        // Yalnızca "Tamamı kapalıda" bu süreyi kapalıda geçmiş sayar; diğer ikisinde sayılmaz.
+        // Girişten bugüne geçen sürenin nerede geçtiği: 4 düğme (kapalı / açık / denetim / mahsuba işlenecek).
         function girisDurumSec(deger) {
             const sel = document.getElementById('girisGunuDurum');
             if (!sel) return;
             sel.value = (sel.value === deger) ? '' : deger; // aynı düğmeye tekrar basılırsa seçim kalkar
             calculateAll();
+        }
+        // İlam / Mahsup / Açıklama kutuları aç-kapa (2026-11-14). Kapalıyken ilam ve mahsup kutusu,
+        // sağdaki rapordaki satırların aynısını özet olarak gösterir.
+        function kutuAcKapa(ad, ac) {
+            const govde = document.getElementById(ad + 'Govde');
+            if (!govde) return;
+            const kapat = (ac === true) ? false : !govde.classList.contains('hidden');
+            govde.classList.toggle('hidden', kapat);
+            const ozet = document.getElementById(ad + 'Ozet');
+            if (ozet) ozet.classList.toggle('hidden', !kapat);
+            const ok = document.getElementById(ad + 'Ok');
+            if (ok) ok.className = 'fa-solid ' + (kapat ? 'fa-chevron-right' : 'fa-chevron-down') + ' text-slate-400';
+            kutuOzetGuncelle();
+        }
+        function kutuOzetGuncelle() {
+            const kopya = (ozetId, kaynakId, basliklar) => {
+                const ozet = document.getElementById(ozetId), kaynak = document.getElementById(kaynakId);
+                if (!ozet || !kaynak) return;
+                ozet.innerHTML = '<table class="w-full text-left text-[11px] border-collapse"><thead><tr class="text-slate-500 border-b border-slate-200 bg-slate-100">'
+                    + basliklar.map(b => `<th class="py-0.5 px-1.5 font-bold">${b}</th>`).join('') + '</tr></thead><tbody>' + kaynak.innerHTML + '</tbody></table>';
+            };
+            kopya('ilamOzet', 'repCezaRows', ['İlam No', 'Suç Tarihi', 'Ceza Mad.', 'Ceza Bilgisi', 'İnfaz Türü']);
+            kopya('mahsupOzet', 'repMahsupRows', ["Mahsup Nev'i", 'Başlama', 'Bitiş', 'Açıklama', 'İlamat No', 'Geçen Süre']);
         }
         function girisDurumGorunum() {
             const sel = document.getElementById('girisGunuDurum');
@@ -2768,18 +2807,23 @@
             try { savcilikSoruldu = localStorage.getItem(SAVCILIK_ANAHTAR) !== null; } catch (e) { /* yoksay */ }
             if (!savcilikSoruldu) savcilikPenceresiAc();
 
-            // 2026-11-14: ilam veya mahsup bilgisi eklendikçe / değiştikçe hesap ve açıklama kendiliğinden
-            // yenilenir; kullanıcı müddetnameye ne yazılacağını baştan görür. (Zimmet satırında borç durumu
-            // henüz seçilmediyse uyarı penceresi tekrar tekrar çıkmasın diye beklenir.)
+            // 2026-11-14 (kullanıcı): sol tarafa girilen HER bilgi sağdaki rapora kendiliğinden işlenir; "Hesapla"
+            // düğmesi kaldırıldı. (Boş bırakılmış tarih kutusu yazılırken ve zimmet satırında borç durumu henüz
+            // seçilmemişken beklenir: yarım tarih bugünün tarihiyle dolmasın, uyarı penceresi tekrar tekrar çıkmasın.)
+            savcilikIcDoldur();
             let canliHesapZamanlayici = null;
-            const canliHesap = () => {
+            const canliHesap = (olay) => {
+                const hedef = olay && olay.target;
+                if (hedef && hedef.type === 'file') return;
+                if (hedef && hedef.type === 'date' && !hedef.value) return;
                 clearTimeout(canliHesapZamanlayici);
                 canliHesapZamanlayici = setTimeout(() => {
                     const zimmetBekliyor = [...document.querySelectorAll('.penalty-zimmet-uyari:not(.hidden) .penalty-zimmet-odeme')].some(s => !s.value);
                     if (!zimmetBekliyor) calculateAll();
-                }, 200);
+                }, 250);
             };
-            ['penaltyTableBody', 'mahsupTableBody', 'infazBaslangic'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', canliHesap); });
+            const solSutun = document.querySelector('main > div');
+            if (solSutun) { solSutun.addEventListener('input', canliHesap); solSutun.addEventListener('change', canliHesap); }
 
             // Açılışta 1 adet ceza satırı ekle
             addPenaltyRow('sureli', 1, 0, 0, '', today, 'yok', false);
@@ -4421,6 +4465,9 @@
             const girisGunuDurumSelect = document.getElementById('girisGunuDurum');
             const girisGunuDurumVal = girisGunuDurumSelect ? girisGunuDurumSelect.value : '';
             girisDurumGorunum();
+            // 2026-11-14 (kullanıcı): girişten bugüne geçen süre seçilen yerde geçmiş sayılır — kapalı ise kapalıda
+            // (aşağıda kapalı kalma şartına), denetim ise denetimde (denetimli serbestlik hakkından düşülür), açık ise açıkta.
+            if (girisGunuDurumVal === 'denetim') dsKullanilanGun += girisGunFarki;
 
             const girisGunFarkiBox = document.getElementById('girisGunFarkiBox');
             if (girisGunFarkiBox) {
@@ -5016,13 +5063,15 @@
                 // değilse sadece ekrandaki "Program Bilgi Notu" kutusunda görünür, çıktıya girmez.
                 // Kullanıcının kendi yazdığı / şablondan eklediği açıklama her zaman NOT'a yazılır.
                 const otomatikParcalar = [
+                    // Önce savcılığın hesaplama yöntemiyle ilgili bilgiler...
                     capWarningText.trim(),
                     zimmetAciklamaMetni,
-                    zimmetKosulluUygulanmaz ? "" : acikDsNot.trim(),
                     cocukYasAciklamaMetni.trim(),
                     cocuk1089AciklamaMetni.trim(),
                     ...ozelInfazAciklamaParcalari,
-                    bitisikAciklamaMetni
+                    bitisikAciklamaMetni,
+                    // ...ardından, satır başıyla, cezaevinin kullanacağı açık / denetime ayrılma bilgileri (2026-11-14)
+                    zimmetKosulluUygulanmaz ? "" : acikDsNot.trim()
                 ].filter(Boolean);
                 const otoAcik = otomatikAciklamaAcikMi();
                 const hazirSablon = otoAcik ? (((savcilikOku() || {}).sablon) || '').trim() : '';
@@ -5046,6 +5095,8 @@
                     }
                 }
             }
+
+            kutuOzetGuncelle();
 
             // Ekrandaki uyarı kutusu (Hesapla anında görünür)
             const warningBanner = document.getElementById('capWarningBanner');
@@ -5140,17 +5191,29 @@
             const s = savcilikOku() || {};
             const koy = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
             koy('savcilikAdi', s.savcilik); koy('savcilikKatipAd', s.katipAd); koy('savcilikKatipSicil', s.katipSicil);
-            koy('savcilikSavciAd', s.savciAd); koy('savcilikSavciSicil', s.savciSicil); koy('savcilikSablon', s.sablon);
+            koy('savcilikSavciAd', s.savciAd); koy('savcilikSavciSicil', s.savciSicil);
             const m = document.getElementById('savcilikModal');
             if (m) m.style.display = 'flex';
         }
         function savcilikPenceresiKapat() { const m = document.getElementById('savcilikModal'); if (m) m.style.display = 'none'; }
         function savcilikKaydet() {
             const al = id => ((document.getElementById(id) || {}).value || '').trim();
-            const veri = { savcilik: al('savcilikAdi'), katipAd: al('savcilikKatipAd'), katipSicil: al('savcilikKatipSicil'), savciAd: al('savcilikSavciAd'), savciSicil: al('savcilikSavciSicil'), sablon: al('savcilikSablon') };
+            const veri = { savcilik: al('savcilikAdi'), katipAd: al('savcilikKatipAd'), katipSicil: al('savcilikKatipSicil'), savciAd: al('savcilikSavciAd'), savciSicil: al('savcilikSavciSicil'), sablon: ((savcilikOku() || {}).sablon) || '' };
             try { localStorage.setItem(SAVCILIK_ANAHTAR, JSON.stringify(veri)); } catch (e) { alert('Bilgiler bu tarayıcıda kaydedilemedi.'); }
             savcilikPenceresiKapat();
+            savcilikIcDoldur();
             calculateAll(); // imza alanları + (otomatik açıklama işaretliyse) şablon yenilenir
+        }
+        // Kutunun içindeki savcılık / imza / şablon alanları (2026-11-14): yazıldıkça bu bilgisayara kaydedilir.
+        function savcilikIcDoldur() {
+            const s = savcilikOku() || {};
+            document.querySelectorAll('.savcilik-ic').forEach(el => { el.value = s[el.dataset.alan] || ''; });
+        }
+        function savcilikIcKaydet() {
+            const veri = {};
+            document.querySelectorAll('.savcilik-ic').forEach(el => { veri[el.dataset.alan] = (el.value || '').trim(); });
+            try { localStorage.setItem(SAVCILIK_ANAHTAR, JSON.stringify(veri)); } catch (e) { /* yoksay */ }
+            evrakBilgileriniYaz();
         }
         // "Savcılık değilim / Şimdi değil": pencere bir daha kendiliğinden açılmaz (düğmeden her zaman açılabilir).
         function savcilikAtla() {
@@ -5203,6 +5266,8 @@
                 // 2026-11-14: şablon artık savcılık penceresindeki "Hazır Açıklama Şablonu" kutusuna yüklenir.
                 const kutu = document.getElementById('savcilikSablon');
                 kutu.value = metin;
+                savcilikIcKaydet();
+                calculateAll();
                 kutu.focus();
             } catch (err) {
                 alert('Şablon eklenemedi: ' + ((err && err.message) || err));
@@ -5701,7 +5766,7 @@
         <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:520px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
             <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; font-weight:800; font-size:14px;">Savcılık / İmza Bilgileri</div>
             <div style="padding:16px 18px;">
-                <p style="font-size:12px; color:#475569; margin-bottom:12px;">Bu bilgiler bu bilgisayarda bir kez kaydedilir ve hazırlanan her müddetnameye kendiliğinden yazılır. Daha sonra "Hükümlü Kimlik Bilgileri" kutusundaki "Savcılık / İmza Bilgileri" düğmesinden değiştirilebilir.</p>
+                <p style="font-size:12px; color:#475569; margin-bottom:12px;">Bu bilgiler bu bilgisayarda bir kez kaydedilir ve hazırlanan her müddetnameye kendiliğinden yazılır. Daha sonra "Ceza Bilgileri (Mahkeme) · Savcılık / İmza Bilgileri" kutusundan değiştirilebilir; hazır açıklama şablonunuzu da oradan ekleyebilirsiniz.</p>
                 <label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Cumhuriyet Başsavcılığı</label>
                 <input type="text" id="savcilikAdi" placeholder="Örn: Kayseri Cumhuriyet Başsavcılığı" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px; margin-bottom:10px;">
                 <div style="display:flex; gap:8px; margin-bottom:10px;">
@@ -5712,12 +5777,6 @@
                     <div style="flex:2;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Cumhuriyet Savcısı Adı Soyadı</label><input type="text" id="savcilikSavciAd" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
                     <div style="flex:1;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Sicil No</label><input type="text" id="savcilikSavciSicil" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
                 </div>
-                <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                    <label style="font-weight:700; font-size:12px;">Hazır Açıklama Şablonu</label>
-                    <button type="button" onclick="document.getElementById('aciklamaSablonInput').click()" style="padding:4px 10px; border-radius:6px; border:1px solid #f59e0b; background:#fffbeb; color:#b45309; font-weight:700; font-size:11px;">Dosyadan Yükle (UDF / Word / txt)</button>
-                    <input type="file" id="aciklamaSablonInput" accept=".udf,.txt,.docx" style="display:none;" onchange="aciklamaSablonEkle(this)">
-                </div>
-                <textarea id="savcilikSablon" rows="5" placeholder="Müddetnamelerin NOT bölümünün en altına eklenecek hazır açıklamanız. Dosyadan yükleyebilir veya buraya yazıp düzeltebilirsiniz. &quot;Otomatik açıklama&quot; işaretlendiğinde eklenir." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px; margin-top:4px; font-size:12px;"></textarea>
             </div>
             <div style="padding:12px 18px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; gap:8px;">
                 <button type="button" onclick="savcilikAtla()" style="padding:7px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Savcılık değilim / Şimdi değil</button>
