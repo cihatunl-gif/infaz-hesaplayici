@@ -182,22 +182,8 @@
                 <div class="px-3 pb-3 text-xs space-y-2">
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Hükmü Veren Mahkeme</span><input type="text" id="evrakMahkeme" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Mahkeme Karar Bilgisi</span><input type="text" id="evrakKarar" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
-                    <div class="pt-2 mt-1 border-t border-slate-200">
-                        <div class="text-slate-500 font-bold uppercase tracking-wider text-[10px] mb-1"><i class="fa-solid fa-building-columns text-amber-500"></i> Savcılık / İmza Bilgileri <span class="font-normal normal-case tracking-normal text-slate-400">(bu bilgisayarda saklanır, her müddetnameye yazılır)</span></div>
-                        <label class="block mb-2"><span class="block text-slate-500 mb-0.5 font-bold">Cumhuriyet Başsavcılığı</span><input type="text" data-alan="savcilik" placeholder="Örn: Kayseri Cumhuriyet Başsavcılığı" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
-                        <div class="grid grid-cols-3 gap-2 mb-2">
-                            <label class="block col-span-2"><span class="block text-slate-500 mb-0.5 font-bold">Zabıt Katibi Adı Soyadı</span><input type="text" data-alan="katipAd" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
-                            <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Sicil No</span><input type="text" data-alan="katipSicil" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
-                            <label class="block col-span-2"><span class="block text-slate-500 mb-0.5 font-bold">Cumhuriyet Savcısı Adı Soyadı</span><input type="text" data-alan="savciAd" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
-                            <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Sicil No</span><input type="text" data-alan="savciSicil" class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></label>
-                        </div>
-                        <div class="flex items-center justify-between gap-2 mb-0.5">
-                            <span class="text-slate-500 font-bold">Hazır Açıklama Şablonu</span>
-                            <button type="button" onclick="document.getElementById('aciklamaSablonInput').click()" class="px-2 py-0.5 text-[11px] bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold">Dosyadan Yükle (UDF / Word / txt)</button>
-                            <input type="file" id="aciklamaSablonInput" accept=".udf,.txt,.docx" class="hidden" onchange="aciklamaSablonEkle(this)">
-                        </div>
-                        <textarea rows="3" data-alan="sablon" id="savcilikSablon" placeholder="&quot;Otomatik açıklama&quot; işaretlendiğinde NOT bölümünün en altına eklenecek hazır açıklamanız." class="savcilik-ic w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500" oninput="savcilikIcKaydet()"></textarea>
-                    </div>
+                    <!-- 2026-11-14 (kullanıcı): savcılık / imza bilgileri bu kutuda düğme olarak durur; tıklayınca pencere açılır, oradan doldurulur. -->
+                    <button type="button" onclick="savcilikPenceresiAc()" class="w-full px-2.5 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded font-semibold text-slate-700 text-left"><i class="fa-solid fa-building-columns text-amber-500"></i> Savcılık / İmza Bilgileri <span id="savcilikDugmeOzet" class="font-normal text-slate-500"></span></button>
                 </div>
             </details>
 
@@ -5284,29 +5270,24 @@
             const s = savcilikOku() || {};
             const koy = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
             koy('savcilikAdi', s.savcilik); koy('savcilikKatipAd', s.katipAd); koy('savcilikKatipSicil', s.katipSicil);
-            koy('savcilikSavciAd', s.savciAd); koy('savcilikSavciSicil', s.savciSicil);
+            koy('savcilikSavciAd', s.savciAd); koy('savcilikSavciSicil', s.savciSicil); koy('savcilikSablon', s.sablon);
             const m = document.getElementById('savcilikModal');
             if (m) m.style.display = 'flex';
         }
         function savcilikPenceresiKapat() { const m = document.getElementById('savcilikModal'); if (m) m.style.display = 'none'; }
         function savcilikKaydet() {
             const al = id => ((document.getElementById(id) || {}).value || '').trim();
-            const veri = { savcilik: al('savcilikAdi'), katipAd: al('savcilikKatipAd'), katipSicil: al('savcilikKatipSicil'), savciAd: al('savcilikSavciAd'), savciSicil: al('savcilikSavciSicil'), sablon: ((savcilikOku() || {}).sablon) || '' };
+            const veri = { savcilik: al('savcilikAdi'), katipAd: al('savcilikKatipAd'), katipSicil: al('savcilikKatipSicil'), savciAd: al('savcilikSavciAd'), savciSicil: al('savcilikSavciSicil'), sablon: al('savcilikSablon') };
             try { localStorage.setItem(SAVCILIK_ANAHTAR, JSON.stringify(veri)); } catch (e) { alert('Bilgiler bu tarayıcıda kaydedilemedi.'); }
             savcilikPenceresiKapat();
             savcilikIcDoldur();
             calculateAll(); // imza alanları + (otomatik açıklama işaretliyse) şablon yenilenir
         }
-        // Kutunun içindeki savcılık / imza / şablon alanları (2026-11-14): yazıldıkça bu bilgisayara kaydedilir.
+        // Kutudaki düğmenin yanında kayıtlı savcılığın adı görünür.
         function savcilikIcDoldur() {
             const s = savcilikOku() || {};
-            document.querySelectorAll('.savcilik-ic').forEach(el => { el.value = s[el.dataset.alan] || ''; });
-        }
-        function savcilikIcKaydet() {
-            const veri = {};
-            document.querySelectorAll('.savcilik-ic').forEach(el => { veri[el.dataset.alan] = (el.value || '').trim(); });
-            try { localStorage.setItem(SAVCILIK_ANAHTAR, JSON.stringify(veri)); } catch (e) { /* yoksay */ }
-            evrakBilgileriniYaz();
+            const oz = document.getElementById('savcilikDugmeOzet');
+            if (oz) oz.textContent = s.savcilik ? '— ' + s.savcilik : '— tıklayıp doldurunuz';
         }
         // "Savcılık değilim / Şimdi değil": pencere bir daha kendiliğinden açılmaz (düğmeden her zaman açılabilir).
         function savcilikAtla() {
@@ -5358,9 +5339,7 @@
                 if (!metin) throw new Error('Seçilen dosyada metin bulunamadı.');
                 // 2026-11-14: şablon artık savcılık penceresindeki "Hazır Açıklama Şablonu" kutusuna yüklenir.
                 const kutu = document.getElementById('savcilikSablon');
-                kutu.value = metin;
-                savcilikIcKaydet();
-                calculateAll();
+                kutu.value = metin; // "Kaydet"e basılınca saklanır
                 kutu.focus();
             } catch (err) {
                 alert('Şablon eklenemedi: ' + ((err && err.message) || err));
@@ -5860,7 +5839,7 @@
         <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:520px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
             <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; font-weight:800; font-size:14px;">Savcılık / İmza Bilgileri</div>
             <div style="padding:16px 18px;">
-                <p style="font-size:12px; color:#475569; margin-bottom:12px;">Bu bilgiler bu bilgisayarda bir kez kaydedilir ve hazırlanan her müddetnameye kendiliğinden yazılır. Daha sonra "Ceza Bilgileri (Mahkeme) · Savcılık / İmza Bilgileri" kutusundan değiştirilebilir; hazır açıklama şablonunuzu da oradan ekleyebilirsiniz.</p>
+                <p style="font-size:12px; color:#475569; margin-bottom:12px;">Bu bilgiler bu bilgisayarda bir kez kaydedilir ve hazırlanan her müddetnameye kendiliğinden yazılır. Daha sonra "Ceza Bilgileri (Mahkeme) · Savcılık / İmza Bilgileri" kutusundaki düğmeden yeniden açıp değiştirebilirsiniz.</p>
                 <label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Cumhuriyet Başsavcılığı</label>
                 <input type="text" id="savcilikAdi" placeholder="Örn: Kayseri Cumhuriyet Başsavcılığı" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px; margin-bottom:10px;">
                 <div style="display:flex; gap:8px; margin-bottom:10px;">
@@ -5871,6 +5850,12 @@
                     <div style="flex:2;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Cumhuriyet Savcısı Adı Soyadı</label><input type="text" id="savcilikSavciAd" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
                     <div style="flex:1;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Sicil No</label><input type="text" id="savcilikSavciSicil" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
                 </div>
+                <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <label style="font-weight:700; font-size:12px;">Hazır Açıklama Şablonu</label>
+                    <button type="button" onclick="document.getElementById('aciklamaSablonInput').click()" style="padding:4px 10px; border-radius:6px; border:1px solid #f59e0b; background:#fffbeb; color:#b45309; font-weight:700; font-size:11px;">Dosyadan Yükle (UDF / Word / txt)</button>
+                    <input type="file" id="aciklamaSablonInput" accept=".udf,.txt,.docx" style="display:none;" onchange="aciklamaSablonEkle(this)">
+                </div>
+                <textarea id="savcilikSablon" rows="5" placeholder="&quot;Otomatik açıklama&quot; işaretlendiğinde NOT bölümünün en altına eklenecek hazır açıklamanız. Dosyadan yükleyebilir veya buraya yazıp düzeltebilirsiniz." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px; margin-top:4px; font-size:12px;"></textarea>
             </div>
             <div style="padding:12px 18px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; gap:8px;">
                 <button type="button" onclick="savcilikAtla()" style="padding:7px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Savcılık değilim / Şimdi değil</button>
