@@ -145,6 +145,40 @@
                 <div id="pdfFillSonuc" class="hidden mt-2 text-[11px] leading-relaxed"></div>
             </div>
 
+            <!-- Hükümlü Kimlik Bilgileri: tıklayınca açılıp kapanan kutu (2026-11-14) -->
+            <details id="kimlikKutu" class="bg-white border border-slate-200 rounded-xl shadow-sm">
+                <summary class="cursor-pointer select-none p-4 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <i class="fa-solid fa-id-card text-amber-500"></i> Hükümlü Kimlik Bilgileri
+                    <span class="text-[10px] font-normal normal-case tracking-normal text-slate-400">(tıklayınca açılır / kapanır)</span>
+                </summary>
+                <div class="px-4 pb-4 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">T.C. Kimlik No</span><input type="text" id="evrakTc" inputmode="numeric" maxlength="11" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Adı ve Soyadı</span><input type="text" id="evrakAdSoyad" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Baba Adı</span><input type="text" id="evrakBabaAdi" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Ana Adı</span><input type="text" id="evrakAnaAdi" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Doğum Yeri</span><input type="text" id="evrakDogumYeri" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Nüfusa Kayıtlı Olduğu İl ve İlçe</span><input type="text" id="evrakNufus" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Cezaevi Hükümlü Defter Numarası</span><input type="text" id="evrakDefterNo" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info"></i> Doğum tarihi aşağıdaki "Doğum Tarihi / Cinsiyet" kutusundan alınır. UDF/PDF yüklenince bu alanlar belgeden doldurulur; boş gelenler elle yazılabilir.</p>
+                    <button type="button" onclick="savcilikPenceresiAc()" class="mt-2 px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded font-semibold text-slate-700"><i class="fa-solid fa-building-columns"></i> Savcılık / İmza Bilgileri</button>
+                </div>
+            </details>
+
+            <!-- Ceza Bilgileri (hükmü veren mahkeme, karar bilgisi, cezası) (2026-11-14) -->
+            <details id="cezaBilgiKutu" class="bg-white border border-slate-200 rounded-xl shadow-sm">
+                <summary class="cursor-pointer select-none p-4 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <i class="fa-solid fa-scale-balanced text-amber-500"></i> Ceza Bilgileri (Mahkeme)
+                    <span class="text-[10px] font-normal normal-case tracking-normal text-slate-400">(tıklayınca açılır / kapanır)</span>
+                </summary>
+                <div class="px-4 pb-4 text-xs space-y-2">
+                    <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Hükmü Veren Mahkeme</span><input type="text" id="evrakMahkeme" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                    <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Mahkeme Karar Bilgisi</span><input type="text" id="evrakKarar" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                    <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Cezası</span><input type="text" id="evrakCezasi" oninput="evrakBilgileriniYaz()" placeholder="Boş bırakılırsa programın hesapladığı toplam ceza yazılır" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                </div>
+            </details>
+
             <!-- Hesaplama Yöntemi: Ayrışık / Bitişik Hesap Seçimi (2026-11-09) -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2 mb-2">
@@ -303,10 +337,18 @@
 
             <!-- Açıklama (Manuel Not) -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
-                </h2>
-                <textarea id="aciklamaManuel" rows="2" placeholder="İleride eklenecek ek açıklamalar buraya yazılabilir..." class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                        <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
+                    </h2>
+                    <button type="button" onclick="document.getElementById('aciklamaSablonInput').click()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold whitespace-nowrap"><i class="fa-solid fa-file-import"></i> Şablon Ekle</button>
+                    <input type="file" id="aciklamaSablonInput" accept=".udf,.txt,.docx" class="hidden" onchange="aciklamaSablonEkle(this)">
+                </div>
+                <textarea id="aciklamaManuel" rows="4" onchange="calculateAll()" placeholder="Açıklamanızı buraya yazabilir veya &quot;Şablon Ekle&quot; ile bilgisayarınızdaki hazır şablonu (UDF, Word .docx veya .txt) ekleyip üzerinde düzeltme yapabilirsiniz." class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
+                <label class="flex items-start gap-1.5 text-[11px] text-slate-600 mt-2 font-semibold">
+                    <input type="checkbox" id="otomatikAciklama" onchange="otomatikAciklamaDegisti()" class="accent-amber-500 mt-0.5">
+                    <span>Otomatik açıklama — işaretlenirse programın kendi açıklaması da müddetnamenin NOT bölümüne eklenir; işaretlenmezse yalnızca ekranda "Program Bilgi Notu" olarak görünür, çıktıya girmez.</span>
+                </label>
             </div>
 
             <!-- Hesapla Butonu -->
@@ -322,52 +364,62 @@
         <div id="raporKolon" class="lg:col-span-5 space-y-5">
 
             <!-- Resmi Müddetname Formu (Fotoğraftaki Şablona Tam Uyumlu) -->
-            <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs font-sans print-card relative space-y-4">
+            <div id="printSheet" class="bg-white text-slate-950 rounded-xl p-6 shadow-2xl border border-slate-300 text-xs print-card relative space-y-4" style="font-family: 'Times New Roman', Times, serif;">
 
-                <!-- Başlık -->
-                <div class="text-center border-b-2 border-slate-900 pb-2">
-                    <h2 class="text-sm font-extrabold tracking-wide uppercase text-slate-900">MÜDDETNAME</h2>
-                    <h3 class="text-[11px] font-bold text-slate-700 uppercase">(Hükümlüler İçin)</h3>
+                <!-- Başlık (örnek UYAP müddetnamesi düzeni — 2026-11-14) -->
+                <div class="text-center">
+                    <h2 class="text-sm font-bold italic underline text-slate-900">MÜDDETNAME</h2>
+                </div>
+
+                <!-- 1. Bölüm: Cumhuriyet Başsavcılığı -->
+                <div>
+                    <table class="w-full border-collapse border border-slate-400 text-[11px]">
+                        <tbody>
+                            <tr><td class="py-0.5 px-2 font-bold" style="width:45%">Cumhuriyet Başsavcılığı</td><td class="py-0.5 font-bold" style="width:10px">:</td><td class="py-0.5 px-2" id="repSavcilik"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Cumhuriyet Başsavcılığı Dosya No</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold italic" id="repDosyaNo"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Cezaevi Hükümlü Defter Numarası</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2" id="repDefterNo"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2. Bölüm: Hükümlü Kimlik Bilgileri -->
+                <div>
+                    <h4 class="font-bold text-[11px] text-slate-900">HÜKÜMLÜ KİMLİK BİLGİLERİ</h4>
+                    <table class="w-full border-collapse border border-slate-400 text-[11px]">
+                        <tbody>
+                            <tr><td class="py-0.5 px-2 font-bold" style="width:45%">T.C. Kimlik No</td><td class="py-0.5 font-bold" style="width:10px">:</td><td class="py-0.5 px-2 font-bold" id="repTc"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Adı ve Soyadı</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repAdSoyad"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Baba Adı</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repBaba"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Ana Adı</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repAna"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Doğum Tarihi</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repDogumTarihi"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Doğum Yeri</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repDogumYeri"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">Nüfusa Kayıtlı Olduğu İl ve İlçe</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repNufus"></td></tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <!-- 3. Bölüm: Ceza Bilgileri -->
                 <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">CEZA BİLGİLERİ</h4>
+                    <h4 class="font-bold text-[11px] text-slate-900">CEZA BİLGİLERİ</h4>
                     <table class="w-full border-collapse border border-slate-400 text-[11px]">
                         <tbody>
-                            <tr class="border-b border-slate-300">
-                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">HÜKMÜ VEREN MAHKEME</td>
-                                <td class="py-1 px-2" id="repMahkeme">-</td>
-                            </tr>
-                            <tr class="border-b border-slate-300">
-                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">MAHKEME ESAS NO</td>
-                                <td class="py-1 px-2" id="repEsasNo">-</td>
-                            </tr>
-                            <tr class="border-b border-slate-300">
-                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">KARAR NO</td>
-                                <td class="py-1 px-2" id="repKararNo">-</td>
-                            </tr>
-                            <tr class="border-b border-slate-300">
-                                <td class="py-1 px-2 font-bold bg-slate-50 w-1/3 border-r border-slate-300">CEZASI (TOPLAM)</td>
-                                <td class="py-1 px-2 font-bold text-slate-900" id="repCeza">-</td>
-                            </tr>
+                            <tr><td class="py-0.5 px-2 font-bold" style="width:45%">HÜKMÜ VEREN MAHKEME</td><td class="py-0.5 font-bold" style="width:10px">:</td><td class="py-0.5 px-2" id="repMahkeme"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">MAHKEME KARAR BİLGİSİ</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2" id="repKarar"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">CEZASI</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold italic" id="repCeza"></td></tr>
+                        </tbody>
+                    </table>
+                    <table class="w-full border-collapse border border-slate-400 border-t-0 text-[10px]">
+                        <thead>
                             <tr>
-                                <td colspan="2" class="p-0">
-                                    <table class="w-full border-collapse text-[10px]">
-                                        <thead>
-                                            <tr class="bg-slate-100">
-                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Suç Tarihi</th>
-                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Suç Maddesi</th>
-                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Ceza Süresi</th>
-                                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">İnfaz Türü</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="repCezaRows">
-                                            <!-- Dinamik olarak doldurulur -->
-                                        </tbody>
-                                    </table>
-                                </td>
+                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold underline">İlam No</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold underline">Suç Tarihi</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold underline">Ceza Mad.</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold underline">Ceza Bilgisi</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold underline">İnfaz Türü</th>
                             </tr>
+                        </thead>
+                        <tbody id="repCezaRows">
+                            <!-- Dinamik olarak doldurulur -->
                         </tbody>
                     </table>
                 </div>
@@ -406,46 +458,67 @@
 
                 <!-- 5. Bölüm: Mahsup Bilgileri -->
                 <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">MAHSUP BİLGİLERİ</h4>
                     <table class="w-full border-collapse border border-slate-400 text-[10px]">
                         <thead>
-                            <tr class="bg-slate-100 border-b border-slate-400">
-                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Mahsup Türü</th>
-                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Başlangıç</th>
-                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Bitiş</th>
-                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Gün</th>
+                            <tr class="border-b border-slate-400">
+                                <th colspan="6" class="py-0.5 px-1.5 leading-tight text-center font-bold">MAHSUP BİLGİLERİ</th>
+                            </tr>
+                            <tr class="border-b border-slate-400">
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Mahsup Nev'i:</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Başlama Tarihi:</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Bitiş Tarihi:</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">Açıklama:</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left border-r border-slate-300 font-bold">İlamat No:</th>
+                                <th class="py-0.5 px-1.5 leading-tight text-left font-bold">Geçen Süre:</th>
                             </tr>
                         </thead>
                         <tbody id="repMahsupRows">
                             <!-- Dinamik olarak doldurulur -->
                         </tbody>
                         <tfoot>
-                            <tr class="border-t border-slate-400 bg-slate-50">
-                                <td colspan="3" class="py-0.5 px-1.5 leading-tight text-right font-bold border-r border-slate-300">TOPLAM MAHSUP</td>
-                                <td class="py-0.5 px-1.5 leading-tight font-bold text-emerald-700" id="repMahsupToplam">0 Gün</td>
+                            <tr class="border-t border-slate-400">
+                                <td colspan="2" class="py-0.5 px-1.5 leading-tight text-center font-bold border-r border-slate-300">TOPLAM MAHSUP</td>
+                                <td colspan="2" class="py-0.5 px-1.5 leading-tight text-center border-r border-slate-300">&gt;&gt;&gt;&gt;&gt;</td>
+                                <td colspan="2" class="py-0.5 px-1.5 leading-tight text-center font-bold uppercase" id="repMahsupToplam">0 Gün</td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
 
-                <!-- 6. Bölüm: Açıklama -->
+                <!-- İmza Bölümü: Zabıt Katibi — tarih — Cumhuriyet Savcısı -->
+                <div class="pt-4">
+                    <table class="w-full text-[11px]">
+                        <tbody>
+                            <tr class="align-top">
+                                <td class="text-center" style="width:38%">
+                                    <p class="font-bold" id="repKatipAd"></p>
+                                    <p class="font-bold italic" id="repKatipUnvan"></p>
+                                </td>
+                                <td class="text-center" style="width:24%"><p id="repTarihAlani">.../.../....</p></td>
+                                <td class="text-center" style="width:38%">
+                                    <p class="font-bold" id="repSavciAd"></p>
+                                    <p class="font-bold" id="repSavciUnvan">CUMHURİYET SAVCISI</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- NOT (Açıklama) -->
                 <div>
-                    <h4 class="font-extrabold text-[11px] text-slate-900 uppercase bg-slate-200 px-2 py-1 border border-slate-400 border-b-0">AÇIKLAMA</h4>
-                    <div class="border border-slate-400 p-2 text-[10.5px] whitespace-pre-line min-h-[2.5rem]" id="repAciklama">—</div>
-                </div>
-
-                <!-- İmza Bölümü -->
-                <div class="pt-8 flex justify-between items-end">
-                    <div class="text-[9px] text-slate-500">
-                        <p id="repTarihAlani">.../.../....</p>
-                    </div>
-                    <div class="text-center w-40">
-                        <p class="text-[10px] font-bold text-slate-800">Cumhuriyet Savcısı - Sicil</p>
-                        <div class="h-8"></div>
-                        <p class="text-[10px] font-bold text-slate-800">İmza</p>
+                    <div class="border border-slate-400 p-2 text-[10.5px] min-h-[2.5rem]">
+                        <div class="font-bold">NOT:</div>
+                        <div class="whitespace-pre-line" id="repAciklama"></div>
                     </div>
                 </div>
 
+            </div>
+
+            <!-- Program Bilgi Notu: "Otomatik açıklama" işaretli DEĞİLKEN programın kendi açıklaması
+                 yalnızca burada (ekranda) görünür; yazdırma/PDF/UDF çıktısına girmez. -->
+            <div id="bilgiNotuKutu" class="no-print hidden bg-sky-50 border border-sky-300 text-sky-900 text-[11px] rounded-xl p-3">
+                <div class="font-bold mb-1"><i class="fa-solid fa-circle-info"></i> PROGRAM BİLGİ NOTU <span class="font-normal">(çıktıya eklenmez)</span></div>
+                <div class="whitespace-pre-line leading-relaxed" id="bilgiNotuMetin"></div>
             </div>
 
             <!-- Download Actions -->
@@ -1908,6 +1981,7 @@
             const contentEntry = zip.file('content.xml');
             if (!contentEntry) throw new Error('UDF içinde content.xml bulunamadı; dosya bozuk veya desteklenmeyen bir UDF türü olabilir.');
             const xmlText = await contentEntry.async('string');
+            sonUdfXml = xmlText; // kimlik / mahkeme / ilamat no gibi ek alanlar yapısal okunur (udfYapisalOku)
             const cdataMatch = xmlText.match(/<content>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/content>/);
             if (!cdataMatch) throw new Error('UDF içeriğinden metin çıkarılamadı.');
             let rawLines = cdataMatch[1].split(/\r?\n/).map(l => l.replace(/ /g, ' ').trim()).filter(l => l.length > 0);
@@ -2080,6 +2154,8 @@
                     sucTarihiSadeceYil,
                     sucTarihiBos,
                     sucTarihiTahmini,
+                    // İlamat no ("2026/1-1234" biçimi) satırda yazıyorsa alınır (2026-11-14).
+                    ilamNo: ((line.match(/(?<![\d\/.\-])(\d{4}\s*\/\s*\d{1,3}\s*-\s*\d+)(?![\d\/])/) || [])[1] || '').replace(/\s+/g, ''),
                     maddeRaw: maddeMatch ? normalizeEdilmisMadde(maddeMatch[1].trim()) : '',
                     yil: yilM ? parseInt(yilM[1]) : 0,
                     ay: ayM ? parseInt(ayM[1]) : 0,
@@ -2329,6 +2405,7 @@
                 };
                 let taranmisBelge = false;
                 let lines;
+                sonUdfXml = '';
                 if (isResim) { // TIF / JPG / PNG: her zaman yazı tanıma ile okunur
                     taranmisBelge = true;
                     goster(`<i class="fa-solid fa-spinner fa-spin"></i> Resim dosyası; yazı tanıma bileşeni hazırlanıyor (ilk kullanımda indirme birkaç dakika sürebilir)...`);
@@ -2403,6 +2480,14 @@
                 document.getElementById('penaltyTableBody').innerHTML = '';
                 document.getElementById('mahsupTableBody').innerHTML = '';
 
+                // Kimlik, mahkeme, ilamat no ve mahsup açıklama bilgileri (2026-11-14): UDF'te tablo
+                // yapısından, PDF'te "Etiket : değer" satırlarından alınır; bulunamayan alan boş kalır,
+                // kullanıcı elle doldurur.
+                const evrakOkunan = (isUdf && sonUdfXml) ? udfEvrakBilgileri(udfYapisalOku(sonUdfXml)) : { alanlar: satirlardanEvrakAlanlari(lines), ilamNolar: null, mahsupEk: null };
+                EVRAK_ALANLARI.forEach(id => { const el = document.getElementById(id); if (el) el.value = evrakOkunan.alanlar[id] || ''; });
+                if (evrakOkunan.ilamNolar && evrakOkunan.ilamNolar.length === cezaSatirlari.length) cezaSatirlari.forEach((s, i) => { s.ilamNo = evrakOkunan.ilamNolar[i] || s.ilamNo || ''; });
+                if (evrakOkunan.mahsupEk && evrakOkunan.mahsupEk.length === mahsupSatirlari.length) mahsupSatirlari.forEach((s, i) => { s.aciklama = evrakOkunan.mahsupEk[i].aciklama; s.ilamNo = evrakOkunan.mahsupEk[i].ilamNo; });
+
                 const eklenenCezaSatirElemanlari = [];
                 cezaSatirlari.forEach(s => {
                     const orgutluAuto = isOrgutluOtomatikMadde(s.maddeRaw) || !!s.orgutlu1074
@@ -2426,9 +2511,10 @@
                     } else {
                         eklenenTr = addPenaltyRow('sureli', s.yil, s.ay, s.gun, s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAuto, 0, s.oranParsed || oranFallback, true, s.ekGun);
                     }
+                    if (eklenenTr && s.ilamNo) { const ilamEl = eklenenTr.querySelector('.penalty-ilam-no'); if (ilamEl) ilamEl.value = s.ilamNo; }
                     eklenenCezaSatirElemanlari.push(eklenenTr);
                 });
-                const eklenenMahsupSatirElemanlari = mahsupSatirlari.map(s => addMahsupRow(s.tur, s.start, s.end));
+                const eklenenMahsupSatirElemanlari = mahsupSatirlari.map(s => addMahsupRow(s.tur, s.start, s.end, s.aciklama || '', s.ilamNo || ''));
                 if (document.querySelectorAll('#penaltyTableBody tr').length === 0) addPenaltyRow();
                 if (girisTarihiBulundu) document.getElementById('infazBaslangic').value = girisTarihiBulundu;
                 if (dogumTarihiBulundu) document.getElementById('hukumluDogumTarihi').value = dogumTarihiBulundu;
@@ -2634,6 +2720,13 @@
             document.getElementById('infazBaslangic').value = today;
 
             populateSucMaddeDatalist();
+
+            // Otomatik açıklama seçimi bu bilgisayarda hatırlanır; savcılık bilgileri hiç sorulmadıysa
+            // (program bu bilgisayarda ilk kez açılıyorsa) pencere kendiliğinden açılır.
+            try { const otoEl = document.getElementById('otomatikAciklama'); if (otoEl) otoEl.checked = localStorage.getItem(OTO_ACIKLAMA_ANAHTAR) === '1'; } catch (e) { /* yoksay */ }
+            let savcilikSoruldu = true;
+            try { savcilikSoruldu = localStorage.getItem(SAVCILIK_ANAHTAR) !== null; } catch (e) { /* yoksay */ }
+            if (!savcilikSoruldu) savcilikPenceresiAc();
 
             // Açılışta 1 adet ceza satırı ekle
             addPenaltyRow('sureli', 1, 0, 0, '', today, 'yok', false);
@@ -2981,7 +3074,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false, magdurCocuk = false, tekIlam = null) {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false, magdurCocuk = false, tekIlam = null, ilamNo = '') {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -3050,6 +3143,10 @@
                     <div class="flex items-center gap-1">
                         <span class="text-[10px] text-slate-500 w-16">Suç Tarihi:</span>
                         <input type="date" value="${sucTarihi || today}" oninput="oran647GorunumGuncelle(this.closest('tr'))" onchange="oran647GorunumGuncelle(this.closest('tr'))" class="penalty-suc-tarihi w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-sky-700 font-semibold">
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-[10px] text-slate-500 w-16">İlamat No:</span>
+                        <input type="text" value="${attrKacis(ilamNo)}" placeholder="Örn: 2026/1-1234" autocomplete="off" oninput="evrakBilgileriniYaz()" onchange="calculateAll()" class="penalty-ilam-no w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-slate-800 font-medium">
                     </div>
                     <div class="flex items-center gap-1">
                         <span class="text-[10px] text-slate-500 w-16">Mükerrir mi?</span>
@@ -3133,7 +3230,7 @@
         }
 
         // Add Mahsup Rows (Boş Başlangıç)
-        function addMahsupRow(tur = 'tutukluluk', start = '', end = '') {
+        function addMahsupRow(tur = 'tutukluluk', start = '', end = '', aciklama = '', ilamNo = '') {
             const tbody = document.getElementById('mahsupTableBody');
             const tr = document.createElement('tr');
             tr.className = "border-b border-slate-200 odd:bg-white even:bg-slate-50 hover:bg-sky-50 transition-colors";
@@ -3150,8 +3247,10 @@
                         <option value="ds_ihlal" ${tur === 'ds_ihlal' ? 'selected' : ''}>Denetimli Serbestlik (İhlal)</option>
                     </select>
                 </td>
-                <td class="p-2"><input type="date" value="${start}" class="mahsup-start w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none"></td>
-                <td class="p-2"><input type="date" value="${end}" class="mahsup-end w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none"></td>
+                <td class="p-2"><input type="date" value="${start}" class="mahsup-start w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none">
+                    <input type="text" value="${attrKacis(aciklama)}" placeholder="Açıklama" title="Müddetnamedeki mahsup açıklaması (örn. Hükme Geçiş)" onchange="calculateAll()" class="mahsup-aciklama w-full mt-1 bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-[11px]"></td>
+                <td class="p-2"><input type="date" value="${end}" class="mahsup-end w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none">
+                    <input type="text" value="${attrKacis(ilamNo)}" placeholder="İlamat No" title="Mahsubun ait olduğu ilamat numarası" onchange="calculateAll()" class="mahsup-ilam-no w-full mt-1 bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-[11px]"></td>
                 <td class="p-2 text-right font-mono font-bold text-emerald-700 mahsup-row-total">0</td>
                 <td class="p-2 text-center"><button onclick="removeMahsupRow(this)" class="text-slate-500 hover:text-red-600"><i class="fa-solid fa-trash"></i></button></td>
             `;
@@ -3322,6 +3421,7 @@
            ve doğru hesaba girer.
            ====================================================== */
         function calculateAll() {
+            evrakBilgileriniYaz(); // savcılık / kimlik / mahkeme / imza alanları (hesap erken bitse de güncel kalsın)
             // 5411 S.K. m.167 doğrulaması: zimmet (m.160) maddesi seçilip kırmızı uyarı
             // kutusu görünür hâldeyken "Borç/Tazminat Durumu" henüz işaretlenmemişse,
             // bu işaretlenmeden hesaplama YAPILMAZ (kullanıcı talebi, 2026-11-09).
@@ -3890,6 +3990,7 @@
                 }
 
                 rowReportData.push({
+                    ilamNo: ((row.querySelector('.penalty-ilam-no') || {}).value || '').trim(),
                     metin: isSuresiz ? suresizText : sureMetinYAG,
                     sucMetni: isAdliPara ? "Adli Para Cezası (TCK m.52)" : (ozelInfazBilgi ? ozelInfazBilgi.etiket : (sucMadde || 'Diğer Adli Suçlar')),
                     tarih: sTarih ? formatDate(new Date(sTarih)) : "-",
@@ -4685,13 +4786,15 @@
             }
 
             // Resmi rapor alanları
-            document.getElementById('repCeza').innerText = `${cezaMetin} (${totalRawDays} Gün)`;
+            hesaplananCezaMetni = `${cezaMetin} (${totalRawDays} Gün)`;
+            evrakBilgileriniYaz(); // CEZASI: kutu boşsa hesaplanan toplam ceza yazılır
 
             // Her ceza satırını raporda ayrı ayrı göster
             const repRowsBody = document.getElementById('repCezaRows');
             if (repRowsBody) {
                 repRowsBody.innerHTML = rowReportData.map(r => `
                     <tr>
+                        <td class="py-0.5 px-1.5 leading-tight">${escapeHtml(r.ilamNo || '')}</td>
                         <td class="py-0.5 px-1.5 leading-tight text-sky-800">${r.tarih}</td>
                         <td class="py-0.5 px-1.5 leading-tight">${r.sucMetni}</td>
                         <td class="py-0.5 px-1.5 leading-tight">${r.metin}</td>
@@ -4739,6 +4842,8 @@
                     const sVal = row.querySelector('.mahsup-start').value;
                     const eVal = row.querySelector('.mahsup-end').value;
                     const rawGun = row.querySelector('.mahsup-row-total').innerText;
+                    const mAciklama = ((row.querySelector('.mahsup-aciklama') || {}).value || '').trim();
+                    const mIlamNo = ((row.querySelector('.mahsup-ilam-no') || {}).value || '').trim();
                     if (sVal && eVal) {
                         const cocukTag = row.dataset.cocukYasEtkisi === '1'
                             ? ' <span class="text-[8px] font-bold text-rose-600">(Çocuk Yaş)</span>' : '';
@@ -4756,12 +4861,14 @@
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${mahsupLabels[tur] || tur}</td>
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(sVal))}</td>
                                 <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300 text-sky-800">${formatDate(new Date(eVal))}</td>
+                                <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${escapeHtml(mAciklama)}</td>
+                                <td class="py-0.5 px-1.5 leading-tight border-r border-slate-300">${escapeHtml(mIlamNo)}</td>
                                 <td class="py-0.5 px-1.5 leading-tight font-semibold text-emerald-700">${gun} Gün${cocukTag}${konutTag}</td>
                             </tr>
                         `);
                     }
                 });
-                repMahsupBody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="4" class="py-0.5 px-1.5 leading-tight text-center text-slate-500">Mahsup kaydı bulunmamaktadır.</td></tr>`;
+                repMahsupBody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="6" class="py-0.5 px-1.5 leading-tight text-center text-slate-500">Mahsup kaydı bulunmamaktadır.</td></tr>`;
             }
             const repMahsupToplamEl = document.getElementById('repMahsupToplam');
             if (repMahsupToplamEl) repMahsupToplamEl.innerText = `${grandTotalMahsupDays} Gün`;
@@ -4827,20 +4934,35 @@
             const manuelNot = (document.getElementById('aciklamaManuel') || {}).value || "";
             const repAciklamaEl = document.getElementById('repAciklama');
             if (repAciklamaEl) {
-                const parcalar = [
+                // 2026-11-14 (kullanıcı talebi): programın kendi (otomatik) açıklaması yalnızca
+                // "Otomatik açıklama" kutusu işaretliyse müddetnamenin NOT bölümüne eklenir; işaretli
+                // değilse sadece ekrandaki "Program Bilgi Notu" kutusunda görünür, çıktıya girmez.
+                // Kullanıcının kendi yazdığı / şablondan eklediği açıklama her zaman NOT'a yazılır.
+                const otomatikParcalar = [
                     capWarningText.trim(),
                     zimmetAciklamaMetni,
                     zimmetKosulluUygulanmaz ? "" : acikDsNot.trim(),
                     cocukYasAciklamaMetni.trim(),
                     cocuk1089AciklamaMetni.trim(),
                     ...ozelInfazAciklamaParcalari,
-                    bitisikAciklamaMetni,
-                    manuelNot.trim() ? escapeHtml(manuelNot.trim()) : ""
+                    bitisikAciklamaMetni
                 ].filter(Boolean);
+                const otoAcik = otomatikAciklamaAcikMi();
+                const parcalar = (otoAcik ? otomatikParcalar : []).concat(manuelNot.trim() ? [escapeHtml(manuelNot.trim())] : []);
                 // NOT: özel infaz notları kırmızı <span> işaretlemesi içerdiğinden burada
-                // innerHTML kullanılır (önceden innerText idi); manuel not ayrıca escapeHtml
-                // ile kaçışlanarak HTML enjeksiyonuna karşı güvenceye alınmıştır.
-                repAciklamaEl.innerHTML = parcalar.length ? parcalar.join('\n\n') : "—";
+                // innerHTML kullanılır; manuel not escapeHtml ile kaçışlanır.
+                repAciklamaEl.innerHTML = parcalar.join('\n\n');
+                const bilgiKutu = document.getElementById('bilgiNotuKutu');
+                const bilgiMetin = document.getElementById('bilgiNotuMetin');
+                if (bilgiKutu && bilgiMetin) {
+                    if (!otoAcik && otomatikParcalar.length) {
+                        bilgiMetin.innerHTML = otomatikParcalar.join('\n\n');
+                        bilgiKutu.classList.remove('hidden');
+                    } else {
+                        bilgiMetin.innerHTML = '';
+                        bilgiKutu.classList.add('hidden');
+                    }
+                }
             }
 
             // Ekrandaki uyarı kutusu (Hesapla anında görünür)
@@ -4867,6 +4989,263 @@
             }
         }
 
+        /* ======================================================
+           EVRAK BİLGİLERİ (2026-11-14, kullanıcı talebi): çıktı, kullanıcının verdiği gerçek
+           UYAP müddetnamesi örneğinin düzeninde verilir. Bunun için savcılık / imza bilgileri
+           (bu bilgisayarda bir kez kaydedilir), hükümlü kimlik bilgileri, mahkeme bilgileri,
+           ceza satırı ilamat numaraları ve mahsup açıklama / ilamat numaraları tutulur.
+           ====================================================== */
+        const SAVCILIK_ANAHTAR = 'infazci_savcilik_v1';
+        const OTO_ACIKLAMA_ANAHTAR = 'infazci_otomatik_aciklama_v1';
+        const EVRAK_ALANLARI = ['evrakTc', 'evrakAdSoyad', 'evrakBabaAdi', 'evrakAnaAdi', 'evrakDogumYeri', 'evrakNufus', 'evrakDefterNo', 'evrakMahkeme', 'evrakKarar', 'evrakCezasi'];
+        let hesaplananCezaMetni = '';
+
+        function savcilikOku() {
+            try { const v = JSON.parse(localStorage.getItem(SAVCILIK_ANAHTAR) || 'null'); return (v && typeof v === 'object') ? v : null; } catch (e) { return null; }
+        }
+        function evrakDeger(id) { const el = document.getElementById(id); return el ? (el.value || '').trim() : ''; }
+        function attrKacis(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        // Cumhuriyet Başsavcılığı Dosya No: EN AĞIR cezanın ilamat numarası; ağırlığı aynı olan
+        // cezalarda SON kaydedilen (listede en altta olan) cezanın ilamat numarası.
+        // Ağırlık: Ağırlaştırılmış Müebbet > Müebbet > hapis cezaları (gün sayısına göre) > adli para cezası.
+        function enAgirCezaIlamNo() {
+            let enIyi = null;
+            document.querySelectorAll('#penaltyTableBody tr').forEach(row => {
+                const tipEl = row.querySelector('.penalty-sure-tip');
+                if (!tipEl) return;
+                const tip = tipEl.value;
+                const sayi = sel => parseInt((row.querySelector(sel) || {}).value) || 0;
+                let sinif, gun;
+                if (tip === 'agirlastirilmis_muebbet') { sinif = 3; gun = 0; }
+                else if (tip === 'muebbet') { sinif = 2; gun = 0; }
+                else if (tip === 'adli_para') { sinif = 0; gun = sayi('.penalty-apc-gun'); }
+                else { sinif = 1; gun = sayi('.penalty-yil') * 365 + sayi('.penalty-ay') * 30 + sayi('.penalty-gun'); }
+                if (!enIyi || sinif > enIyi.sinif || (sinif === enIyi.sinif && gun >= enIyi.gun)) {
+                    enIyi = { sinif, gun, ilam: ((row.querySelector('.penalty-ilam-no') || {}).value || '').trim() };
+                }
+            });
+            return enIyi ? enIyi.ilam : '';
+        }
+
+        // Rapor kağıdındaki savcılık, kimlik, mahkeme ve imza alanlarını doldurur.
+        function evrakBilgileriniYaz() {
+            const s = savcilikOku() || {};
+            const yaz = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v || ''; };
+            yaz('repSavcilik', s.savcilik);
+            yaz('repDosyaNo', enAgirCezaIlamNo());
+            yaz('repDefterNo', evrakDeger('evrakDefterNo'));
+            yaz('repTc', evrakDeger('evrakTc'));
+            yaz('repAdSoyad', evrakDeger('evrakAdSoyad'));
+            yaz('repBaba', evrakDeger('evrakBabaAdi'));
+            yaz('repAna', evrakDeger('evrakAnaAdi'));
+            const dogum = (document.getElementById('hukumluDogumTarihi') || {}).value || '';
+            yaz('repDogumTarihi', dogum ? formatDate(new Date(dogum)) : '');
+            yaz('repDogumYeri', evrakDeger('evrakDogumYeri'));
+            yaz('repNufus', evrakDeger('evrakNufus'));
+            yaz('repMahkeme', evrakDeger('evrakMahkeme'));
+            yaz('repKarar', evrakDeger('evrakKarar'));
+            yaz('repCeza', evrakDeger('evrakCezasi') || hesaplananCezaMetni);
+            yaz('repKatipAd', s.katipAd);
+            yaz('repKatipUnvan', (s.katipAd || s.katipSicil) ? ('Zabıt Katibi' + (s.katipSicil ? ' - ' + s.katipSicil : '')) : '');
+            yaz('repSavciAd', (s.savciAd || '').toLocaleUpperCase('tr-TR'));
+            yaz('repSavciUnvan', 'CUMHURİYET SAVCISI' + (s.savciSicil ? '-' + s.savciSicil : ''));
+        }
+
+        // --- Savcılık / İmza Bilgileri penceresi ---
+        function savcilikPenceresiAc() {
+            const s = savcilikOku() || {};
+            const koy = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+            koy('savcilikAdi', s.savcilik); koy('savcilikKatipAd', s.katipAd); koy('savcilikKatipSicil', s.katipSicil);
+            koy('savcilikSavciAd', s.savciAd); koy('savcilikSavciSicil', s.savciSicil);
+            const m = document.getElementById('savcilikModal');
+            if (m) m.style.display = 'flex';
+        }
+        function savcilikPenceresiKapat() { const m = document.getElementById('savcilikModal'); if (m) m.style.display = 'none'; }
+        function savcilikKaydet() {
+            const al = id => ((document.getElementById(id) || {}).value || '').trim();
+            const veri = { savcilik: al('savcilikAdi'), katipAd: al('savcilikKatipAd'), katipSicil: al('savcilikKatipSicil'), savciAd: al('savcilikSavciAd'), savciSicil: al('savcilikSavciSicil') };
+            try { localStorage.setItem(SAVCILIK_ANAHTAR, JSON.stringify(veri)); } catch (e) { alert('Bilgiler bu tarayıcıda kaydedilemedi.'); }
+            savcilikPenceresiKapat();
+            evrakBilgileriniYaz();
+        }
+        // "Savcılık değilim / Şimdi değil": pencere bir daha kendiliğinden açılmaz (düğmeden her zaman açılabilir).
+        function savcilikAtla() {
+            try { if (!savcilikOku()) localStorage.setItem(SAVCILIK_ANAHTAR, JSON.stringify({ atlandi: true })); } catch (e) { /* yoksay */ }
+            savcilikPenceresiKapat();
+        }
+
+        // --- Otomatik açıklama seçimi (bu bilgisayarda hatırlanır) ---
+        function otomatikAciklamaAcikMi() { return !!(document.getElementById('otomatikAciklama') || {}).checked; }
+        function otomatikAciklamaDegisti() {
+            try { localStorage.setItem(OTO_ACIKLAMA_ANAHTAR, otomatikAciklamaAcikMi() ? '1' : '0'); } catch (e) { /* yoksay */ }
+            calculateAll();
+        }
+
+        // --- Açıklamaya şablon ekleme: UDF, Word (.docx) veya .txt dosyasının metni açıklama
+        // kutusuna eklenir; kullanıcı kutuda dilediği gibi düzeltir. ---
+        async function aciklamaSablonEkle(inputEl) {
+            const dosya = inputEl.files && inputEl.files[0];
+            if (!dosya) return;
+            try {
+                const ad = (dosya.name || '').toLocaleLowerCase('tr-TR');
+                let metin = '';
+                if (ad.endsWith('.udf') || ad.endsWith('.docx')) {
+                    if (typeof JSZip === 'undefined') throw new Error('Dosya okuma kütüphanesi (JSZip) yüklenemedi; internet bağlantınızı kontrol edin.');
+                    const zip = await JSZip.loadAsync(await dosya.arrayBuffer());
+                    if (ad.endsWith('.udf')) {
+                        const giris = zip.file('content.xml');
+                        if (!giris) throw new Error('UDF içinde content.xml bulunamadı.');
+                        const xml = await giris.async('string');
+                        const m = xml.match(/<content>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/content>/);
+                        if (!m) throw new Error('UDF içeriğinden metin çıkarılamadı.');
+                        metin = m[1];
+                    } else {
+                        const giris = zip.file('word/document.xml');
+                        if (!giris) throw new Error('Word dosyasının içeriği okunamadı.');
+                        const xml = await giris.async('string');
+                        metin = xml.replace(/<w:tab\b[^>]*\/>/g, '\t').replace(/<w:br\b[^>]*\/>/g, '\n').replace(/<\/w:p>/g, '\n').replace(/<[^>]+>/g, '')
+                            .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+                    }
+                } else if (ad.endsWith('.txt')) {
+                    const tampon = await dosya.arrayBuffer();
+                    // Not Defteri dosyaları UTF-8 değilse Türkçe Windows kodlamasıyla (1254) okunur.
+                    try { metin = new TextDecoder('utf-8', { fatal: true }).decode(tampon); }
+                    catch (e) { metin = new TextDecoder('windows-1254').decode(tampon); }
+                } else {
+                    throw new Error('Yalnızca UDF, Word (.docx) ve .txt dosyaları şablon olarak eklenebilir.');
+                }
+                metin = metin.replace(/^﻿/, '').replace(/\r/g, '').replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+                if (!metin) throw new Error('Seçilen dosyada metin bulunamadı.');
+                const kutu = document.getElementById('aciklamaManuel');
+                kutu.value = kutu.value.trim() ? (kutu.value.replace(/\s+$/, '') + '\n' + metin) : metin;
+                calculateAll();
+                kutu.focus();
+            } catch (err) {
+                alert('Şablon eklenemedi: ' + ((err && err.message) || err));
+            } finally {
+                inputEl.value = '';
+            }
+        }
+
+        /* --- UDF'yi YAPISIYLA (tablo / satır / hücre) okuma: kimlik, mahkeme, ilamat no ve mahsup
+           açıklama bilgileri hücre konumundan alınır. Ceza / mahsup / tarih okuyan mevcut okuyucuya
+           dokunmaz; yalnızca bu ek alanları doldurmak için kullanılır. --- */
+        let sonUdfXml = '';
+        function udfYapisalOku(xmlText) {
+            const cm = xmlText.match(/<content>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/content>/);
+            if (!cm) return null;
+            const text = cm[1];
+            let doc;
+            try { doc = new DOMParser().parseFromString(xmlText.replace(cm[0], '<content/>'), 'application/xml'); } catch (e) { return null; }
+            if (!doc || doc.querySelector('parsererror')) return null;
+            const pMetin = p => {
+                let s = '';
+                [...p.children].forEach(c => {
+                    if (!c.hasAttribute('startOffset')) return;
+                    const o = parseInt(c.getAttribute('startOffset')), l = parseInt(c.getAttribute('length'));
+                    if (!isNaN(o) && !isNaN(l)) s += text.substr(o, l);
+                });
+                return s.replace(/ /g, ' ').replace(/\n/g, ' ').replace(/[ ]{2,}/g, ' ').trim();
+            };
+            const tablolar = [...doc.querySelectorAll('elements table')].map(t =>
+                [...t.children].filter(r => r.tagName === 'row').map(r =>
+                    [...r.children].filter(c => c.tagName === 'cell').map(c => [...c.querySelectorAll('paragraph')].map(pMetin))));
+            return { tablolar };
+        }
+
+        const EVRAK_ETIKETLERI = [
+            { id: 'evrakTc', re: /T\.?\s*C\.?\s*K[İI]ML[İI]K\s*NO/ },
+            { id: 'evrakAdSoyad', re: /ADI\s*(VE\s*)?SOYADI/ },
+            { id: 'evrakBabaAdi', re: /BABA\s*ADI/ },
+            { id: 'evrakAnaAdi', re: /AN[AN]E?\s*ADI/ },
+            { id: 'evrakDogumYeri', re: /DO[ĞG]UM\s*YER[İI]/ },
+            { id: 'evrakNufus', re: /N[ÜU]FUSA\s*KAYITLI/ },
+            { id: 'evrakDefterNo', re: /DEFTER\s*(NUMARASI|NO)/ }
+        ];
+        const trBuyuk = s => (s || '').toLocaleUpperCase('tr-TR');
+
+        // Dönüş: { alanlar: {evrakTc: '...', ...}, ilamNolar: [..] | null, mahsupEk: [{aciklama, ilamNo}] | null }
+        function udfEvrakBilgileri(yapi) {
+            const sonuc = { alanlar: {}, ilamNolar: null, mahsupEk: null };
+            if (!yapi) return sonuc;
+            const etiketDegeri = p => { const i = p.indexOf(':'); return i === -1 ? null : p.slice(i + 1).replace(/^[\s:]+/, '').trim(); };
+            yapi.tablolar.forEach(satirlar => {
+                // 1) Etiket : değer (aynı paragrafta) veya soldaki hücrede etiketler, sağdaki hücrede aynı sıradaki değerler
+                satirlar.forEach(hucreler => {
+                    hucreler.forEach((paragraflar, hi) => {
+                        paragraflar.forEach((p, pi) => {
+                            const up = trBuyuk(p);
+                            EVRAK_ETIKETLERI.forEach(e => {
+                                if (sonuc.alanlar[e.id] || !e.re.test(up)) return;
+                                let d = etiketDegeri(p);
+                                if (!d && hucreler.length === 2 && hi === 0 && paragraflar.length === hucreler[1].length) d = hucreler[1][pi];
+                                if (d) sonuc.alanlar[e.id] = d;
+                            });
+                        });
+                    });
+                    // 2) Ceza bilgileri kutusu: solda "HÜKMÜ VEREN MAHKEME / MAHKEME KARAR BİLGİSİ / CEZASI" etiketleri,
+                    //    sağda sırasıyla mahkeme, karar bilgisi ve ceza.
+                    if (hucreler.length === 2 && /H[ÜU]KM[ÜU]\s*VEREN\s*MAHKEME/.test(trBuyuk(hucreler[0].join(' '))) && !sonuc.alanlar.evrakMahkeme && !sonuc.alanlar.evrakKarar && !sonuc.alanlar.evrakCezasi) {
+                        const d = hucreler[1].filter(Boolean);
+                        const cezaGibi = t => /YIL|AY|G[ÜU]N|HAP[İI]S|M[ÜU]EBBET|PARA/.test(trBuyuk(t)) && !/ESAS|KARAR|TAR[İI]H|MAHKEME|HAK[İÎI]ML[İI]/.test(trBuyuk(t));
+                        if (d.length >= 3) {
+                            sonuc.alanlar.evrakMahkeme = d[0];
+                            sonuc.alanlar.evrakKarar = d.slice(1, -1).join(' ');
+                            sonuc.alanlar.evrakCezasi = d[d.length - 1];
+                        } else if (d.length === 2) {
+                            sonuc.alanlar.evrakMahkeme = d[0];
+                            if (cezaGibi(d[1])) sonuc.alanlar.evrakCezasi = d[1]; else sonuc.alanlar.evrakKarar = d[1];
+                        } else if (d.length === 1) {
+                            sonuc.alanlar.evrakMahkeme = d[0];
+                        }
+                    }
+                });
+                // 3) Ceza tablosu: "İlam No" sütunu
+                const bi = satirlar.findIndex(h => h.some(p => /[İI]LAM\s*NO/.test(trBuyuk(p.join(' ')))) && h.some(p => /SU[ÇC]\s*TAR/.test(trBuyuk(p.join(' ')))));
+                if (bi !== -1 && !sonuc.ilamNolar) {
+                    const sutun = satirlar[bi].findIndex(p => /[İI]LAM\s*NO/.test(trBuyuk(p.join(' '))));
+                    const veri = satirlar.slice(bi + 1).filter(h => h.length === satirlar[bi].length);
+                    if (veri.length === 1 && veri[0].some(p => p.filter(Boolean).length > 1)) {
+                        sonuc.ilamNolar = veri[0][sutun].filter(Boolean);          // sütun sütun dizilmiş tablo
+                    } else if (veri.length) {
+                        sonuc.ilamNolar = veri.map(h => h[sutun].filter(Boolean).join(' '));
+                    }
+                }
+                // 4) Mahsup tablosu: "Açıklama" ve "İlamat No" sütunları
+                const mi = satirlar.findIndex(h => h.some(p => /MAHSUP\s*NEV/.test(trBuyuk(p.join(' ')))));
+                if (mi !== -1 && !sonuc.mahsupEk) {
+                    const bas = satirlar[mi].map(p => trBuyuk(p.join(' ')));
+                    const aS = bas.findIndex(t => /A[ÇC]IKLAMA/.test(t));
+                    const iS = bas.findIndex(t => /[İI]LAMAT\s*NO|[İI]LAM\s*NO/.test(t));
+                    const ek = [];
+                    for (let k = mi + 1; k < satirlar.length; k++) {
+                        const h = satirlar[k];
+                        if (h.length !== bas.length || /TOPLAM/.test(trBuyuk(h[0].join(' ')))) break;
+                        ek.push({ aciklama: aS > -1 ? h[aS].filter(Boolean).join(' ') : '', ilamNo: iS > -1 ? h[iS].filter(Boolean).join(' ') : '' });
+                    }
+                    if (ek.length) sonuc.mahsupEk = ek;
+                }
+            });
+            return sonuc;
+        }
+
+        // PDF / taranmış belge satırlarından "Etiket : değer" biçimindeki kimlik bilgilerini alır.
+        function satirlardanEvrakAlanlari(lines) {
+            const alanlar = {};
+            const tum = EVRAK_ETIKETLERI.concat([{ id: 'evrakMahkeme', re: /H[ÜU]KM[ÜU]\s*VEREN\s*MAHKEME/ }, { id: 'evrakKarar', re: /MAHKEME\s*KARAR\s*B[İI]LG[İI]S[İI]/ }]);
+            lines.forEach(l => {
+                const up = trBuyuk(l);
+                const bulunan = tum.filter(e => e.re.test(up));
+                if (bulunan.length !== 1 || alanlar[bulunan[0].id]) return;     // aynı satırda birden çok etiket varsa güvenilmez
+                const i = l.indexOf(':');
+                if (i === -1) return;
+                const d = l.slice(i + 1).replace(/^[\s:]+/, '').trim();
+                if (d && d.length <= 120) alanlar[bulunan[0].id] = d;
+            });
+            return alanlar;
+        }
+
         // Reset All Data
         function resetAll() {
             // Kullanıcı talimatı (2026-11-12): "Dosya Seç" altındaki önceki yüklemeden kalan sonuç/hata listesi de temizlenir.
@@ -4887,6 +5266,7 @@
             document.getElementById('mahsupTableBody').innerHTML = '';
             const aciklamaEl = document.getElementById('aciklamaManuel');
             if (aciklamaEl) aciklamaEl.value = '';
+            EVRAK_ALANLARI.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); // kimlik + mahkeme bilgileri
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('infazBaslangic').value = today;
             addPenaltyRow('sureli', 0, 0, 0, '', today, 'yok', false);
@@ -4903,117 +5283,137 @@
            dosya programın kendi UDF okuyucusuna (yukarıdaki PDF/UDF
            otomatik doldurma) geri yüklendiğinde de doğru çalışır.
            ====================================================== */
-        /* UDF ÇIKTISI — 2026-11-11'de YENİDEN YAZILDI (kullanıcı talebi: "UDF bozuk çıkıyor,
-           PDF gibi versin"). Önceki sürüm raporun tüm metnini TEK bir paragraf olarak yazıyordu
-           (tablo/başlık yok, satırlar birbirine yapışık). Yeni sürüm, ekrandaki/PDF'teki rapor
-           kağıdını (#printSheet) dolaşıp UYAP'ın kendi müddetname UDF'lerindeki yapının aynısını
-           üretir: ortalanmış kalın başlık, bölüm başlıkları, kenarlıklı TABLOLAR (her hücre ayrı
-           paragraf), açıklama kutusu ve imza bloğu. Metin CDATA içinde düz durur; her paragraf
-           ve hücre, bu metindeki konumuna (startOffset/length) göre <elements> altında tanımlanır
-           (gerçek UYAP müddetname UDF'leri örnek alınmıştır). */
+        /* UDF ÇIKTISI — 2026-11-14'te YENİDEN YAZILDI (kullanıcı talebi): çıktı, kullanıcının verdiği
+           gerçek UYAP müddetnamesi örneğiyle AYNI yapıda üretilir (aynı tablolar, sütun genişlikleri,
+           yazı boyutu ve sıralama): başlık → Cumhuriyet Başsavcılığı kutusu → HÜKÜMLÜ KİMLİK BİLGİLERİ →
+           CEZA BİLGİLERİ (mahkeme kutusu + İlam No'lu ceza tablosu) → tarihler → MAHSUP BİLGİLERİ →
+           imza (Zabıt Katibi — tarih — Cumhuriyet Savcısı) → NOT. Metin CDATA içinde düz durur; her
+           paragraf bu metindeki konumuna (startOffset/length) göre tanımlanır. Bilgiler ekrandaki
+           rapor kağıdından (#printSheet) alınır; böylece PDF/Yazdır çıktısı ile aynıdır. */
         function buildUdfFromPrintSheet(root) {
             let text = '';
-            const P_ATTR = 'RightIndent="0.0" LineSpacing="0.0" Hanging="0.0" SpaceAbove="1.0" SpaceBelow="1.0" LeftIndent="0.0"';
+            const PA = 'resolver="hvl-default" RightIndent="0.0" LineSpacing="0.0" Hanging="0.0" SpaceAbove="1.0" SpaceBelow="1.0" LeftIndent="0.0"';
             const temiz = t => (t || '').replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
-            const para = (t, o = {}) => {
-                t = temiz(t).replace(/]]>/g, ']] >');
-                const start = text.length;
-                text += t + '\n';
-                const c = `resolver="hvl-default"${o.bold ? ' bold="true"' : ''} size="${o.size || 9}"`;
-                let x = `<paragraph resolver="hvl-default" Alignment="${o.align || 0}" ${P_ATTR}>`;
-                if (t.length) x += `<content ${c} startOffset="${start}" length="${t.length}" />`;
-                x += `<content ${c} startOffset="${start + t.length}" length="1" /></paragraph>`;
+            const guvenli = t => String(t == null ? '' : t).replace(/]]>/g, ']] >').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+            // parcalar: [{ t, b (kalın), i (italik), u (altı çizili), size, ham (boşluk/sekme korunur) }]
+            const para = (parcalar, o = {}) => {
+                if (typeof parcalar === 'string') parcalar = [{ t: parcalar, b: o.bold, i: o.italic, u: o.underline, size: o.size }];
+                let x = `<paragraph ${o.tab ? `TabSet="${o.tab}" ` : ''}${PA} Alignment="${o.align || 0}">`;
+                parcalar.forEach(r => {
+                    const t = guvenli(r.ham ? r.t : temiz(r.t));
+                    if (!t.length) return;
+                    x += `<content resolver="hvl-default"${r.b ? ' bold="true"' : ''}${r.i ? ' italic="true"' : ''}${r.u ? ' underline="true"' : ''} size="${r.size || 9}" startOffset="${text.length}" length="${t.length}" />`;
+                    text += t;
+                });
+                x += `<content resolver="hvl-default" size="9" startOffset="${text.length}" length="1" /></paragraph>`;
+                text += '\n';
                 return x;
             };
-            const gorunur = el => !!el && getComputedStyle(el).display !== 'none';
-            // Hücre metni: <br> ve blok öğeler satır sonu sayılır.
-            const hucreSatirlari = el => {
-                const k = el.cloneNode(true);
-                k.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-                k.querySelectorAll('div,p,li').forEach(d => d.append('\n'));
-                return k.textContent.split('\n').map(temiz).filter(Boolean);
-            };
-            let tabloNo = 0;
-            const tabloXml = (satirlar, spans) => {
-                tabloNo++;
-                let x = `<table tableName="Tablo${tabloNo}" columnCount="${spans.length}" columnSpans="${spans.join(',')}" border="borderCell">`;
-                let dataNo = 0, headNo = 0;
-                satirlar.forEach(r => {
-                    x += r.header ? `<row rowType="headerRow" rowName="header${++headNo}">` : `<row rowType="dataRow" rowName="row${++dataNo}">`;
-                    for (let i = 0; i < spans.length; i++) {
-                        const h = r.cells[i] || { lines: [''] };
-                        x += '<cell>' + (h.lines.length ? h.lines : ['']).map(l => para(l, { bold: h.bold, align: h.align, size: h.size })).join('') + '</cell>';
-                    }
-                    x += '</row>';
-                });
-                return x + '</table>';
-            };
-            const spansFor = (n, ilkBaslik) => {
-                if (n === 1) return [100];
-                if (n === 2) return [80, 120];
-                if (n === 4 && /^Mahsup/i.test(ilkBaslik || '')) return [195, 74, 66, 65];
-                if (n === 4) return [60, 100, 80, 160];
-                return Array(n).fill(Math.round(400 / n));
-            };
-            // Bir HTML tablosunu UDF tablosuna (iç içe tablo varsa art arda tablolara) çevirir.
-            const tabloyuCevir = (table) => {
-                let out = '';
-                let bekleyen = [];
-                const bosalt = () => {
-                    if (!bekleyen.length) return;
-                    const n = Math.max(...bekleyen.map(r => r.cells.length));
-                    out += tabloXml(bekleyen, spansFor(n, (bekleyen[0].cells[0] || { lines: [''] }).lines[0]));
-                    bekleyen = [];
-                };
-                const trler = [...table.querySelectorAll(':scope > thead > tr, :scope > tbody > tr, :scope > tfoot > tr, :scope > tr')];
-                trler.forEach(tr => {
-                    if (!gorunur(tr)) return;
-                    const icTablo = tr.querySelector('table');
-                    if (icTablo) { bosalt(); out += tabloyuCevir(icTablo); return; }
-                    const header = tr.parentElement.tagName === 'THEAD';
-                    const cells = [];
-                    [...tr.children].forEach(td => {
-                        if (!gorunur(td)) return;
-                        const span = parseInt(td.getAttribute('colspan') || '1') || 1;
-                        const kalin = header || td.tagName === 'TH' || /font-(bold|extrabold|semibold)/.test(td.className);
-                        // Birleşik (colspan) hücre: metin, birleşen hücrelerin SONUNCUSUNA yazılır
-                        // (örn. "TOPLAM MAHSUP" değerin hemen solunda dursun), öncekiler boş kalır.
-                        for (let i = 0; i < span - 1; i++) cells.push({ lines: [''] });
-                        cells.push({ lines: [hucreSatirlari(td).join(' ')], bold: kalin, align: /text-right/.test(td.className) ? 2 : 0 });
-                    });
-                    if (cells.length) bekleyen.push({ header, cells });
-                });
-                bosalt();
-                return out;
-            };
-
+            const al = id => { const el = root.querySelector('#' + id); return el ? temiz(el.textContent) : ''; };
+            const etiket = t => [{ t: t + '\t:', b: true, ham: true }];
+            const TAB1 = '220.0:0:0', TAB2 = '220.0:0:0,243.0:0:0';
+            const TABLO = (ad, spans) => `<table FirstLineIndent="0.0" tableName="${ad}" RightIndent="0.0" columnCount="2" SpaceAbove="0.0" SpaceBelow="0.0" LeftIndent="0.0" border="borderTable" columnSpans="${spans}">`;
             let els = '';
-            [...root.children].forEach(blok => {
-                if (!gorunur(blok)) return;
-                const tablo = blok.querySelector(':scope > table');
-                const h4 = blok.querySelector(':scope > h4');
-                const aciklama = blok.querySelector(':scope > #repAciklama');
-                if (blok.querySelector(':scope > h2')) {                       // Başlık
-                    [...blok.children].forEach(h => { els += para(h.textContent, { bold: true, align: 1, size: h.tagName === 'H2' ? 12 : 10 }); });
-                    els += para('');
-                } else if (tablo || aciklama) {                                 // Bölüm (başlık + tablo / açıklama)
-                    if (h4) els += para(h4.textContent, { bold: true, size: 10 });
-                    if (tablo) els += tabloyuCevir(tablo);
-                    if (aciklama) {
-                        const satirlar = aciklama.textContent.split('\n').map(temiz).filter(Boolean);
-                        els += tabloXml([{ cells: [{ lines: satirlar.length ? satirlar : ['—'] }] }], [100]);
-                    }
-                    els += para('');
-                } else {                                                        // İmza bloğu
-                    const tarihEl = blok.querySelector('#repTarihAlani');
-                    if (tarihEl) els += para(tarihEl.textContent, { size: 9 });
-                    [...blok.querySelectorAll('p')].filter(pp => pp !== tarihEl).forEach((pp, i) => {
-                        if (i > 0) els += para('', { align: 2 });
-                        els += para(pp.textContent, { bold: true, align: 2, size: 10 });
-                    });
-                }
+
+            // Başlık
+            els += para([{ t: 'MÜDDETNAME', b: true, i: true, u: true, size: 11 }], { align: 1 });
+            els += para('', { align: 1 });
+
+            // Cumhuriyet Başsavcılığı kutusu
+            els += TABLO('Tablo1', '91,109') + '<row rowType="dataRow" rowName="row1"><cell>';
+            els += para(etiket('Cumhuriyet Başsavcılığı'), { tab: TAB1 });
+            els += para(etiket('Cumhuriyet Başsavcılığı Dosya No'), { tab: TAB1 });
+            els += para(etiket('Cezaevi Hükümlü Defter Numarası'), { tab: TAB1 });
+            els += '</cell><cell>';
+            els += para(al('repSavcilik'));
+            els += para([{ t: al('repDosyaNo'), b: true, i: true }]);
+            els += para(al('repDefterNo'));
+            els += '</cell></row></table>';
+
+            // Hükümlü kimlik bilgileri
+            els += para('HÜKÜMLÜ KİMLİK BİLGİLERİ', { bold: true });
+            els += TABLO('Tablo2', '124,76') + '<row rowType="dataRow" rowName="row1"><cell>';
+            [['T.C. Kimlik No', 'repTc'], ['Adı ve Soyadı', 'repAdSoyad'], ['Baba Adı', 'repBaba'], ['Ana Adı', 'repAna'], ['Doğum Tarihi', 'repDogumTarihi'], ['Doğum Yeri', 'repDogumYeri'], ['Nüfusa Kayıtlı Olduğu İl ve İlçe', 'repNufus']]
+                .forEach(([ad, id]) => { els += para([{ t: ad + '\t:', b: true, ham: true }, { t: ' ' + al(id), b: true, ham: true }], { tab: TAB2 }); });
+            els += '</cell><cell>' + para('') + para('') + '</cell></row></table>';
+
+            // Ceza bilgileri: mahkeme kutusu
+            els += para('CEZA BİLGİLERİ', { bold: true });
+            els += TABLO('Tablo3', '91,109') + '<row rowType="dataRow" rowName="row1"><cell>';
+            els += para(etiket('HÜKMÜ VEREN MAHKEME'), { tab: TAB2 });
+            els += para(etiket('MAHKEME KARAR BİLGİSİ'), { tab: TAB2 });
+            els += para(etiket('CEZASI'), { tab: TAB2 });
+            els += '</cell><cell>';
+            els += para(al('repMahkeme'));
+            els += para(al('repKarar'));
+            els += para([{ t: al('repCeza'), b: true, i: true }]);
+            els += '</cell></row></table>';
+
+            // Ceza tablosu (İlam No / Suç Tarihi / Ceza Mad. / Ceza Bilgisi / İnfaz Türü)
+            els += TABLO('Tablo4', '100,100') + '<row height="0.0" rowType="headerRow" columnSpans="88,81,82,166,153" rowName="header1">';
+            ['İlam No', 'Suç Tarihi', 'Ceza Mad.', 'Ceza Bilgisi', 'İnfaz Türü'].forEach(b => { els += '<cell>' + para([{ t: b, b: true, u: true }]) + '</cell>'; });
+            els += '</row>';
+            [...root.querySelectorAll('#repCezaRows tr')].forEach(tr => {
+                const h = [...tr.children].map(td => temiz(td.textContent));
+                if (h.length < 5) return;
+                els += '<row height="0.0" rowType="dataRow" rowName="row1" columnSpans="75,69,71,142,131">';
+                h.slice(0, 5).forEach(t => { els += '<cell>' + para(t) + '</cell>'; });
+                els += '</row>';
             });
-            const xml = `<?xml version="1.0" encoding="UTF-8" ?>\n\n<template format_id="1.8" >\n<content><![CDATA[${text}]]></content><properties><pageFormat mediaSizeName="1" leftMargin="42.51968479156494" rightMargin="42.51968479156494" topMargin="28.34645652770996" bottomMargin="28.34645652770996" paperOrientation="1" headerFOffset="15.0" footerFOffset="15.0" /></properties>\n<elements resolver="hvl-default" >\n${els}\n</elements>\n<styles><style name="default" size="12" description="Geçerli" family="Dialog" bold="false" italic="false" /><style name="hvl-default" family="Times New Roman" size="12" description="Gövde" RightIndent="0.0" Alignment="0" LineSpacing="0.0" SpaceAbove="0.0" SpaceBelow="0.0" LeftIndent="0.0" /></styles>\n</template>\n`;
+            els += '</table>';
+            els += para('', { bold: true });
+
+            // Tarihler (rapor kağıdındaki tarih tablosunun satırları aynen aktarılır)
+            const tarihTablo = (root.querySelector('#repBaslangic') || { closest: () => null }).closest('table');
+            if (tarihTablo) {
+                els += '<table FirstLineIndent="0.0" SpaceBelow="0.0" columnCount="2" columnSpans="91,109" border="borderTable" header="false" LeftIndent="0.0" RightIndent="0.0" bold="true" tableName="Tablo5" SpaceAbove="0.0">';
+                let no = 0;
+                [...tarihTablo.querySelectorAll('tr')].forEach(tr => {
+                    if (getComputedStyle(tr).display === 'none' || tr.children.length < 2) return;
+                    els += `<row rowType="dataRow" rowName="row${++no}"><cell>` + para(etiket(temiz(tr.children[0].textContent)), { tab: TAB1 }) + '</cell><cell>' + para(temiz(tr.children[1].textContent), { tab: TAB1 }) + '</cell></row>';
+                });
+                els += '</table>';
+            }
+            els += para('');
+
+            // Mahsup bilgileri
+            els += '<table tableName="Sabit" columnCount="6" columnSpans="100,100,100,100,100,100" border="borderCell">';
+            els += '<row rowType="dataRow" rowName="row1"><cell>' + para([{ t: ' MAHSUP BİLGİLERİ', b: true, ham: true }], { align: 1 }) + '</cell></row>';
+            els += '<row rowName="row2" rowType="dataRow">';
+            ["Mahsup Nev'i: ", 'Başlama Tarihi: ', 'Bitiş Tarihi: ', 'Açıklama: ', 'İlamat No: ', 'Geçen Süre: '].forEach(b => { els += '<cell>' + para([{ t: b, b: true, ham: true }]) + '</cell>'; });
+            els += '</row>';
+            let mNo = 2;
+            [...root.querySelectorAll('#repMahsupRows tr')].forEach(tr => {
+                const h = [...tr.children].map(td => temiz(td.textContent));
+                els += `<row rowType="dataRow" rowName="row${++mNo}">`;
+                if (h.length >= 6) h.slice(0, 6).forEach(t => { els += '<cell>' + para(t) + '</cell>'; });
+                else els += '<cell>' + para(h.join(' ')) + '</cell>';
+                els += '</row>';
+            });
+            els += `<row rowName="row${++mNo}" rowType="dataRow"><cell>` + para([{ t: 'TOPLAM MAHSUP', b: true }], { align: 1 }) + '</cell><cell>' + para('>>>>>', { align: 1 }) + '</cell><cell>'
+                + para([{ t: al('repMahsupToplam').toLocaleUpperCase('tr-TR'), b: true }], { align: 1 }) + '</cell></row></table>';
+            els += para('', { align: 1 });
+
+            // İmza: Zabıt Katibi — tarih — Cumhuriyet Savcısı
+            els += '<table tableName="Sabit" columnCount="3" columnSpans="140,111,10" border="borderNone" borderSpec="31" borderColor="-16777216" borderStyle="borderStyle-plain" borderWidth="1.0" rowSpans="428">';
+            els += '<row rowType="dataRow" rowName="row1" columnSpans="140,140,111,10" border="borderNone" borderWidth="0.5" height="0.0">';
+            els += '<cell border="borderNone" borderWidth="0.5">' + para([{ t: al('repKatipAd'), b: true }], { align: 1 }) + para([{ t: al('repKatipUnvan'), b: true, i: true }], { align: 1 }) + '</cell>';
+            els += '<cell border="borderNone" borderWidth="0.5">' + para(al('repTarihAlani'), { align: 1 }) + '</cell>';
+            els += '<cell border="borderNone" borderWidth="0.5">' + para([{ t: al('repSavciAd'), b: true }], { align: 1 }) + para([{ t: al('repSavciUnvan'), b: true }], { align: 1 }) + '</cell>';
+            els += '</row></table>';
+            els += para('', { align: 1 });
+
+            // NOT
+            els += '<table FirstLineIndent="0.0" tableName="Tablo9" RightIndent="0.0" columnCount="1" SpaceAbove="0.0" SpaceBelow="0.0" LeftIndent="0.0" border="borderTable" columnSpans="100"><row rowType="headerRow" rowName="header1"><cell>';
+            els += para([{ t: 'NOT: ', b: true, ham: true }]);
+            const notEl = root.querySelector('#repAciklama');
+            const notSatirlari = notEl ? notEl.textContent.split('\n').map(temiz).filter(Boolean) : [];
+            if (notSatirlari.length) notSatirlari.forEach(s => { els += para(s, { align: 3 }); });
+            else els += para('', { align: 3 });
+            els += '</cell></row></table>';
+            els += para('');
+
+            const xml = `<?xml version="1.0" encoding="UTF-8" ?> \n\n<template format_id="1.8" >\n<content><![CDATA[${text}]]></content><properties><pageFormat mediaSizeName="1" leftMargin="42.51968479156494" rightMargin="42.51968479156494" topMargin="14.17322826385498" bottomMargin="14.17322826385498" paperOrientation="1" headerFOffset="15.0" footerFOffset="15.0" /></properties>\n<elements resolver="hvl-default" >\n${els}\n</elements>\n<styles><style name="default" size="12" description="Geçerli" family="Dialog" bold="false" italic="false" /><style name="hvl-default" family="Times New Roman" size="12" description="Gövde" RightIndent="0.0" Alignment="0" LineSpacing="0.0" SpaceAbove="0.0" SpaceBelow="0.0" LeftIndent="0.0" /></styles>\n</template>\n`;
             return { xml, text };
         }
 
@@ -5033,7 +5433,7 @@
             try {
                 const zip = new JSZip();
                 zip.file('content.xml', udf.xml);
-                zip.file('documentproperties.xml', `<?xml version="1.0" encoding="UTF-8" ?>\n<documentProperties><title>Müddetname</title></documentProperties>\n`);
+                zip.file('documentproperties.xml', `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">\n<properties>\n</properties>\n`);
                 const blob = await zip.generateAsync({ type: 'blob' });
                 const tarihEtiketi = new Date().toISOString().split('T')[0];
                 const a = document.createElement('a');
@@ -5068,6 +5468,7 @@
                     manuelOran: row.dataset.manuelOran === '1',
                     ekGun: row.querySelector('.penalty-ek-gun') ? (parseInt(row.querySelector('.penalty-ek-gun').value) || 0) : 0,
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
+                    ilamNo: (row.querySelector('.penalty-ilam-no') || {}).value || '',
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     tekIlam: { y: parseInt((row.querySelector('.penalty-tekilam-yil') || {}).value) || 0, a: parseInt((row.querySelector('.penalty-tekilam-ay') || {}).value) || 0, g: parseInt((row.querySelector('.penalty-tekilam-gun') || {}).value) || 0 },
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
@@ -5083,7 +5484,9 @@
                 mahsups.push({
                     tur: row.querySelector('.mahsup-tur').value,
                     start: row.querySelector('.mahsup-start').value,
-                    end: row.querySelector('.mahsup-end').value
+                    end: row.querySelector('.mahsup-end').value,
+                    aciklama: (row.querySelector('.mahsup-aciklama') || {}).value || '',
+                    ilamNo: (row.querySelector('.mahsup-ilam-no') || {}).value || ''
                 });
             });
 
@@ -5094,6 +5497,7 @@
                 infazBaslangic: document.getElementById('infazBaslangic').value,
                 aciklamaManuel: (document.getElementById('aciklamaManuel') || {}).value || "",
                 hesaplamaYontemi: hesaplamaYontemi,
+                evrak: EVRAK_ALANLARI.reduce((o, id) => { o[id] = (document.getElementById(id) || {}).value || ''; return o; }, {}),
                 penalties: penalties,
                 mahsups: mahsups,
                 timestamp: new Date().toISOString()
@@ -5131,17 +5535,19 @@
                         if (aciklamaEl) aciklamaEl.value = data.aciklamaManuel;
                     }
 
+                    EVRAK_ALANLARI.forEach(id => { const el = document.getElementById(id); if (el) el.value = (data.evrak && data.evrak[id]) || ''; });
+
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik, !!p.magdurCocuk, p.tekIlam || null);
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik, !!p.magdurCocuk, p.tekIlam || null, p.ilamNo || '');
                         });
                     }
 
                     if (Array.isArray(data.mahsups)) {
                         document.getElementById('mahsupTableBody').innerHTML = '';
                         data.mahsups.forEach(m => {
-                            addMahsupRow(m.tur, m.start, m.end);
+                            addMahsupRow(m.tur, m.start, m.end, m.aciklama || '', m.ilamNo || '');
                         });
                     }
 
@@ -5206,6 +5612,29 @@
     })();
     </script>
     <!-- ================= HATIRLATICI (kullanıcı talebi, 2026-11-12) ================= -->
+    <!-- Savcılık / İmza Bilgileri penceresi (ilk açılışta bir kez sorulur) — 2026-11-14 -->
+    <div id="savcilikModal" class="no-print" style="display:none; position:fixed; inset:0; z-index:1002; background:rgba(15,23,42,.45); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:520px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
+            <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; font-weight:800; font-size:14px;">Savcılık / İmza Bilgileri</div>
+            <div style="padding:16px 18px;">
+                <p style="font-size:12px; color:#475569; margin-bottom:12px;">Bu bilgiler bu bilgisayarda bir kez kaydedilir ve hazırlanan her müddetnameye kendiliğinden yazılır. Daha sonra "Hükümlü Kimlik Bilgileri" kutusundaki "Savcılık / İmza Bilgileri" düğmesinden değiştirilebilir.</p>
+                <label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Cumhuriyet Başsavcılığı</label>
+                <input type="text" id="savcilikAdi" placeholder="Örn: Kayseri Cumhuriyet Başsavcılığı" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px; margin-bottom:10px;">
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <div style="flex:2;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Zabıt Katibi Adı Soyadı</label><input type="text" id="savcilikKatipAd" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
+                    <div style="flex:1;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Sicil No</label><input type="text" id="savcilikKatipSicil" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <div style="flex:2;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Cumhuriyet Savcısı Adı Soyadı</label><input type="text" id="savcilikSavciAd" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
+                    <div style="flex:1;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Sicil No</label><input type="text" id="savcilikSavciSicil" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
+                </div>
+            </div>
+            <div style="padding:12px 18px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; gap:8px;">
+                <button type="button" onclick="savcilikAtla()" style="padding:7px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Savcılık değilim / Şimdi değil</button>
+                <button type="button" onclick="savcilikKaydet()" style="padding:7px 16px; border-radius:8px; border:0; background:#f59e0b; color:#0f172a; font-weight:800; font-size:12px;">Kaydet</button>
+            </div>
+        </div>
+    </div>
     <div id="hatirlatModal" class="no-print" style="display:none; position:fixed; inset:0; z-index:1000; background:rgba(15,23,42,.45); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); align-items:center; justify-content:center; padding:16px;">
         <div style="background:#fff; border-radius:14px; box-shadow:0 25px 60px rgba(0,0,0,.35); width:100%; max-width:760px; max-height:90vh; overflow:auto; font-size:13px; color:#0f172a;">
             <div style="padding:14px 18px; border-bottom:1px solid #e2e8f0; font-weight:800; font-size:14px;">Bu Tarihler Geldiğinde Hatırlat</div>
