@@ -408,6 +408,7 @@
                 <!-- Başlık (örnek UYAP müddetnamesi düzeni — 2026-11-14) -->
                 <div class="text-center">
                     <h2 class="text-sm font-bold italic underline text-slate-900">MÜDDETNAME</h2>
+                    <p class="font-bold text-[10px] text-slate-900" id="repResmiDegil">RESMİ BELGE DEĞİLDİR.</p>
                 </div>
 
                 <!-- 1. Bölüm: Cumhuriyet Başsavcılığı -->
@@ -2332,7 +2333,7 @@
                 }
 
                 satirlar.push({
-                    sucTarihi: dateMatch ? `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : '',
+                    sucTarihi: dateMatch ? `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}` : (sucTarihiSadeceYil ? `${sucTarihiSadeceYil}-01-01` : ''), // 2026-11-14: sadece yıl yazılıysa 01/01/YIL olarak hesaplanır (uyarı verilmeye devam eder)
                     sucTarihiSadeceYil,
                     sucTarihiBos,
                     sucTarihiTahmini,
@@ -2762,7 +2763,7 @@
                 // tarih alanı boş bırakıldı, kırmızı işaretlenip kullanıcıdan tam tarih istenir.
                 cezaSatirlari.forEach((s, idx) => {
                     if (!s.sucTarihiSadeceYil && !s.sucTarihiBos) return;
-                    satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], s.sucTarihiBos ? 'Suç tarihi belgede yazılı değil.' : `Suç tarihi belgede sadece yıl (${s.sucTarihiSadeceYil}) olarak yazılı.`);
+                    satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], s.sucTarihiBos ? 'Suç tarihi belgede yazılı değil.' : `Suç tarihi belgede sadece yıl (${s.sucTarihiSadeceYil}); 01.01.${s.sucTarihiSadeceYil} olarak hesaplandı.`);
                     uyarilar.push(`<li id="suc-tarihi-yil-uyari-${idx}">${idx + 1}. ceza satırında suç tarihi belgede ${s.sucTarihiBos ? 'yazılı değil' : `sadece yıl olarak (${s.sucTarihiSadeceYil}) yazılı`}; ceza süresi ve diğer bilgiler dolduruldu, <span class="text-red-700 font-semibold">ancak suç tarihi alanı BOŞ bırakıldı — lütfen tam suç tarihini (gün/ay/yıl) siz girin.</span> (Bazı oranlar ve haklar suç tarihine göre değiştiği için tarih tahmin edilmedi.)</li>`);
                     const hataliTr = eklenenCezaSatirElemanlari[idx];
                     if (!hataliTr) return;
@@ -2770,7 +2771,7 @@
                     const tarihAlani = hataliTr.querySelector('.penalty-suc-tarihi');
                     // addPenaltyRow, suç tarihi verilmediğinde alanı BUGÜNÜN tarihiyle doldurur;
                     // burada alan bilerek BOŞALTILIR ki bugünün tarihi suç tarihi sanılmasın.
-                    if (tarihAlani) { tarihAlani.value = ''; tarihAlani.classList.add('ceza-hata-alani'); }
+                    if (tarihAlani) { tarihAlani.value = s.sucTarihiSadeceYil ? `${s.sucTarihiSadeceYil}-01-01` : ''; tarihAlani.classList.add('ceza-hata-alani'); }
                     const isaretiTemizleYil = () => {
                         // Tarih hâlâ boşsa işareti kaldırma (kullanıcı henüz girmedi).
                         if (tarihAlani && !tarihAlani.value) return;
@@ -5638,6 +5639,8 @@
 
             // Başlık
             els += para([{ t: 'MÜDDETNAME', b: true, i: true, u: true, size: A.size + 2 }], { align: 1 });
+            // 2026-11-14 (kullanıcı): başlığın altında bu ibare yer alır; hesaplayıcı evrakı kullanırken kendisi siler.
+            els += para([{ t: 'RESMİ BELGE DEĞİLDİR.', b: true }], { align: 1 });
             if (A.ara) els += para('', { align: 1 });
 
             // Cumhuriyet Başsavcılığı kutusu
@@ -5753,14 +5756,6 @@
            (3) üst / alt boşluk da dar → (4) 7 punto → (5) 6 punto. Sayfaya sığan İLK düzen kullanılır;
            yükseklik, satır sayısından yaklaşık olarak hesaplanır. */
         function buildUdfFromPrintSheet(root) {
-            const seviyeler = [
-                { size: 9, bosluk: 1, ara: true, dikey: 14.17322826385498, yan: 42.51968479156494 },
-                { size: 9, bosluk: 0, ara: false, dikey: 14.17322826385498, yan: 42.51968479156494 },
-                { size: 8, bosluk: 0, ara: false, dikey: 14.17322826385498, yan: 28.34645652770996 },
-                { size: 8, bosluk: 0, ara: false, dikey: 8.5, yan: 22.68 },
-                { size: 7, bosluk: 0, ara: false, dikey: 8.5, yan: 22.68 },
-                { size: 6, bosluk: 0, ara: false, dikey: 8.5, yan: 22.68 }
-            ];
             const temiz = t => (t || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
             const hucreler = sec => [...root.querySelectorAll(sec)].map(tr => [...tr.children].map(td => temiz(td.textContent)));
             const cezalar = hucreler('#repCezaRows tr'), mahsuplar = hucreler('#repMahsupRows tr');
@@ -5772,7 +5767,7 @@
                 const en = 595.3 - 2 * A.yan;
                 const satirYuk = A.size * 1.22 + 2 * A.bosluk + 1.5;
                 const sar = (metin, genislik) => Math.max(1, Math.ceil(udfYaziEni(metin, A.size, false) / Math.max(20, genislik - 6)));
-                let satir = 1 + 3 + 1 + 8 + 1 + 2 + sar(karar, en * 0.6) + 1;
+                let satir = 2 + 3 + 1 + 8 + 1 + 2 + sar(karar, en * 0.6) + 1;
                 const cezaPay = [75, 69, 71, 142, 131].map(x => x / 488 * en);
                 cezalar.forEach(h => { satir += Math.max(1, ...h.slice(0, 5).map((t, i) => sar(t, cezaPay[i]))); });
                 tarihler.forEach(h => { satir += Math.max(1, sar(h[1] || '', en * 0.55)); });
@@ -5782,7 +5777,27 @@
                 if (A.ara) satir += 6;
                 return satir * satirYuk + 9 * 3;
             };
-            const uygun = seviyeler.find(A => yukseklik(A) <= 841.9 - 2 * A.dikey - 24) || seviyeler[seviyeler.length - 1];
+            // 2026-11-14 (kullanıcı): "tek sayfaya sığdır" = içerik sayfaya OTURTULSUN. Önce sığan en büyük punto
+            // seçilir (11 → 6); kalan boş yer, kutular arasına boş satır ve satırlara aralık verilerek doldurulur
+            // (tahmin payı için sayfanın %93'ü hedeflenir). Sığmadıkça punto ve sayfa boşlukları küçülür.
+            const denenecek = [
+                { size: 11, dikey: 28.35, yan: 42.51968479156494 }, { size: 10, dikey: 28.35, yan: 42.51968479156494 },
+                { size: 9, dikey: 28.35, yan: 42.51968479156494 }, { size: 9, dikey: 14.17322826385498, yan: 42.51968479156494 },
+                { size: 8, dikey: 14.17322826385498, yan: 28.34645652770996 }, { size: 8, dikey: 8.5, yan: 22.68 },
+                { size: 7, dikey: 8.5, yan: 22.68 }, { size: 6, dikey: 8.5, yan: 22.68 }
+            ];
+            const alan = A => 841.9 - 2 * A.dikey - 24;
+            let uygun = null;
+            for (const d of denenecek) {
+                const A = Object.assign({ bosluk: 0, ara: false }, d);
+                if (yukseklik(A) > alan(A)) continue;
+                const hedef = alan(A) * 0.93;
+                if (yukseklik(Object.assign({}, A, { ara: true })) <= hedef) A.ara = true;
+                while (A.bosluk < 4 && yukseklik(Object.assign({}, A, { bosluk: A.bosluk + 0.5 })) <= hedef) A.bosluk += 0.5;
+                uygun = A;
+                break;
+            }
+            if (!uygun) uygun = Object.assign({ bosluk: 0, ara: false }, denenecek[denenecek.length - 1]);
             return udfUret(root, uygun);
         }
 
