@@ -1443,8 +1443,6 @@
             const kapali = tr.classList.toggle('ilam-kapali');
             const h = tr.children;
             if (h.length >= 4) { h[0].colSpan = kapali ? 3 : 1; h[1].style.display = kapali ? 'none' : ''; h[2].style.display = kapali ? 'none' : ''; }
-            const ok = tr.querySelector('.ilam-satir-ok');
-            if (ok) ok.className = 'ilam-satir-ok fa-solid ' + (kapali ? 'fa-chevron-down' : 'fa-chevron-up');
         }
         function kutuOzetGuncelle() {
             const kopya = (ozetId, kaynakId, basliklar) => {
@@ -3254,8 +3252,14 @@
             }
             tr.innerHTML = `
                 <td class="p-1.5 space-y-1">
-                    <div class="ilam-ozet-satir text-[11px] font-semibold text-slate-700 leading-snug" title="Tıklayınca açılır" onclick="ilamSatirAcKapa(this)"></div>
-                    <div class="flex items-center gap-1">
+                    <div class="ilam-ozet-satir text-[11px] text-slate-800 leading-snug" title="Tıklayınca açılır" onclick="ilamSatirAcKapa(this)">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-chevron-right text-slate-400" style="font-size:13px; width:14px;"></i>
+                            <div class="ilam-ozet-ic" style="flex:1; display:grid; grid-template-columns: 17% 14% 21% 22% 26%; column-gap:6px;"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="ilamSatirAcKapa(this)" title="Bu ilamı kapat / aç" class="shrink-0"><i class="fa-solid fa-chevron-down text-slate-400" style="font-size:13px; width:14px;"></i></button>
                         <select class="penalty-sure-tip w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-bold" onchange="toggleSuresiTip(this)">
                             <option value="sureli" ${sureTip === 'sureli' ? 'selected' : ''}>Süreli Hapis Cezası</option>
                             <optgroup label="Süreli Hapis — Özel İnfaz Rejimi (4/4, Koşullusu Yok)">
@@ -3358,7 +3362,6 @@
                 </td>
                 <td class="p-1.5 text-center">
                     <div class="h-full min-h-[50px] flex flex-col items-center justify-between">
-                        <button type="button" onclick="ilamSatirAcKapa(this)" title="Bu ilamı kapat / aç" class="text-slate-400 hover:text-amber-600"><i class="ilam-satir-ok fa-solid fa-chevron-up"></i></button>
                         <button onclick="removePenaltyRow(this)" class="text-slate-500 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
                         <span class="penalty-row-badge inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold shadow-sm">?</span>
                     </div>
@@ -4176,8 +4179,9 @@
 
                 { // kapalı ilam satırında görünecek özet: sağdaki rapordaki satırın aynısı
                     const sonR = rowReportData[rowReportData.length - 1];
-                    const ozetEl = row.querySelector('.ilam-ozet-satir');
-                    if (ozetEl && sonR) ozetEl.textContent = [sonR.ilamNo, sonR.tarih, sonR.sucMetni, sonR.metin, sonR.oranMetni].filter(x => x && x !== '-').join('  ·  ');
+                    const ozetEl = row.querySelector('.ilam-ozet-ic');
+                    // rapordaki sütunlarla aynı sıra ve aralıkta: İlam No | Suç Tarihi | Ceza Mad. | Ceza Bilgisi | İnfaz Türü
+                    if (ozetEl && sonR) ozetEl.innerHTML = [sonR.ilamNo, sonR.tarih, sonR.sucMetni, sonR.metin, sonR.oranMetni].map(x => `<span>${escapeHtml(x || '')}</span>`).join('');
                 }
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
             });
