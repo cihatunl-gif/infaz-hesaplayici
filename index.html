@@ -159,6 +159,7 @@
                         <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Ana Adı</span><input type="text" id="evrakAnaAdi" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                         <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Doğum Yeri</span><input type="text" id="evrakDogumYeri" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                         <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Nüfusa Kayıtlı Olduğu İl ve İlçe</span><input type="text" id="evrakNufus" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                        <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">İkametgah Adresi</span><input type="text" id="evrakIkamet" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                         <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Cezaevi Hükümlü Defter Numarası</span><input type="text" id="evrakDefterNo" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                     </div>
                     <p class="text-[10px] text-slate-400 mt-2"><i class="fa-solid fa-circle-info"></i> Doğum tarihi aşağıdaki "Doğum Tarihi / Cinsiyet" kutusundan alınır. UDF/PDF yüklenince bu alanlar belgeden doldurulur; boş gelenler elle yazılabilir.</p>
@@ -175,15 +176,17 @@
                 <div class="px-4 pb-4 text-xs space-y-2">
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Hükmü Veren Mahkeme</span><input type="text" id="evrakMahkeme" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Mahkeme Karar Bilgisi</span><input type="text" id="evrakKarar" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
-                    <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Cezası</span><input type="text" id="evrakCezasi" oninput="evrakBilgileriniYaz()" placeholder="Boş bırakılırsa programın hesapladığı toplam ceza yazılır" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
+                    <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Cezası</span><input type="text" id="evrakCezasi" oninput="evrakBilgileriniYaz()" placeholder="Boş bırakın: program cezaların toplamını kendisi yazar (örn. Müebbet + 100 Yıl)" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                 </div>
             </details>
 
             <!-- Hesaplama Yöntemi: Ayrışık / Bitişik Hesap Seçimi (2026-11-09) -->
-            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2 mb-2">
-                    <i class="fa-solid fa-scale-unbalanced text-amber-500"></i> Hesaplama Yöntemi
-                </h2>
+            <details id="hesapYontemKutu" class="bg-white border border-slate-200 rounded-xl shadow-sm">
+                <summary class="cursor-pointer select-none p-4 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <i class="fa-solid fa-scale-unbalanced text-amber-500"></i> Hesaplama Yöntemi: <span id="hesapYontemEtiket" class="text-amber-700">Ayrışık Hesap</span>
+                    <span class="text-[10px] font-normal normal-case tracking-normal text-slate-400">(tıklayınca açılır / kapanır)</span>
+                </summary>
+                <div class="px-4 pb-4">
                 <div class="grid grid-cols-2 gap-2">
                     <button type="button" id="btnHesapAyrisik" onclick="setHesaplamaYontemi('ayrisik')" class="px-3 py-2 text-xs font-bold rounded-lg border transition">
                         Ayrışık Hesap
@@ -195,6 +198,55 @@
                 <p class="text-[10px] text-slate-400 mt-2">
                     <i class="fa-solid fa-circle-info"></i> <b>Ayrışık:</b> her ceza kalemi kendi oranıyla ayrı hesaplanıp toplanır (bazı savcılıkların kullandığı yöntem, programın varsayılanı). <b>Bitişik:</b> önce aynı orandaki (1/2, 2/3, 3/4) kalemler kendi arasında gün olarak toplanır, oran bu grup toplamına bir kerede uygulanır, sonra gruplar toplanır (bazı savcılıkların kullandığı diğer yöntem). Müebbet, ağırlaştırılmış müebbet, adli para cezası ve özel infaz rejimi kalemleri her iki yöntemde de aynı şekilde (gruplanmadan) hesaplanır; içtima tavanları (28/32 yıl vb.) her iki yöntemde de aynıdır.
                 </p>
+                </div>
+            </details>
+
+            <!-- İnfaz Başlangıç / Doğum Tarihi / Cinsiyet: 2026-11-14 kullanıcı talebiyle hesaplama yönteminin altına alındı -->
+            <!-- İnfaz Başlangıç Tarihi & Doğum Tarihi -->
+            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-500 mb-1 font-bold">İnfaz Başlangıç Tarihi (Cezaevine Giriş Tarihi)</label>
+                        <input type="date" id="infazBaslangic" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1 font-bold">Doğum Tarihi / Cinsiyet</label>
+                        <div class="flex gap-2">
+                            <input type="date" id="hukumluDogumTarihi" onchange="calculateAll()" class="flex-1 min-w-0 bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
+                            <select id="hukumluCinsiyet" onchange="cinsiyetGorunumGuncelle(); calculateAll();" class="w-28 bg-slate-50 border border-slate-300 rounded px-2 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
+                                <option value="">Cinsiyet</option>
+                                <option value="erkek">Erkek</option>
+                                <option value="kadin">Kadın</option>
+                            </select>
+                        </div>
+                        <label id="kadinCocuk06Wrap" class="hidden flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-600 font-semibold">
+                            <input type="checkbox" id="kadinCocuk06" onchange="calculateAll()" class="accent-amber-500"> 0-6 yaş grubunda çocuğu var
+                        </label>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır. Cinsiyet "Kadın" seçilip 0-6 yaş grubunda çocuğu olduğu işaretlenirse denetimli serbestlik koşullu salıverilmeye 2 yıl kala hesaplanır.</p>
+
+                <!-- 01/07/2016 öncesi işlenmiş, 5 yıldan az hapis cezalı (istisna suçlar
+                     hariç) hükümlülerin "3 gün içinde doğrudan açık" hakkı (R11,
+                     kullanıcı onayı 2026-11-10) için iyi hal bilgisi. -->
+                <label class="flex items-center gap-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-200">
+                    <input type="checkbox" id="hukumluIyiHalli" onchange="calculateAll()" class="accent-amber-500">
+                    Hükümlü İyi Hallidir (01/07/2016 öncesi, 5 yıldan az hapis cezalarında "3 gün içinde doğrudan açık" hakkı değerlendirmesi için)
+                </label>
+
+                <!-- Açık/Denetime ayrılma için asgari kapalı kalma şartı: giriş tarihi ile
+                     bugün arasında bir süre farkı varsa, bu sürenin nerede geçtiği otomatik
+                     VARSAYILMAZ; kullanıcıya sorulur. -->
+                <div id="girisGunFarkiBox" class="hidden mt-3 pt-3 border-t border-slate-200 bg-amber-50/60 -mx-4 -mb-4 px-4 pb-4 rounded-b-xl">
+                    <p class="text-[11px] font-bold text-amber-800 mb-1.5">
+                        <i class="fa-solid fa-circle-question"></i> Giriş tarihi ile bugün arasında <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> günlük bir süre var. Açığa ayrılma için asgari kapalı kalma şartının sağlanıp sağlanmadığını anlamak için bu süre nerede geçirilmiş?
+                    </p>
+                    <select id="girisGunuDurum" onchange="calculateAll()" class="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500">
+                        <option value="">— Belirtilmedi (şart sağlandı mı anlaşılamıyor) —</option>
+                        <option value="tamamen_kapali">Bu süre tamamen kapalı ceza infaz kurumunda geçirildi</option>
+                        <option value="kismen_disarida">Bu sürenin bir kısmı/tamamı açıkta veya dışarıda geçirildi (firar, açık cezaevi, DS vb.)</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
@@ -235,53 +287,6 @@
 
             <!-- Mahsup Bilgileri ve İnfaz Başlangıç Tarihi Birleştirilmiş Kutu -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-4">
-                <!-- İnfaz Başlangıç Tarihi & Doğum Tarihi -->
-                <div class="text-xs border-b border-slate-200 pb-3">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-slate-500 mb-1 font-bold">İnfaz Başlangıç Tarihi (Cezaevine Giriş Tarihi)</label>
-                            <input type="date" id="infazBaslangic" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
-                        </div>
-                        <div>
-                            <label class="block text-slate-500 mb-1 font-bold">Doğum Tarihi / Cinsiyet</label>
-                            <div class="flex gap-2">
-                                <input type="date" id="hukumluDogumTarihi" onchange="calculateAll()" class="flex-1 min-w-0 bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
-                                <select id="hukumluCinsiyet" onchange="cinsiyetGorunumGuncelle(); calculateAll();" class="w-28 bg-slate-50 border border-slate-300 rounded px-2 py-1.5 focus:border-amber-500 outline-none font-semibold text-sky-700">
-                                    <option value="">Cinsiyet</option>
-                                    <option value="erkek">Erkek</option>
-                                    <option value="kadin">Kadın</option>
-                                </select>
-                            </div>
-                            <label id="kadinCocuk06Wrap" class="hidden flex items-center gap-1.5 mt-1.5 text-[11px] text-slate-600 font-semibold">
-                                <input type="checkbox" id="kadinCocuk06" onchange="calculateAll()" class="accent-amber-500"> 0-6 yaş grubunda çocuğu var
-                            </label>
-                        </div>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır. Cinsiyet "Kadın" seçilip 0-6 yaş grubunda çocuğu olduğu işaretlenirse denetimli serbestlik koşullu salıverilmeye 2 yıl kala hesaplanır.</p>
-
-                    <!-- 01/07/2016 öncesi işlenmiş, 5 yıldan az hapis cezalı (istisna suçlar
-                         hariç) hükümlülerin "3 gün içinde doğrudan açık" hakkı (R11,
-                         kullanıcı onayı 2026-11-10) için iyi hal bilgisi. -->
-                    <label class="flex items-center gap-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-200">
-                        <input type="checkbox" id="hukumluIyiHalli" onchange="calculateAll()" class="accent-amber-500">
-                        Hükümlü İyi Hallidir (01/07/2016 öncesi, 5 yıldan az hapis cezalarında "3 gün içinde doğrudan açık" hakkı değerlendirmesi için)
-                    </label>
-
-                    <!-- Açık/Denetime ayrılma için asgari kapalı kalma şartı: giriş tarihi ile
-                         bugün arasında bir süre farkı varsa, bu sürenin nerede geçtiği otomatik
-                         VARSAYILMAZ; kullanıcıya sorulur. -->
-                    <div id="girisGunFarkiBox" class="hidden mt-3 pt-3 border-t border-slate-200 bg-amber-50/60 -mx-4 -mb-4 px-4 pb-4 rounded-b-xl">
-                        <p class="text-[11px] font-bold text-amber-800 mb-1.5">
-                            <i class="fa-solid fa-circle-question"></i> Giriş tarihi ile bugün arasında <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> günlük bir süre var. Açığa ayrılma için asgari kapalı kalma şartının sağlanıp sağlanmadığını anlamak için bu süre nerede geçirilmiş?
-                        </p>
-                        <select id="girisGunuDurum" onchange="calculateAll()" class="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500">
-                            <option value="">— Belirtilmedi (şart sağlandı mı anlaşılamıyor) —</option>
-                            <option value="tamamen_kapali">Bu süre tamamen kapalı ceza infaz kurumunda geçirildi</option>
-                            <option value="kismen_disarida">Bu sürenin bir kısmı/tamamı açıkta veya dışarıda geçirildi (firar, açık cezaevi, DS vb.)</option>
-                        </select>
-                    </div>
-                </div>
-
                 <!-- Mahsup Aralıkları Tablosu (Boş Başlangıç) -->
                 <div>
                     <div class="flex items-center justify-between mb-3">
@@ -337,17 +342,13 @@
 
             <!-- Açıklama (Manuel Not) -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                <div class="flex items-center justify-between gap-2 mb-2">
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                        <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
-                    </h2>
-                    <button type="button" onclick="document.getElementById('aciklamaSablonInput').click()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold whitespace-nowrap"><i class="fa-solid fa-file-import"></i> Şablon Ekle</button>
-                    <input type="file" id="aciklamaSablonInput" accept=".udf,.txt,.docx" class="hidden" onchange="aciklamaSablonEkle(this)">
-                </div>
-                <textarea id="aciklamaManuel" rows="4" onchange="calculateAll()" placeholder="Açıklamanızı buraya yazabilir veya &quot;Şablon Ekle&quot; ile bilgisayarınızdaki hazır şablonu (UDF, Word .docx veya .txt) ekleyip üzerinde düzeltme yapabilirsiniz." class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-note-sticky text-amber-500"></i> Açıklama (Müddetnameye Eklenecek Not)
+                </h2>
+                <textarea id="aciklamaManuel" rows="4" onchange="calculateAll()" placeholder="Müddetnamenin NOT bölümüne eklenecek açıklamanızı buraya yazabilirsiniz." class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500"></textarea>
                 <label class="flex items-start gap-1.5 text-[11px] text-slate-600 mt-2 font-semibold">
                     <input type="checkbox" id="otomatikAciklama" onchange="otomatikAciklamaDegisti()" class="accent-amber-500 mt-0.5">
-                    <span>Otomatik açıklama — işaretlenirse programın kendi açıklaması da müddetnamenin NOT bölümüne eklenir; işaretlenmezse yalnızca ekranda "Program Bilgi Notu" olarak görünür, çıktıya girmez.</span>
+                    <span>Otomatik açıklama — işaretlenirse programın açıklaması ve (kayıtlıysa) savcılık penceresindeki hazır şablonunuz NOT bölümüne eklenir; şablon her zaman en altta yer alır. İşaret kaldırılırsa ikisi de çıktıdan kalkar; programın açıklaması yalnızca ekranda "Program Bilgi Notu" olarak görünür.</span>
                 </label>
             </div>
 
@@ -394,6 +395,7 @@
                             <tr><td class="py-0.5 px-2 font-bold">Doğum Tarihi</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repDogumTarihi"></td></tr>
                             <tr><td class="py-0.5 px-2 font-bold">Doğum Yeri</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repDogumYeri"></td></tr>
                             <tr><td class="py-0.5 px-2 font-bold">Nüfusa Kayıtlı Olduğu İl ve İlçe</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repNufus"></td></tr>
+                            <tr><td class="py-0.5 px-2 font-bold">İkametgah Adresi</td><td class="py-0.5 font-bold">:</td><td class="py-0.5 px-2 font-bold" id="repIkamet"></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1333,6 +1335,7 @@
         // içtima (tavan) mantığı her iki yöntemde de AYNI kalır (kullanıcı onayı).
         let hesaplamaYontemi = 'ayrisik';
         function setHesaplamaYontemi(yontem) {
+            { const etk = document.getElementById('hesapYontemEtiket'); if (etk) etk.textContent = (yontem === 'bitisik') ? 'Bitişik Hesap' : 'Ayrışık Hesap'; }
             hesaplamaYontemi = yontem;
             const btnA = document.getElementById('btnHesapAyrisik');
             const btnB = document.getElementById('btnHesapBitisik');
@@ -2484,7 +2487,7 @@
                 // yapısından, PDF'te "Etiket : değer" satırlarından alınır; bulunamayan alan boş kalır,
                 // kullanıcı elle doldurur.
                 const evrakOkunan = (isUdf && sonUdfXml) ? udfEvrakBilgileri(udfYapisalOku(sonUdfXml)) : { alanlar: satirlardanEvrakAlanlari(lines), ilamNolar: null, mahsupEk: null };
-                EVRAK_ALANLARI.forEach(id => { const el = document.getElementById(id); if (el) el.value = evrakOkunan.alanlar[id] || ''; });
+                EVRAK_ALANLARI.forEach(id => { const el = document.getElementById(id); if (el) el.value = (id === 'evrakCezasi') ? '' : (evrakOkunan.alanlar[id] || ''); }); // CEZASI belgeden alınmaz, program toplar
                 if (evrakOkunan.ilamNolar && evrakOkunan.ilamNolar.length === cezaSatirlari.length) cezaSatirlari.forEach((s, i) => { s.ilamNo = evrakOkunan.ilamNolar[i] || s.ilamNo || ''; });
                 if (evrakOkunan.mahsupEk && evrakOkunan.mahsupEk.length === mahsupSatirlari.length) mahsupSatirlari.forEach((s, i) => { s.aciklama = evrakOkunan.mahsupEk[i].aciklama; s.ilamNo = evrakOkunan.mahsupEk[i].ilamNo; });
 
@@ -4786,7 +4789,23 @@
             }
 
             // Resmi rapor alanları
-            hesaplananCezaMetni = `${cezaMetin} (${totalRawDays} Gün)`;
+            // 2026-11-14 (kullanıcı talebi): CEZASI her zaman hesaplamaya giren cezaların toplamıdır;
+            // müebbet varsa "Müebbet + 100 Yıl" biçiminde yazılır (sonradan eklenen ceza da toplama girer).
+            {
+                const tipler = [...document.querySelectorAll('#penaltyTableBody .penalty-sure-tip')].map(e => e.value);
+                const amAdet = tipler.filter(t => t === 'agirlastirilmis_muebbet').length;
+                const mAdet = tipler.filter(t => t === 'muebbet').length;
+                if (amAdet || mAdet) {
+                    const p = [];
+                    if (amAdet) p.push((amAdet > 1 ? amAdet + ' Kez ' : '') + 'Ağırlaştırılmış Müebbet');
+                    if (mAdet) p.push((mAdet > 1 ? mAdet + ' Kez ' : '') + 'Müebbet');
+                    const sureli = [[toplamYilAyri, 'Yıl'], [toplamAyAyri, 'Ay'], [toplamGunAyri, 'Gün']].filter(x => x[0] > 0).map(x => `${x[0]} ${x[1]}`).join(' ');
+                    if (sureli) p.push(sureli);
+                    hesaplananCezaMetni = p.join(' + ');
+                } else {
+                    hesaplananCezaMetni = `${cezaMetin} (${totalRawDays} Gün)`;
+                }
+            }
             evrakBilgileriniYaz(); // CEZASI: kutu boşsa hesaplanan toplam ceza yazılır
 
             // Her ceza satırını raporda ayrı ayrı göster
@@ -4948,7 +4967,10 @@
                     bitisikAciklamaMetni
                 ].filter(Boolean);
                 const otoAcik = otomatikAciklamaAcikMi();
-                const parcalar = (otoAcik ? otomatikParcalar : []).concat(manuelNot.trim() ? [escapeHtml(manuelNot.trim())] : []);
+                const hazirSablon = otoAcik ? (((savcilikOku() || {}).sablon) || '').trim() : '';
+                const parcalar = (otoAcik ? otomatikParcalar : [])
+                    .concat(manuelNot.trim() ? [escapeHtml(manuelNot.trim())] : [])
+                    .concat(hazirSablon ? [escapeHtml(hazirSablon)] : []); // hazır şablon HER ZAMAN en altta
                 // NOT: özel infaz notları kırmızı <span> işaretlemesi içerdiğinden burada
                 // innerHTML kullanılır; manuel not escapeHtml ile kaçışlanır.
                 repAciklamaEl.innerHTML = parcalar.join('\n\n');
@@ -4997,7 +5019,7 @@
            ====================================================== */
         const SAVCILIK_ANAHTAR = 'infazci_savcilik_v1';
         const OTO_ACIKLAMA_ANAHTAR = 'infazci_otomatik_aciklama_v1';
-        const EVRAK_ALANLARI = ['evrakTc', 'evrakAdSoyad', 'evrakBabaAdi', 'evrakAnaAdi', 'evrakDogumYeri', 'evrakNufus', 'evrakDefterNo', 'evrakMahkeme', 'evrakKarar', 'evrakCezasi'];
+        const EVRAK_ALANLARI = ['evrakTc', 'evrakAdSoyad', 'evrakBabaAdi', 'evrakAnaAdi', 'evrakDogumYeri', 'evrakNufus', 'evrakIkamet', 'evrakDefterNo', 'evrakMahkeme', 'evrakKarar', 'evrakCezasi'];
         let hesaplananCezaMetni = '';
 
         function savcilikOku() {
@@ -5043,6 +5065,7 @@
             yaz('repDogumTarihi', dogum ? formatDate(new Date(dogum)) : '');
             yaz('repDogumYeri', evrakDeger('evrakDogumYeri'));
             yaz('repNufus', evrakDeger('evrakNufus'));
+            yaz('repIkamet', evrakDeger('evrakIkamet'));
             yaz('repMahkeme', evrakDeger('evrakMahkeme'));
             yaz('repKarar', evrakDeger('evrakKarar'));
             yaz('repCeza', evrakDeger('evrakCezasi') || hesaplananCezaMetni);
@@ -5057,17 +5080,17 @@
             const s = savcilikOku() || {};
             const koy = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
             koy('savcilikAdi', s.savcilik); koy('savcilikKatipAd', s.katipAd); koy('savcilikKatipSicil', s.katipSicil);
-            koy('savcilikSavciAd', s.savciAd); koy('savcilikSavciSicil', s.savciSicil);
+            koy('savcilikSavciAd', s.savciAd); koy('savcilikSavciSicil', s.savciSicil); koy('savcilikSablon', s.sablon);
             const m = document.getElementById('savcilikModal');
             if (m) m.style.display = 'flex';
         }
         function savcilikPenceresiKapat() { const m = document.getElementById('savcilikModal'); if (m) m.style.display = 'none'; }
         function savcilikKaydet() {
             const al = id => ((document.getElementById(id) || {}).value || '').trim();
-            const veri = { savcilik: al('savcilikAdi'), katipAd: al('savcilikKatipAd'), katipSicil: al('savcilikKatipSicil'), savciAd: al('savcilikSavciAd'), savciSicil: al('savcilikSavciSicil') };
+            const veri = { savcilik: al('savcilikAdi'), katipAd: al('savcilikKatipAd'), katipSicil: al('savcilikKatipSicil'), savciAd: al('savcilikSavciAd'), savciSicil: al('savcilikSavciSicil'), sablon: al('savcilikSablon') };
             try { localStorage.setItem(SAVCILIK_ANAHTAR, JSON.stringify(veri)); } catch (e) { alert('Bilgiler bu tarayıcıda kaydedilemedi.'); }
             savcilikPenceresiKapat();
-            evrakBilgileriniYaz();
+            calculateAll(); // imza alanları + (otomatik açıklama işaretliyse) şablon yenilenir
         }
         // "Savcılık değilim / Şimdi değil": pencere bir daha kendiliğinden açılmaz (düğmeden her zaman açılabilir).
         function savcilikAtla() {
@@ -5082,8 +5105,8 @@
             calculateAll();
         }
 
-        // --- Açıklamaya şablon ekleme: UDF, Word (.docx) veya .txt dosyasının metni açıklama
-        // kutusuna eklenir; kullanıcı kutuda dilediği gibi düzeltir. ---
+        // --- Hazır şablon: UDF, Word (.docx) veya .txt dosyasının metni savcılık penceresindeki
+        // şablon kutusuna yüklenir; kullanıcı kutuda dilediği gibi düzeltir, "Kaydet" ile saklanır. ---
         async function aciklamaSablonEkle(inputEl) {
             const dosya = inputEl.files && inputEl.files[0];
             if (!dosya) return;
@@ -5117,9 +5140,9 @@
                 }
                 metin = metin.replace(/^﻿/, '').replace(/\r/g, '').replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
                 if (!metin) throw new Error('Seçilen dosyada metin bulunamadı.');
-                const kutu = document.getElementById('aciklamaManuel');
-                kutu.value = kutu.value.trim() ? (kutu.value.replace(/\s+$/, '') + '\n' + metin) : metin;
-                calculateAll();
+                // 2026-11-14: şablon artık savcılık penceresindeki "Hazır Açıklama Şablonu" kutusuna yüklenir.
+                const kutu = document.getElementById('savcilikSablon');
+                kutu.value = metin;
                 kutu.focus();
             } catch (err) {
                 alert('Şablon eklenemedi: ' + ((err && err.message) || err));
@@ -5161,6 +5184,7 @@
             { id: 'evrakAnaAdi', re: /AN[AN]E?\s*ADI/ },
             { id: 'evrakDogumYeri', re: /DO[ĞG]UM\s*YER[İI]/ },
             { id: 'evrakNufus', re: /N[ÜU]FUSA\s*KAYITLI/ },
+            { id: 'evrakIkamet', re: /[İI]KAMETG[AÂ]H|[İI]KAMET\s*ADRES/ },
             { id: 'evrakDefterNo', re: /DEFTER\s*(NUMARASI|NO)/ }
         ];
         const trBuyuk = s => (s || '').toLocaleUpperCase('tr-TR');
@@ -5333,7 +5357,7 @@
             // Hükümlü kimlik bilgileri
             els += para('HÜKÜMLÜ KİMLİK BİLGİLERİ', { bold: true });
             els += TABLO('Tablo2', '124,76') + '<row rowType="dataRow" rowName="row1"><cell>';
-            [['T.C. Kimlik No', 'repTc'], ['Adı ve Soyadı', 'repAdSoyad'], ['Baba Adı', 'repBaba'], ['Ana Adı', 'repAna'], ['Doğum Tarihi', 'repDogumTarihi'], ['Doğum Yeri', 'repDogumYeri'], ['Nüfusa Kayıtlı Olduğu İl ve İlçe', 'repNufus']]
+            [['T.C. Kimlik No', 'repTc'], ['Adı ve Soyadı', 'repAdSoyad'], ['Baba Adı', 'repBaba'], ['Ana Adı', 'repAna'], ['Doğum Tarihi', 'repDogumTarihi'], ['Doğum Yeri', 'repDogumYeri'], ['Nüfusa Kayıtlı Olduğu İl ve İlçe', 'repNufus'], ['İkametgah Adresi', 'repIkamet']]
                 .forEach(([ad, id]) => { els += para([{ t: ad + '\t:', b: true, ham: true }, { t: ' ' + al(id), b: true, ham: true }], { tab: TAB2 }); });
             els += '</cell><cell>' + para('') + para('') + '</cell></row></table>';
 
@@ -5628,6 +5652,12 @@
                     <div style="flex:2;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Cumhuriyet Savcısı Adı Soyadı</label><input type="text" id="savcilikSavciAd" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
                     <div style="flex:1;"><label style="display:block; font-weight:700; font-size:12px; margin-bottom:3px;">Sicil No</label><input type="text" id="savcilikSavciSicil" style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px;"></div>
                 </div>
+                <div style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <label style="font-weight:700; font-size:12px;">Hazır Açıklama Şablonu</label>
+                    <button type="button" onclick="document.getElementById('aciklamaSablonInput').click()" style="padding:4px 10px; border-radius:6px; border:1px solid #f59e0b; background:#fffbeb; color:#b45309; font-weight:700; font-size:11px;">Dosyadan Yükle (UDF / Word / txt)</button>
+                    <input type="file" id="aciklamaSablonInput" accept=".udf,.txt,.docx" style="display:none;" onchange="aciklamaSablonEkle(this)">
+                </div>
+                <textarea id="savcilikSablon" rows="5" placeholder="Müddetnamelerin NOT bölümünün en altına eklenecek hazır açıklamanız. Dosyadan yükleyebilir veya buraya yazıp düzeltebilirsiniz. &quot;Otomatik açıklama&quot; işaretlendiğinde eklenir." style="width:100%; border:1px solid #cbd5e1; border-radius:6px; padding:7px 9px; margin-top:4px; font-size:12px;"></textarea>
             </div>
             <div style="padding:12px 18px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; gap:8px;">
                 <button type="button" onclick="savcilikAtla()" style="padding:7px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; font-size:12px;">Savcılık değilim / Şimdi değil</button>
