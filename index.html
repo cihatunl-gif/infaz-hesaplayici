@@ -1317,6 +1317,14 @@
             const sel = tr.querySelector('.penalty-mukerrir');
             if (!wrap || !sel) return;
             if (sel.value === '1') wrap.classList.remove('hidden'); else wrap.classList.add('hidden');
+            // 2026-11-13 (kullanıcı): tekerrür seçilince "Oran" kutusu gizlenir (oran tekerrürden gelir);
+            // "Tekerrür Yok" seçilince kutu eski görünürlüğüne döner (elle satırda hep açık, değilse suç tarihi 01/06/2005 öncesiyse açık).
+            const oranWrap = tr.querySelector('.penalty-oran-wrap');
+            if (oranWrap) {
+                if (sel.value === '1' || sel.value === '2') oranWrap.classList.add('hidden');
+                else if (tr.dataset.manuelOran === '1') oranWrap.classList.remove('hidden');
+                else oran647GorunumGuncelle(tr);
+            }
         }
         // 2026-11-13 (kullanıcı): mağduru her zaman çocuk olan maddeler (TCK 103) seçilince "Mağdur çocuk" kutusu kendiliğinden işaretlenir.
         function isMagdurCocukOtomatikMadde(maddeText) {
