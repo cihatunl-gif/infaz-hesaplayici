@@ -167,7 +167,7 @@
                 </div>
             </details>
 
-            <!-- Ceza Bilgileri (hükmü veren mahkeme, karar bilgisi, cezası) (2026-11-14) -->
+            <!-- Ceza Bilgileri (hükmü veren mahkeme, karar bilgisi) (2026-11-14); CEZASI'nı program kendisi yazar -->
             <details id="cezaBilgiKutu" class="bg-white border border-slate-200 rounded-xl shadow-sm">
                 <summary class="cursor-pointer select-none p-4 text-xs font-bold uppercase tracking-wider text-slate-500">
                     <i class="fa-solid fa-scale-balanced text-amber-500"></i> Ceza Bilgileri (Mahkeme)
@@ -176,7 +176,6 @@
                 <div class="px-4 pb-4 text-xs space-y-2">
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Hükmü Veren Mahkeme</span><input type="text" id="evrakMahkeme" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                     <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Mahkeme Karar Bilgisi</span><input type="text" id="evrakKarar" oninput="evrakBilgileriniYaz()" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
-                    <label class="block"><span class="block text-slate-500 mb-0.5 font-bold">Cezası</span><input type="text" id="evrakCezasi" oninput="evrakBilgileriniYaz()" placeholder="Boş bırakın: program cezaların toplamını kendisi yazar (örn. Müebbet + 100 Yıl)" class="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 outline-none focus:border-amber-500"></label>
                 </div>
             </details>
 
@@ -226,27 +225,6 @@
                 </div>
                 <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır. Cinsiyet "Kadın" seçilip 0-6 yaş grubunda çocuğu olduğu işaretlenirse denetimli serbestlik koşullu salıverilmeye 2 yıl kala hesaplanır.</p>
 
-                <!-- 01/07/2016 öncesi işlenmiş, 5 yıldan az hapis cezalı (istisna suçlar
-                     hariç) hükümlülerin "3 gün içinde doğrudan açık" hakkı (R11,
-                     kullanıcı onayı 2026-11-10) için iyi hal bilgisi. -->
-                <label class="flex items-center gap-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-200">
-                    <input type="checkbox" id="hukumluIyiHalli" onchange="calculateAll()" class="accent-amber-500">
-                    Hükümlü İyi Hallidir (01/07/2016 öncesi, 5 yıldan az hapis cezalarında "3 gün içinde doğrudan açık" hakkı değerlendirmesi için)
-                </label>
-
-                <!-- Açık/Denetime ayrılma için asgari kapalı kalma şartı: giriş tarihi ile
-                     bugün arasında bir süre farkı varsa, bu sürenin nerede geçtiği otomatik
-                     VARSAYILMAZ; kullanıcıya sorulur. -->
-                <div id="girisGunFarkiBox" class="hidden mt-3 pt-3 border-t border-slate-200 bg-amber-50/60 -mx-4 -mb-4 px-4 pb-4 rounded-b-xl">
-                    <p class="text-[11px] font-bold text-amber-800 mb-1.5">
-                        <i class="fa-solid fa-circle-question"></i> Giriş tarihi ile bugün arasında <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> günlük bir süre var. Açığa ayrılma için asgari kapalı kalma şartının sağlanıp sağlanmadığını anlamak için bu süre nerede geçirilmiş?
-                    </p>
-                    <select id="girisGunuDurum" onchange="calculateAll()" class="w-full bg-white border border-amber-300 rounded px-2.5 py-1.5 text-xs outline-none focus:border-amber-500">
-                        <option value="">— Belirtilmedi (şart sağlandı mı anlaşılamıyor) —</option>
-                        <option value="tamamen_kapali">Bu süre tamamen kapalı ceza infaz kurumunda geçirildi</option>
-                        <option value="kismen_disarida">Bu sürenin bir kısmı/tamamı açıkta veya dışarıda geçirildi (firar, açık cezaevi, DS vb.)</option>
-                    </select>
-                </div>
             </div>
 
             <!-- Birleştirilmiş Cezalar, Süresiz Hapis & Suç Türü Paneli -->
@@ -259,9 +237,6 @@
                     <div class="flex items-center gap-1.5">
                         <button onclick="addPenaltyRow()" class="px-2.5 py-1 text-xs bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30 rounded font-semibold transition flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Ceza Ekle
-                        </button>
-                        <button onclick="addManuelPenaltyRow()" class="px-2.5 py-1 text-xs bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 border border-sky-500/30 rounded font-semibold transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus"></i> Manuel Ekle
                         </button>
                     </div>
                 </div>
@@ -287,6 +262,18 @@
 
             <!-- Mahsup Bilgileri ve İnfaz Başlangıç Tarihi Birleştirilmiş Kutu -->
             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-4">
+                <!-- Asgari kapalı kalma şartı için: giriş tarihi ile bugün arasındaki sürenin nerede geçtiği
+                     VARSAYILMAZ, kullanıcıya sorulur. 2026-11-14: mahsubun üstüne alındı, metin kısaltıldı. -->
+                <div id="girisGunFarkiBox" class="hidden bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-bold text-amber-800"><i class="fa-solid fa-circle-question"></i> Girişten bugüne <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> gün geçti. Bu süre nerede geçti?</span>
+                        <select id="girisGunuDurum" onchange="calculateAll()" title="Açığa ayrılmada asgari kapalı kalma şartının sağlanıp sağlanmadığını anlamak için sorulur" class="flex-1 min-w-[12rem] bg-white border border-amber-300 rounded px-2 py-1 text-xs outline-none focus:border-amber-500">
+                            <option value="">Belirtilmedi</option>
+                            <option value="tamamen_kapali">Tamamı kapalı kurumda</option>
+                            <option value="kismen_disarida">Bir kısmı / tamamı dışarıda (açık, denetim, firar)</option>
+                        </select>
+                    </div>
+                </div>
                 <!-- Mahsup Aralıkları Tablosu (Boş Başlangıç) -->
                 <div>
                     <div class="flex items-center justify-between mb-3">
@@ -323,6 +310,13 @@
                         <ul id="mahsupCakismaUyariListesi" class="list-disc list-inside space-y-0.5"></ul>
                     </div>
                 </div>
+                <!-- 01/07/2016 öncesi işlenmiş, 5 yıldan az hapis cezalı (istisna suçlar
+                     hariç) hükümlülerin "3 gün içinde doğrudan açık" hakkı (R11,
+                     kullanıcı onayı 2026-11-10) için iyi hal bilgisi. -->
+                <label class="flex items-center gap-1.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-200">
+                    <input type="checkbox" id="hukumluIyiHalli" onchange="calculateAll()" class="accent-amber-500">
+                    Hükümlü İyi Hallidir (01/07/2016 öncesi, 5 yıldan az hapis cezalarında "3 gün içinde doğrudan açık" hakkı değerlendirmesi için)
+                </label>
             </div>
 
             <!-- Kanuni Üst Sınır Uyarısı (STT/BTT 28/32/42/48 yıl vb. - m.107/3, m.107/4, m.108/1-c) -->
@@ -1385,6 +1379,28 @@
             if (tr.dataset.manuelOran === '1') { wrap.classList.remove('hidden'); return; }
             if (tarihEl.value && tarihEl.value < '2005-06-01') wrap.classList.remove('hidden');
             else wrap.classList.add('hidden');
+        }
+        // 2026-11-14 (kullanıcı): "Manuel Ekle" düğmesi kaldırıldı; onun özelliği (oranı ve mükerrir gününü
+        // elle girme) her ceza satırındaki "Oranı elle gir" tikiyle açılır.
+        function oranElleDegisti(cb) {
+            const tr = cb.closest('tr');
+            if (!tr) return;
+            tr.dataset.manuelOran = cb.checked ? '1' : '0';
+            const ekWrap = tr.querySelector('.penalty-ekgun-wrap');
+            if (ekWrap) ekWrap.classList.toggle('hidden', !cb.checked);
+            if (!cb.checked) { const ek = tr.querySelector('.penalty-ek-gun'); if (ek) ek.value = 0; }
+            tekerrurKutuGuncelle(tr); // oran kutusunun görünürlüğü (tekerrür seçiliyse gizli kalır)
+            calculateAll();
+        }
+        function oranSecildi(sel) {
+            const tr = sel.closest('tr');
+            if (!tr) return;
+            tr.dataset.manuelOran = '1';
+            const cb = tr.querySelector('.penalty-oran-elle');
+            if (cb) cb.checked = true;
+            const ekWrap = tr.querySelector('.penalty-ekgun-wrap');
+            if (ekWrap) ekWrap.classList.remove('hidden');
+            calculateAll();
         }
         // 2026-11-13 (kullanıcı): "1. Tekerrür" seçilince tekerrüre esas ilamın süresi (yıl/ay/gün) kutusu açılır.
         function tekerrurKutuGuncelle(tr) {
@@ -2487,7 +2503,7 @@
                 // yapısından, PDF'te "Etiket : değer" satırlarından alınır; bulunamayan alan boş kalır,
                 // kullanıcı elle doldurur.
                 const evrakOkunan = (isUdf && sonUdfXml) ? udfEvrakBilgileri(udfYapisalOku(sonUdfXml)) : { alanlar: satirlardanEvrakAlanlari(lines), ilamNolar: null, mahsupEk: null };
-                EVRAK_ALANLARI.forEach(id => { const el = document.getElementById(id); if (el) el.value = (id === 'evrakCezasi') ? '' : (evrakOkunan.alanlar[id] || ''); }); // CEZASI belgeden alınmaz, program toplar
+                EVRAK_ALANLARI.forEach(id => { const el = document.getElementById(id); if (el) el.value = evrakOkunan.alanlar[id] || ''; }); // CEZASI belgeden alınmaz, program toplar
                 if (evrakOkunan.ilamNolar && evrakOkunan.ilamNolar.length === cezaSatirlari.length) cezaSatirlari.forEach((s, i) => { s.ilamNo = evrakOkunan.ilamNolar[i] || s.ilamNo || ''; });
                 if (evrakOkunan.mahsupEk && evrakOkunan.mahsupEk.length === mahsupSatirlari.length) mahsupSatirlari.forEach((s, i) => { s.aciklama = evrakOkunan.mahsupEk[i].aciklama; s.ilamNo = evrakOkunan.mahsupEk[i].ilamNo; });
 
@@ -3133,7 +3149,7 @@
                     </div>
                     <div class="flex items-center gap-1 penalty-oran-wrap ${manuelOran ? '' : 'hidden'}">
                         <span class="text-[10px] text-slate-500">Oran:</span>
-                        <select onchange="this.closest('tr').dataset.manuelOran = '1'; calculateAll();" class="penalty-oran w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold">
+                        <select onchange="oranSecildi(this)" class="penalty-oran w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-semibold">
                             <option value="1/2" ${oranSecimi === '1/2' ? 'selected' : ''}>1/2</option>
                             <option value="2/3" ${oranSecimi === '2/3' ? 'selected' : ''}>2/3</option>
                             <option value="3/4" ${oranSecimi === '3/4' ? 'selected' : ''}>3/4</option>
@@ -3179,6 +3195,10 @@
                     <label class="flex items-center gap-1.5 text-[10px] text-amber-700 pt-0.5 penalty-etkin-pismanlik-wrap ${(orgutlu || isTerorEtkinPismanlikMaddesi(sucMadde)) ? '' : 'hidden'}">
                         <input type="checkbox" class="penalty-etkin-pismanlik accent-amber-500" ${etkinPismanlik ? 'checked' : ''}>
                         Etkin Pişmanlıktan Yararlandı (TCK 221): işaretlenirse koşulluya 2 yıl kala açığa ayrılır, işaretlenmezse 1 yıl kala
+                    </label>
+                    <label class="flex items-center gap-1.5 text-[10px] text-slate-500 pt-0.5" title="İşaretlenirse infaz oranı listeden otomatik alınmaz; oranı ve varsa mükerrir gününü siz girersiniz">
+                        <input type="checkbox" class="penalty-oran-elle accent-amber-500" onchange="oranElleDegisti(this)" ${manuelOran ? 'checked' : ''}>
+                        Oranı elle gir
                     </label>
                     <div class="flex items-center gap-1 pt-0.5 penalty-ekgun-wrap ${manuelOran ? '' : 'hidden'}">
                         <span class="text-[10px] text-slate-500 w-16">Mükerrir Gün:</span>
@@ -5019,7 +5039,7 @@
            ====================================================== */
         const SAVCILIK_ANAHTAR = 'infazci_savcilik_v1';
         const OTO_ACIKLAMA_ANAHTAR = 'infazci_otomatik_aciklama_v1';
-        const EVRAK_ALANLARI = ['evrakTc', 'evrakAdSoyad', 'evrakBabaAdi', 'evrakAnaAdi', 'evrakDogumYeri', 'evrakNufus', 'evrakIkamet', 'evrakDefterNo', 'evrakMahkeme', 'evrakKarar', 'evrakCezasi'];
+        const EVRAK_ALANLARI = ['evrakTc', 'evrakAdSoyad', 'evrakBabaAdi', 'evrakAnaAdi', 'evrakDogumYeri', 'evrakNufus', 'evrakIkamet', 'evrakDefterNo', 'evrakMahkeme', 'evrakKarar'];
         let hesaplananCezaMetni = '';
 
         function savcilikOku() {
@@ -5068,7 +5088,7 @@
             yaz('repIkamet', evrakDeger('evrakIkamet'));
             yaz('repMahkeme', evrakDeger('evrakMahkeme'));
             yaz('repKarar', evrakDeger('evrakKarar'));
-            yaz('repCeza', evrakDeger('evrakCezasi') || hesaplananCezaMetni);
+            yaz('repCeza', hesaplananCezaMetni); // CEZASI her zaman programın hesapladığı toplamdır
             yaz('repKatipAd', s.katipAd);
             yaz('repKatipUnvan', (s.katipAd || s.katipSicil) ? ('Zabıt Katibi' + (s.katipSicil ? ' - ' + s.katipSicil : '')) : '');
             yaz('repSavciAd', (s.savciAd || '').toLocaleUpperCase('tr-TR'));
