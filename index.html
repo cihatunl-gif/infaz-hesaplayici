@@ -1089,7 +1089,9 @@
 
         function getAcikDsBilgi(sucMadde) {
             if (sucMadde) {
-                const trimmed = sucMadde.trim();
+                // 2026-11-13: UYAP'taki noktalı bent yazımı ("TCK 86/3.a.3.1", "TCK 82/1.d") tabloda tireli
+                // ("TCK 86/3-a") anahtarlarla eşleşsin diye fıkradan sonraki ilk nokta tireye çevrilir.
+                const trimmed = sucMadde.trim().replace(/^(TCK\s*\d+\/\d+)\.(?=[a-zçğıöşü](?![a-zçğıöşü]))/i, '$1-');
                 for (const rec of ACIK_DS_TABLOSU) {
                     if (trimmed.startsWith(rec.key)) {
                         let acik = rec.acik;
@@ -1169,7 +1171,7 @@
             if (isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || isTerorEtkinPismanlikMaddesi(sucMadde)) return 'terör suçu';
             // (2026-11-12) Örgütlü suçlar erken açığa ayrılmadan YARARLANIR — eski "örgütlü suç" hariç tutması kaldırıldı.
             if (/^tck\s*10[23]\b/.test(m)) return 'cinsel suç (TCK 102/103)';
-            if (/^tck\s*86\/3-b/.test(m) || /^tck\s*82\/1-d\s*,\s*e/.test(m) || /^tck\s*82\/1-e/.test(m)) return 'beden/ruh bakımından savunamayacak kişiye karşı suç';
+            if (/^tck\s*86\/3[-.]b/.test(m) || /^tck\s*82\/1[-.]d\s*,\s*e/.test(m) || /^tck\s*82\/1[-.]e/.test(m)) return 'beden/ruh bakımından savunamayacak kişiye karşı suç';
             if (eslesme === 'TCK 82/1-d' || eslesme === 'TCK 86/3-a' || eslesme === 'TCK 96/2-b') return 'eşe karşı suç';
             return '';
         }
