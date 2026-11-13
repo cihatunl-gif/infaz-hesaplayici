@@ -59,6 +59,11 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+        /* Her ilam (ceza satırı) kendi başına kapatılıp açılabilir (2026-11-14): kapalıyken yalnız özet satırı görünür. */
+        .ilam-ozet-satir { display: none; cursor: pointer; }
+        tr.ilam-kapali .ilam-ozet-satir { display: block; }
+        tr.ilam-kapali > td:not(:last-child) > *:not(.ilam-ozet-satir):not(.satir-hata-notu) { display: none !important; }
+
         @media print {
             body { background: white !important; color: black !important; }
             .no-print { display: none !important; }
@@ -143,6 +148,7 @@
                 </p>
                 <input type="file" accept="application/pdf,.udf,.tif,.tiff,.jpg,.jpeg,.png" onchange="muddetnameDosyasindanDoldur(this)" class="block w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-amber-500/10 file:text-amber-700 hover:file:bg-amber-500/20 border border-slate-300 rounded-lg cursor-pointer">
                 <p class="mt-1.5 text-[11px] font-bold" style="color:#15803d;"><i class="fa-solid fa-circle-check"></i> Daha önce hesaplanmış müddetnameyi UDF olarak seçerseniz tüm bilgiler otomatik dolar.</p>
+                <div id="belgeKiyasKutu" class="hidden mt-1.5 text-[10px] leading-snug"></div>
                 <div id="pdfFillSonuc" class="hidden mt-2 text-[11px] leading-relaxed"></div>
             </div>
 
@@ -329,6 +335,7 @@
                         <span class="text-slate-500">Toplam Mahsup Düşülecek Süre:</span>
                         <span id="grandTotalMahsup" class="text-emerald-700 font-mono text-sm">0 Gün</span>
                     </div>
+                    <div id="mahsupKiyasNotu" class="hidden mt-1" style="color:#dc2626; font-size:10px; font-weight:600;"></div>
                     <div id="mahsupCakismaUyariBanner" class="hidden mt-2 bg-red-50 border border-red-300 text-red-800 text-[11px] rounded-lg p-2.5">
                         <p class="font-bold mb-1"><i class="fa-solid fa-triangle-exclamation"></i> Tarih Çakışması Uyarısı</p>
                         <ul id="mahsupCakismaUyariListesi" class="list-disc list-inside space-y-0.5"></ul>
@@ -1443,6 +1450,16 @@
             if (ok) ok.className = 'fa-solid ' + (kapat ? 'fa-chevron-right' : 'fa-chevron-down') + ' text-slate-400';
             kutuOzetGuncelle();
         }
+        // Tek bir ilamı (ceza satırını) kapatır / açar; kapalıyken satır, rapordaki satır gibi tek satır özet görünür.
+        function ilamSatirAcKapa(el) {
+            const tr = el.closest('tr');
+            if (!tr) return;
+            const kapali = tr.classList.toggle('ilam-kapali');
+            const h = tr.children;
+            if (h.length >= 4) { h[0].colSpan = kapali ? 3 : 1; h[1].style.display = kapali ? 'none' : ''; h[2].style.display = kapali ? 'none' : ''; }
+            const ok = tr.querySelector('.ilam-satir-ok');
+            if (ok) ok.className = 'ilam-satir-ok fa-solid ' + (kapali ? 'fa-chevron-down' : 'fa-chevron-up');
+        }
         function kutuOzetGuncelle() {
             const kopya = (ozetId, kaynakId, basliklar) => {
                 const ozet = document.getElementById(ozetId), kaynak = document.getElementById(kaynakId);
@@ -1746,6 +1763,54 @@
             }, ilerleme);
         }
         // Belgenin KENDİ yazdığı koşullu salıverilme / hakederek tahliye tarihini bulur (OCR sonrası karşılaştırma için).
+        // --- Yüklenen belge ile programın hesabının karşılaştırılması (2026-11-14) ---
+        let yuklenenBelge = null; // { stt, btt, mahsupGun } — yalnız ekranda uyarı için; rapora / çıktıya girmez
+        function belgedekiMahsupToplamBul(lines) {
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].length > 200 || !/TOPLAM\s*MAHSUP/.test(lines[i].toLocaleUpperCase('tr-TR'))) continue;
+                for (let k = 0; k <= 3; k++) {
+                    const m = (lines[i + k] || '').toLocaleUpperCase('tr-TR').match(/(\d+)\s*G[ÜU]N/);
+                    if (m) return parseInt(m[1]);
+                }
+            }
+            return null;
+        }
+        // İlam / mahsup satırının altına kırmızı, küçük, yıldızla başlayan kısa uyarı ekler; satırda
+        // herhangi bir değişiklik yapılınca kalkar. Belgeden gelen bilgi değiştirilmez.
+        function satirHataNotuEkle(tr, metin) {
+            if (!tr) return;
+            const hucre = tr.querySelector('td');
+            if (!hucre) return;
+            const not = document.createElement('div');
+            not.className = 'satir-hata-notu';
+            not.style.cssText = 'color:#dc2626; font-size:10px; font-weight:600; line-height:1.25; margin-top:2px;';
+            not.textContent = '* ' + metin;
+            hucre.appendChild(not);
+            const kaldir = () => { not.remove(); tr.removeEventListener('input', kaldir); tr.removeEventListener('change', kaldir); };
+            tr.addEventListener('input', kaldir);
+            tr.addEventListener('change', kaldir);
+        }
+        function belgeKiyasGuncelle(programMahsupGun) {
+            const kutu = document.getElementById('belgeKiyasKutu');
+            const mNot = document.getElementById('mahsupKiyasNotu');
+            if (mNot) { mNot.textContent = ''; mNot.classList.add('hidden'); }
+            if (!kutu) return;
+            if (!yuklenenBelge) { kutu.innerHTML = ''; kutu.classList.add('hidden'); return; }
+            const hesapTarih = id => { const m = ((document.getElementById(id) || {}).innerText || '').match(/\d{2}\.\d{2}\.\d{4}/); return m ? m[0] : ''; };
+            const satirlar = [];
+            [['Koşullu salıverilme', yuklenenBelge.stt, hesapTarih('repStt')], ['Hakederek tahliye', yuklenenBelge.btt, hesapTarih('repBtt')]].forEach(([ad, belge, hesap]) => {
+                if (!belge) return;
+                if (belge === hesap) satirlar.push(`<div style="color:#15803d; font-weight:600;"><i class="fa-solid fa-check"></i> ${ad}: belgedeki tarih (${belge}) ile hesaplanan aynı.</div>`);
+                else satirlar.push(`<div style="color:#dc2626; font-weight:600;">* ${ad}: belgede ${belge}, program ${hesap || '-'} hesapladı.</div>`);
+            });
+            if (yuklenenBelge.mahsupGun !== null && yuklenenBelge.mahsupGun !== undefined && yuklenenBelge.mahsupGun !== programMahsupGun && mNot) {
+                mNot.textContent = `* Belgede toplam mahsup ${yuklenenBelge.mahsupGun} gün, program ${programMahsupGun} gün hesapladı.`;
+                mNot.classList.remove('hidden');
+            }
+            kutu.innerHTML = satirlar.join('');
+            kutu.classList.toggle('hidden', satirlar.length === 0);
+        }
+
         function belgedekiTarihBul(lines, desen) {
             const duz = t => (t || '').toLocaleUpperCase('tr-TR').replace(/İ/g, 'I').replace(/Ş/g, 'S').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
             for (let i = 0; i < lines.length; i++) {
@@ -2485,6 +2550,7 @@
                 let taranmisBelge = false;
                 let lines;
                 sonUdfXml = '';
+                yuklenenBelge = null;
                 if (isResim) { // TIF / JPG / PNG: her zaman yazı tanıma ile okunur
                     taranmisBelge = true;
                     goster(`<i class="fa-solid fa-spinner fa-spin"></i> Resim dosyası; yazı tanıma bileşeni hazırlanıyor (ilk kullanımda indirme birkaç dakika sürebilir)...`);
@@ -2612,6 +2678,7 @@
                 // bir alana bağlı olmayanlar) sabit kalır, silinmez.
                 mahsupSatirlari.forEach((s, idx) => {
                     if (!s.turEslesmedi) return;
+                    satirHataNotuEkle(eklenenMahsupSatirElemanlari[idx], 'Mahsup türü belgeden eşleştirilemedi; türü seçiniz.');
                     uyarilar.push(`<li id="mahsup-tur-uyari-${idx}">${idx + 1}. mahsup satırının türü (örn. "Cezaevinde Geçen Süre") otomatik eşleştirilemedi; kutu BOŞ bırakıldı — doğru türü (Gözaltı/Tutukluluk/Açık Çık/Denetimli Serbestlik/Konutta İnfaz) lütfen kendiniz seçin. <span class="text-red-700 font-semibold">Tür seçilmeden bırakılırsa, açık ceza infaz kurumuna/denetimli serbestliğe ayrılma gibi haklar da (asgari kapalı kalma şartı mahsup türüne göre hesaplandığından) hatalı çıkabilir.</span></li>`);
                     // Satırı, ceza satırlarındaki oran-uyuşmazlığı işaretiyle AYNI kırmızı
                     // çember/nabız efektiyle görsel olarak işaretle. Kullanıcı türü
@@ -2638,6 +2705,7 @@
                 // — kullanıcı mutlaka kontrol/düzeltmelidir (kullanıcı talebi, 2026-11-10).
                 cezaSatirlari.forEach((s, idx) => {
                     if (!s.sucTarihiTahmini) return;
+                    satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], 'Suç tarihi belgede bu ceza için yazılı değil; yazılan tarih tahminidir.');
                     uyarilar.push(`<li id="suc-tarihi-tahmini-uyari-${idx}">${idx + 1}. ceza satırında belgede bu kaleme ait kendi suç tarihi yazılı değildi; <span class="text-red-700 font-semibold">kırmızı işaretli suç tarihi alanı tahmini/ortak bir değerdir, lütfen doğru tarihi siz girin.</span></li>`);
                     const hataliTr = eklenenCezaSatirElemanlari[idx];
                     if (!hataliTr) return;
@@ -2656,6 +2724,7 @@
                 // tarih alanı boş bırakıldı, kırmızı işaretlenip kullanıcıdan tam tarih istenir.
                 cezaSatirlari.forEach((s, idx) => {
                     if (!s.sucTarihiSadeceYil && !s.sucTarihiBos) return;
+                    satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], s.sucTarihiBos ? 'Suç tarihi belgede yazılı değil.' : `Suç tarihi belgede sadece yıl (${s.sucTarihiSadeceYil}) olarak yazılı.`);
                     uyarilar.push(`<li id="suc-tarihi-yil-uyari-${idx}">${idx + 1}. ceza satırında suç tarihi belgede ${s.sucTarihiBos ? 'yazılı değil' : `sadece yıl olarak (${s.sucTarihiSadeceYil}) yazılı`}; ceza süresi ve diğer bilgiler dolduruldu, <span class="text-red-700 font-semibold">ancak suç tarihi alanı BOŞ bırakıldı — lütfen tam suç tarihini (gün/ay/yıl) siz girin.</span> (Bazı oranlar ve haklar suç tarihine göre değiştiği için tarih tahmin edilmedi.)</li>`);
                     const hataliTr = eklenenCezaSatirElemanlari[idx];
                     if (!hataliTr) return;
@@ -2687,6 +2756,7 @@
                     // talebi, 2026-11-09).
                     if (!s.oranParsed) {
                         if (s.sureTip !== 'sureli') return;
+                        satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], 'İnfaz oranı belgeden okunamadı.');
                         uyarilar.push(`<li id="oran-yok-uyari-${idx}">${idx + 1}. ceza satırında belgede infaz oranı okunamadı; geçici olarak varsayılan oran atandı. <span class="text-red-700 font-semibold">Kırmızı işaretli satırdaki doğru oranı lütfen kendiniz seçin.</span></li>`);
                         const hataliTr = eklenenCezaSatirElemanlari[idx];
                         if (!hataliTr) return;
@@ -2718,9 +2788,17 @@
                     if (s.mukerrirTahmin === '1' && s.ekGun > 0) return;
                     const orgutluAutoChk = isOrgutluOtomatikMadde(s.maddeRaw);
                     const beklenenOran = beklenenOranYatarHesapla(s.maddeRaw, s.sucTarihi, s.mukerrirTahmin, orgutluAutoChk, dogumTarihiBulundu);
-                    if (beklenenOran === null) return;
+                    if (beklenenOran === null) {
+                        // 2026-11-14: suç maddesi listede yoksa bile, infaz türündeki tekerrür atfı ile yazılı oran
+                        // birbirini tutmalı: 108/1-2 (1. tekerrür) → en az 2/3; 108/3 (2. tekerrür) → 3/4.
+                        const yazili = oranStrToNum(s.oranParsed);
+                        if (s.mukerrirTahmin === '1' && yazili < 2 / 3 - 0.01) satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], `Belgede 1. tekerrür (108/1-2) yazıyor ama oran ${s.oranParsed}; en az 2/3 olmalı.`);
+                        else if (s.mukerrirTahmin === '2' && Math.abs(yazili - 0.75) > 0.01) satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], `Belgede 2. tekerrür (108/3) yazıyor ama oran ${s.oranParsed}; 3/4 olmalı.`);
+                        return;
+                    }
                     const belgedekiOran = oranStrToNum(s.oranParsed);
                     if (Math.abs(beklenenOran - belgedekiOran) > 0.01) {
+                        satirHataNotuEkle(eklenenCezaSatirElemanlari[idx], `Belgede oran ${s.oranParsed}; suç maddesine göre ${oranToTextPlain(beklenenOran)} olmalı.`);
                         uyarilar.push(`<li id="oran-uyusmazlik-uyari-${idx}"><span class="text-red-700 font-semibold">${idx + 1}. ceza satırı (${s.maddeRaw}): belgede yazılı oran ${s.oranParsed} iken, suç maddesi listesine göre olması gereken oran ${oranToTextPlain(beklenenOran)} — lütfen kontrol edin.</span></li>`);
                         // Hatanın bulunduğu satırı VE içindeki oran alanını kırmızı,
                         // belirgin bir çerçeveyle işaretle — kullanıcı kolayca bulsun.
@@ -2769,6 +2847,13 @@
                     // sarılır. (u.trim() zaten "<li" ile başlıyorsa olduğu gibi kullanılır.)
                     `<ul class="mt-1.5 list-disc list-inside text-amber-700">${uyarilar.map(u => u.trim().startsWith('<li') ? u : `<li>${u}</li>`).join('')}</ul>`
                 );
+                // 2026-11-14: belgedeki koşullu / hakederek tarihleri ve toplam mahsup günü saklanır; programın
+                // hesabıyla her hesaplamada karşılaştırılır (bkz. belgeKiyasGuncelle). Rapora / çıktıya girmez.
+                yuklenenBelge = {
+                    stt: belgedekiTarihBul(lines, /KOSULLU\s*SALIVER/),
+                    btt: belgedekiTarihBul(lines, /(HAKEDEREK|BIHAKKIN)\s*TAH/),
+                    mahsupGun: belgedekiMahsupToplamBul(lines)
+                };
                 calculateAll();
                 if (taranmisBelge && sonucBox) {
                     // Belgedeki tarihler ile programın hesabı karşılaştırılır: fark, yanlış okunmuş bir rakama işaret edebilir.
@@ -3183,6 +3268,7 @@
             }
             tr.innerHTML = `
                 <td class="p-1.5 space-y-1">
+                    <div class="ilam-ozet-satir text-[11px] font-semibold text-slate-700 leading-snug" title="Tıklayınca açılır" onclick="ilamSatirAcKapa(this)"></div>
                     <div class="flex items-center gap-1">
                         <select class="penalty-sure-tip w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-amber-700 font-bold" onchange="toggleSuresiTip(this)">
                             <option value="sureli" ${sureTip === 'sureli' ? 'selected' : ''}>Süreli Hapis Cezası</option>
@@ -3286,6 +3372,7 @@
                 </td>
                 <td class="p-1.5 text-center">
                     <div class="h-full min-h-[50px] flex flex-col items-center justify-between">
+                        <button type="button" onclick="ilamSatirAcKapa(this)" title="Bu ilamı kapat / aç" class="text-slate-400 hover:text-amber-600"><i class="ilam-satir-ok fa-solid fa-chevron-up"></i></button>
                         <button onclick="removePenaltyRow(this)" class="text-slate-500 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
                         <span class="penalty-row-badge inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold shadow-sm">?</span>
                     </div>
@@ -4101,6 +4188,11 @@
                     oranMetni: rowOranMetni
                 });
 
+                { // kapalı ilam satırında görünecek özet: sağdaki rapordaki satırın aynısı
+                    const sonR = rowReportData[rowReportData.length - 1];
+                    const ozetEl = row.querySelector('.ilam-ozet-satir');
+                    if (ozetEl && sonR) ozetEl.textContent = [sonR.ilamNo, sonR.tarih, sonR.sucMetni, sonR.metin, sonR.oranMetni].filter(x => x && x !== '-').join('  ·  ');
+                }
                 cumulative = nextDate; // Sıradaki ceza, bunun bittiği yerden devam eder (içtima)
             });
 
@@ -5097,6 +5189,7 @@
             }
 
             kutuOzetGuncelle();
+            belgeKiyasGuncelle(grandTotalMahsupDays);
 
             // Ekrandaki uyarı kutusu (Hesapla anında görünür)
             const warningBanner = document.getElementById('capWarningBanner');
@@ -5400,6 +5493,7 @@
             // Kullanıcı talimatı (2026-11-12): "Dosya Seç" altındaki önceki yüklemeden kalan sonuç/hata listesi de temizlenir.
             const pdfSonucReset = document.getElementById('pdfFillSonuc');
             if (pdfSonucReset) { pdfSonucReset.innerHTML = ''; pdfSonucReset.classList.add('hidden'); }
+            yuklenenBelge = null; // belge kıyası uyarıları da temizlenir
             const dosyaInputReset = document.querySelector('input[type="file"][onchange^="muddetnameDosyasindanDoldur"]');
             if (dosyaInputReset) dosyaInputReset.value = '';
             const cinsiyetReset = document.getElementById('hukumluCinsiyet');
