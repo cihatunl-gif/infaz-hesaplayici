@@ -4112,6 +4112,7 @@
             // 28/32 yıl tavanı bağlandıysa (sttTavanBagladi), tavan uygulanmasaydı
             // (ham/gerçek toplam yatar güne göre) koşullu salıverilme tarihi ne
             // olurdu — bilgi amaçlı, raporda tavanlı tarihin yanında gösterilir.
+            let sttDateTavansiz = null;
             if (sttTavanBagladi) {
                 let sttDaysTavansiz;
                 if (cocukYasKurali) {
@@ -4120,9 +4121,9 @@
                 } else {
                     sttDaysTavansiz = Math.max(0, Math.floor(totalYatarGun) - grandTotalMahsupDays);
                 }
-                const sttDateTavansiz = new Date(D0.getTime());
+                sttDateTavansiz = new Date(D0.getTime());
                 sttDateTavansiz.setDate(sttDateTavansiz.getDate() + sttDaysTavansiz);
-                capWarningText += `(Bilgi: 28/32 yıllık tavan bağlanmasaydı, koşullu salıverilme tarihi ${formatDate(sttDateTavansiz)} olurdu.) `;
+                // 2026-11-13: tavansız tarih artık açıklamada değil, koşullu tarihinin yanında parantez içinde gösterilir.
             }
 
             /* ======================================================
@@ -4636,7 +4637,7 @@
                 // salıverilme hükümleri uygulanmaz; hükümlü BTT'ye kadar (tam infaz) yatar.
                 document.getElementById('repStt').innerText = zimmetKosulluUygulanmaz
                     ? 'Uygulanmaz (5411 S.K. m.167)'
-                    : formatDate(sttDate) + (stt32Date ? ` (32 tavan ${formatDate(stt32Date)})` : '');
+                    : formatDate(sttDate) + (stt32Date ? ` (32 tavan ${formatDate(stt32Date)})` : '') + (sttDateTavansiz && sttDateTavansiz > sttDate ? ` (tavansız ${formatDate(sttDateTavansiz)})` : '');
             }
             document.getElementById('repAcikAyrilma').innerText = zimmetKosulluUygulanmaz
                 ? 'Uygulanmaz (5411 S.K. m.167)'
