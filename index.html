@@ -254,6 +254,22 @@
                         </label>
                     </div>
                 </div>
+                <!-- Asgari kapalı kalma şartı için: giriş tarihi ile bugün arasındaki sürenin nerede geçtiği
+                     VARSAYILMAZ, kullanıcıya sorulur. 2026-11-16 (kullanıcı): infaz başlangıç tarihi kutusunun altına alındı. -->
+                <div id="girisGunFarkiBox" class="hidden mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-bold text-amber-800"><i class="fa-solid fa-circle-question"></i> Girişten bugüne <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> gün geçti. Bu süre nerede geçti?</span>
+                        <select id="girisGunuDurum" class="hidden">
+                            <option value=""></option><option value="tamamen_kapali"></option><option value="acik"></option><option value="denetim"></option><option value="mahsup"></option>
+                        </select>
+                        <div class="flex flex-wrap gap-1" title="Bu süre seçtiğiniz yerde geçmiş sayılır">
+                            <button type="button" data-giris="tamamen_kapali" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Kapalı cezaevinde</button>
+                            <button type="button" data-giris="acik" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Açık cezaevinde</button>
+                            <button type="button" data-giris="denetim" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Denetimde</button>
+                            <button type="button" data-giris="mahsup" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Mahsuba işleyeceğim</button>
+                        </div>
+                    </div>
+                </div>
                 <p class="text-[10px] text-slate-400 mt-1.5"><i class="fa-solid fa-circle-info"></i> Doğum tarihi girilirse, hükümlü çocuk yaştaysa (15-18 yaş) koşullu salıverilme hesabında kanuni çocuk yaş indirimi otomatik uygulanır. Cinsiyet "Kadın" seçilip 0-6 yaş grubunda çocuğu olduğu işaretlenirse denetimli serbestlik koşullu salıverilmeye 2 yıl kala hesaplanır.</p>
 
             </div>
@@ -295,22 +311,6 @@
 
             <!-- Mahsup Bilgileri ve İnfaz Başlangıç Tarihi Birleştirilmiş Kutu -->
             <div class="bg-white border border-slate-200 rounded-xl p-3 shadow-sm space-y-4">
-                <!-- Asgari kapalı kalma şartı için: giriş tarihi ile bugün arasındaki sürenin nerede geçtiği
-                     VARSAYILMAZ, kullanıcıya sorulur. 2026-11-14: mahsubun üstüne alındı, metin kısaltıldı. -->
-                <div id="girisGunFarkiBox" class="hidden bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="font-bold text-amber-800"><i class="fa-solid fa-circle-question"></i> Girişten bugüne <span id="girisGunFarkiGunSayisi" class="font-mono">0</span> gün geçti. Bu süre nerede geçti?</span>
-                        <select id="girisGunuDurum" class="hidden">
-                            <option value=""></option><option value="tamamen_kapali"></option><option value="acik"></option><option value="denetim"></option><option value="mahsup"></option>
-                        </select>
-                        <div class="flex flex-wrap gap-1" title="Bu süre seçtiğiniz yerde geçmiş sayılır">
-                            <button type="button" data-giris="tamamen_kapali" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Kapalı cezaevinde</button>
-                            <button type="button" data-giris="acik" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Açık cezaevinde</button>
-                            <button type="button" data-giris="denetim" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Denetimde</button>
-                            <button type="button" data-giris="mahsup" onclick="girisDurumSec(this.dataset.giris)" class="giris-durum-btn px-2.5 py-1 rounded border font-semibold">Mahsuba işleyeceğim</button>
-                        </div>
-                    </div>
-                </div>
                 <!-- Mahsup Aralıkları Tablosu (Boş Başlangıç) -->
                 <div>
                     <div class="flex items-center justify-between mb-3">
@@ -1217,6 +1217,27 @@
             return !!(mm && +mm[1] >= 302 && +mm[1] <= 325);
         }
 
+        // 2026-11-16 (kullanıcı kararı): +3 yıldan YALNIZCA terör hükümlüleri yararlanamaz (TCK 302-339, 3713 s.K.).
+        // Eski geniş istisna listesi (örgütlü, eşe karşı, 82/1-e-f, 104/2-3, etkin pişmanlık...) +3 için artık kullanılmaz;
+        // tablodaki "istisna106" alanı yalnızca doğrudan açık / 30/03/2020 açık eki gibi DİĞER kurallar için durur.
+        function isPlus3TerorMaddesi(maddeText) {
+            if (!maddeText) return false;
+            if (isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(maddeText)) return true;
+            const mm = maddeText.trim().toLocaleLowerCase('tr-TR').match(/^tck\s*(\d{3})(?!\d)/);
+            return !!(mm && +mm[1] >= 302 && +mm[1] <= 339);
+        }
+        // TCK 102 ve 103: +3 için suç 31/07/2023 ve öncesi + kesinleşme 31/07/2023 ve öncesi + hükümlü 31/07/2023 günü kurumda olmalı.
+        function isKesinlesmeSorulanMadde(maddeText) {
+            return !!maddeText && /^tck\s*10[23](?!\d)/i.test(maddeText.trim());
+        }
+        function kesinlesmeKutuGuncelle(tr) {
+            const wrap = tr.querySelector('.penalty-kesinlesme-wrap');
+            if (!wrap) return;
+            const madde = (tr.querySelector('.penalty-suc-madde') || {}).value || '';
+            const st = (tr.querySelector('.penalty-suc-tarihi') || {}).value || '';
+            wrap.classList.toggle('hidden', !(isKesinlesmeSorulanMadde(madde) && st && st <= '2023-07-31'));
+        }
+
         function getAcikDsBilgi(sucMadde) {
             if (sucMadde) {
                 // 2026-11-13: UYAP'taki noktalı bent yazımı ("TCK 86/3.a.3.1", "TCK 82/1.d") tabloda tireli
@@ -1297,6 +1318,9 @@
             return !!(orgutlu || /^tck\s*22[01]\b/.test(m) || /^tck\s*149\/1[-.]?[^,]*[fg]/.test(m) || /^tck\s*149\/1-f|^tck\s*149\/1-g/.test(m));
         }
         function erkenAcikHaricNeden(sucMadde, orgutlu, eslesme) {
+            // 2026-11-16 (kullanıcı kararı): erken açığa ayrılma (iyileştirme) hakkı İSTİSNASIZ tüm hükümlülere verilir
+            // (terör, cinsel, eşe karşı dahil). Aşağıdaki eski hariç tutma listesi artık çalışmaz.
+            return '';
             const m = (sucMadde || '').trim().toLocaleLowerCase('tr-TR');
             if (isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || isTerorEtkinPismanlikMaddesi(sucMadde)) return 'terör suçu';
             // (2026-11-12) Örgütlü suçlar erken açığa ayrılmadan YARARLANIR — eski "örgütlü suç" hariç tutması kaldırıldı.
@@ -3306,7 +3330,7 @@
         }
 
         // Add Penalty Row
-        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false, magdurCocuk = false, tekIlam = null, ilamNo = '') {
+        function addPenaltyRow(sureTip = 'sureli', yil = 0, ay = 0, gun = 0, sucMadde = '', sucTarihi = '', mukerrir = 'yok', orgutlu = false, apcGun = 0, oranSecimi = '', manuelOran = false, ekGunDeger = 0, zimmetOdeme = '', etkinPismanlik = false, magdurCocuk = false, tekIlam = null, ilamNo = '', kesinlesme = '') {
             const tbody = document.getElementById('penaltyTableBody');
             const today = new Date().toISOString().split('T')[0];
             const tr = document.createElement('tr');
@@ -3382,6 +3406,10 @@
                     <div class="flex items-center gap-1">
                         <span class="text-[10px] text-slate-500 w-16">Suç Tarihi:</span>
                         <input type="date" value="${sucTarihi || today}" oninput="oran647GorunumGuncelle(this.closest('tr'))" onchange="oran647GorunumGuncelle(this.closest('tr'))" class="penalty-suc-tarihi w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 outline-none text-sky-700 font-semibold">
+                    </div>
+                    <div class="penalty-kesinlesme-wrap flex items-center gap-1 ${(isKesinlesmeSorulanMadde(sucMadde) && (sucTarihi || today) <= '2023-07-31') ? '' : 'hidden'}">
+                        <span class="text-[10px] text-rose-600 font-semibold w-16" title="TCK 102/103: +3 yıl için kesinleşme tarihi 31/07/2023 ve öncesi olmalıdır">Kesinleşme:</span>
+                        <input type="date" value="${kesinlesme || ''}" class="penalty-kesinlesme w-full bg-slate-50 border border-rose-300 rounded px-2 py-1 outline-none text-sky-700 font-semibold">
                     </div>
                     <div class="flex items-center gap-1">
                         <span class="text-[10px] text-slate-500 w-16">İlamat No:</span>
@@ -3824,6 +3852,8 @@
                 const oranSecimiVal = row.querySelector('.penalty-oran').value;
                 const mukerrir = row.querySelector('.penalty-mukerrir').value;
                 const sTarih = row.querySelector('.penalty-suc-tarihi').value;
+                kesinlesmeKutuGuncelle(row);
+                const kesinlesmeStr = (row.querySelector('.penalty-kesinlesme') || {}).value || '';
                 const orgutluEl = row.querySelector('.penalty-orgutlu');
                 const orgutlu = orgutluEl ? orgutluEl.checked : false;
                 const magdurCocukEl = row.querySelector('.penalty-magdur-cocuk');
@@ -3900,7 +3930,10 @@
                         orgutlu: orgutlu,
                         orgutluSinif: isOrgutluSucSinifi(sucMadde, orgutlu),
                         erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, acikDsBilgi.eslesme),
-                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked
+                        terorDevletSucu: isTerorOrgutuVeyaDevletinEgemenligineKarsiSucMaddesi(sucMadde) || etkinPismanlikChecked,
+                        plus3Teror: isPlus3TerorMaddesi(sucMadde),
+                        kesinlesmeSorulur: isKesinlesmeSorulanMadde(sucMadde),
+                        kesinlesmeStr: kesinlesmeStr
                     });
                 }
 
@@ -3941,7 +3974,10 @@
                         sucTarihiDate: sTarih ? new Date(sTarih) : null,
                         orgutluSinif: isOrgutluSucSinifi(sucMadde, orgutlu),
                         erkenHaric: erkenAcikHaricNeden(sucMadde, orgutlu, muebbetAcikDsBilgi.eslesme),
-                        terorDevletSucu: terorDevletSucuRowM
+                        terorDevletSucu: terorDevletSucuRowM,
+                        plus3Teror: isPlus3TerorMaddesi(sucMadde),
+                        kesinlesmeSorulur: isKesinlesmeSorulanMadde(sucMadde),
+                        kesinlesmeStr: kesinlesmeStr
                     });
                 }
 
@@ -4610,6 +4646,29 @@
                  OTOMATİK OLARAK SAĞLANMIŞ KABUL EDİLMEZ.
                ====================================================== */
             const ON_YIL_GUN_ESIK = 10 * 365;
+            // 2026-11-16 (kullanıcı kararı) — +3 YIL KİMLERE VERİLMEZ:
+            //  (1) terör hükümlüleri; (2) TCK 102/103'te: kesinleşme tarihi girilmemiş veya 31/07/2023'ten sonra ise,
+            //  ya da hükümlü 31/07/2023 günü kurumda değilse (giriş tarihi o günden sonra VE o günü kapsayan mahsup yok).
+            // Kurumda sayılan mahsup türleri: denetim ve konutta infaz DIŞINDAKİ kayıtlar. "Açık CİK (Firar)" kaydı da
+            // açıkta yatılmış ceza sayılır (kullanıcı kararı, 2026-11-16).
+            const GECICI_GUN_STR = '2023-07-31';
+            const kurumda31072023 = (() => {
+                if (baslangicStr && baslangicStr <= GECICI_GUN_STR) return true;
+                return [...document.querySelectorAll('#mahsupTableBody tr')].some(r => {
+                    const s = (r.querySelector('.mahsup-start') || {}).value, e = (r.querySelector('.mahsup-end') || {}).value;
+                    const t = (r.querySelector('.mahsup-tur') || {}).value || '';
+                    if (!s || !e || ['ds', 'ds_ihlal', 'konutta_infaz'].includes(t)) return false;
+                    return s <= GECICI_GUN_STR && e >= GECICI_GUN_STR;
+                });
+            })();
+            const plus3EngelNedeni = (adaylar) => {
+                if (adaylar.some(r => r.plus3Teror)) return 'Terör suçu bulunduğundan +3 yıl hakkı yoktur.';
+                const cinsel = adaylar.filter(r => r.kesinlesmeSorulur && r.sucTarihiDate && r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
+                if (cinsel.some(r => !r.kesinlesmeStr)) return 'TCK 102/103 suçunda kesinleşme tarihi girilmediğinden +3 yıl hakkı verilmemiştir.';
+                if (cinsel.some(r => r.kesinlesmeStr > GECICI_GUN_STR)) return "TCK 102/103 suçunda ceza 31/07/2023'ten sonra kesinleştiğinden +3 yıl hakkı yoktur.";
+                if (cinsel.length && !kurumda31072023) return "TCK 102/103 suçunda hükümlü 31/07/2023 tarihinde ceza infaz kurumunda bulunmadığından +3 yıl hakkı yoktur.";
+                return '';
+            };
             // Terör örgütü suçları / devletin egemenliğine karşı suçlar (kullanıcı
             // onayı, 2026-11-10): asgari kapalı kalma şartı, 10 yıl eşiğine
             // bakılmaksızın HER ZAMAN toplam cezanın 1/3'üdür (genel 1/10 kuralı
@@ -4701,13 +4760,14 @@
 
                 const allBeforeGecici106M = !anyTarihsizM && muebbetAdaylar.every(r => r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
                 // Kullanıcı kararı (2026-11-12): Geçici 10/6'nın +3 yılı, 30/03/2020 hakkının ÜSTÜNE ayrıca eklenir.
-                const gecici106UygulanirM = !anyIstisnaM && allBeforeGecici106M;
+                const plus3EngelM = plus3EngelNedeni(muebbetAdaylar);
+                const gecici106UygulanirM = !plus3EngelM && allBeforeGecici106M;
                 const gecici106EkM = gecici106UygulanirM ? 3 : 0;
 
                 // Kullanıcı kararı (2026-11-12 gece): AÇIK için +3 yıl yalnızca BİR KEZ verilir (30/03/2020 ve Geçici 10/6 üst üste binmez); DENETİMDE 30/03/2020'nin 3 yılı ayrı haktır, üstüne Geçici 10/6'nın +3'ü bir kez eklenir (3+3).
                 const acikEkYilM = Math.max(esik30032020EkM, gecici106EkM);
                 const acikKalaYilToplamM = temelAcikKalaM + acikEkYilM;
-                const dsKalaYilToplamM = anyTerorDevletSucu ? (kadinCocukDsM ? 2 : 1) : dsKalaTemelYilM + gecici106EkM; // terör: zamansız, koşulsuz 1 yıl
+                const dsKalaYilToplamM = (anyTerorDevletSucu && !gecici106UygulanirM) ? (kadinCocukDsM ? 2 : 1) : dsKalaTemelYilM + gecici106EkM; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplamM * 365;
                 const dsKalaGun = dsKalaYilToplamM * 365;
 
@@ -4741,7 +4801,7 @@
                     ekNotlarM.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
                 acikAyrilmaMetin = `${formatDate(acikDateM)} ${yilEtiketi(temelAcikKalaM, acikEkYilM)}`;
-                dsAyrilmaMetin = `${formatDate(dsDateM)} ${anyTerorDevletSucu ? yilEtiketi(kadinCocukDsM ? 2 : 1, 0) : yilEtiketi(dsKalaTemelYilM, gecici106EkM)}`;
+                dsAyrilmaMetin = `${formatDate(dsDateM)} ${(anyTerorDevletSucu && !gecici106UygulanirM) ? yilEtiketi(kadinCocukDsM ? 2 : 1, 0) : yilEtiketi(dsKalaTemelYilM, gecici106EkM)}`;
                 {
                     const haricNedenM = muebbetAdaylar.map(r => r.erkenHaric).find(x => x);
                     if (haricNedenM) {
@@ -4766,10 +4826,8 @@
                 } else {
                     notParcalariM.push(`Müebbetteki suç 30/03/2020'den sonra işlendiğinden denetimli serbestliğe 1 yıl kala ayrılma hakkı vardır; 30/03/2020 eşikli +3 yıllık açık hakkı uygulanmamıştır.`);
                 }
-                if (anyIstisnaM) {
-                    if (allBeforeGecici106M && !allBefore30032020M) {
-                        notParcalariM.push(`Müebbetteki suç Geçici 10/6. madde istisna suçlarından olduğundan, suç tarihi 31/07/2023 ve öncesi olsa da +3 yıllık açık/denetimli serbestlik hakkı uygulanmamıştır.`);
-                    }
+                if (plus3EngelM) {
+                    if (allBeforeGecici106M) notParcalariM.push(plus3EngelM);
                 } else {
                     if (gecici106UygulanirM) {
                         notParcalariM.push(`Suç 31/07/2023 ve öncesi işlendiğinden Geçici 10/6. madde gereğince ${allBefore30032020M ? 'denetimli serbestliğe ayrılma süresine +3 yıl daha eklenmiştir; açığa ayrılmadaki +3 yıl yalnızca bir kez uygulanır' : 'açığa ayrılma ve denetimli serbestliğe ayrılma sürelerine +3 yıl eklenmiştir'} (denetimli serbestlikteki ek hak, en az 3 ay açık ceza infaz kurumunda kalınmış olması şartına bağlıdır).`);
@@ -4868,13 +4926,14 @@
                 const allBeforeGecici106 = !anyTarihsiz && acikDsAdaylar.every(r => r.sucTarihiDate <= GECICI_10_6_ESIK_TARIHI);
                 // KULLANICI KARARI (2026-11-12, yukarıdaki "üst üste uygulanmaz" notunun YERİNE GEÇER):
                 // Geçici 10/6'nın +3 yılı, 30/03/2020 hakkının ÜSTÜNE ayrıca eklenir (DS 3+3, açık temel+3+3).
-                const gecici106Uygulanir = !anyIstisna106 && allBeforeGecici106;
+                const plus3Engel = plus3EngelNedeni(acikDsAdaylar);
+                const gecici106Uygulanir = !plus3Engel && allBeforeGecici106;
                 const gecici106Ek = gecici106Uygulanir ? 3 : 0;
 
                 // Kullanıcı kararı (2026-11-12 gece): AÇIK için +3 yıl yalnızca BİR KEZ verilir (30/03/2020 ve Geçici 10/6 üst üste binmez); DENETİMDE 30/03/2020'nin 3 yılı ayrı haktır, üstüne Geçici 10/6'nın +3'ü bir kez eklenir (3+3).
                 const acikEkYil = Math.max(esik30032020Ek, gecici106Ek);
                 const acikKalaYilToplam = temelAcikKala + acikEkYil;
-                const dsKalaYilToplam = anyTerorDevletSucu ? (kadinCocukDs ? 2 : 1) : dsKalaTemelYil + gecici106Ek; // terör: zamansız, koşulsuz 1 yıl
+                const dsKalaYilToplam = (anyTerorDevletSucu && !gecici106Uygulanir) ? (kadinCocukDs ? 2 : 1) : dsKalaTemelYil + gecici106Ek; // terör: zamansız, koşulsuz 1 yıl
                 const acikKalaGun = acikKalaYilToplam * 365;
                 const dsKalaGun = dsKalaYilToplam * 365;
 
@@ -4889,7 +4948,9 @@
                 // tarihten hangisi DAHA GEÇ ise odur (önceden mahsup hiç düşülmüyor ve iki şarttan yalnızca
                 // biri tarihe yansıtılıyordu).
                 const acikKalaTarihi = sttDaysApcsiz > acikKalaGun ? addDays(D0, sttDaysApcsiz - acikKalaGun) : new Date(D0.getTime());
-                const kapaliSartKalanGun = Math.max(0, kapaliKalmaGerekliGun - tutuklulukToplamGun);
+                // 2026-11-16 (kullanıcı kararı): +3 yıldan yararlanan hükümlüde 1/10 ve 1/3 kapalı kalma hesabı ASLA uygulanmaz;
+                // yerine yalnızca aşağıdaki 1 ay (10 yıldan az) / 3 ay (10 yıl ve üzeri) kapalıda kalma şartı aranır.
+                const kapaliSartKalanGun = gecici106Uygulanir ? 0 : Math.max(0, kapaliKalmaGerekliGun - tutuklulukToplamGun);
                 const kapaliSartTarihi = addDays(D0, kapaliSartKalanGun);
                 const acikKapaliSartBagladi = !(sttDaysApcsiz > acikKalaGun) || kapaliSartTarihi > acikKalaTarihi;
                 let acikDateHam = kapaliSartTarihi > acikKalaTarihi ? kapaliSartTarihi : acikKalaTarihi;
@@ -4900,7 +4961,7 @@
                 const ekNotlarPlus3 = [];
                 let acikEtiketEk = '';
                 // "+3 kullanılıyor" = +3 olmasaydı "koşulluya temel yıl kala" tarihi girişten SONRA olacaktı (kullanıcı, 2026-11-13).
-                if (acikEkYil > 0 && dogrudanAcikDurum === 'kapali_baslar' && sttDaysApcsiz > temelAcikKala * 365) {
+                if (gecici106Uygulanir && dogrudanAcikDurum === 'kapali_baslar') {
                     const onYilUstu = acikHesabiToplamGun >= ON_YIL_GUN_ESIK;
                     const plus3KapaliGun = onYilUstu ? 90 : 30;
                     const plus3KapaliTarihi = addDays(D0, Math.max(0, plus3KapaliGun - tutuklulukToplamGun));
@@ -4930,7 +4991,7 @@
                 // 1/10 açıkta kalma şartından BAĞIMSIZDIR (ikisi ayrı ayrı uygulanır, geç olan esas alınır).
                 ekNotlarPlus3.forEach(n => ekNotlar.push(n));
                 let dsEtiketEk = '';
-                if (gecici106Ek > 0 && !anyTerorDevletSucu) {
+                if (gecici106Ek > 0) {
                     const dsTemelNet = Math.max(0, dsKalaTemelYil * 365 - dsKullanilanGun);
                     if (sttDays > dsTemelNet) {
                         const ucAyAcikTarihi = addDays(acikBaslangicDate, 90);
@@ -4953,7 +5014,7 @@
                     ekNotlar.push(`UYARI: Hesaplanan denetimli serbestliğe ayrılma tarihi koşullu salıverilme tarihini (${formatDate(sttDate)}) geçtiğinden bu tarihle sınırlandırılmıştır; hükümlü denetimli serbestlikten yararlanmadan koşullu salıverilir.`);
                 }
                 acikAyrilmaMetin = `${formatDate(acikDate)} ${yilEtiketi(temelAcikKala, acikEkYil)}${acikSttyiAsti ? '' : acikEtiketEk}`;
-                dsAyrilmaMetin = `${formatDate(dsDate)} ${anyTerorDevletSucu ? yilEtiketi(kadinCocukDs ? 2 : 1, 0) : yilEtiketi(dsKalaTemelYil, gecici106Ek)}${dsDate >= sttDate ? '' : dsEtiketEk}`;
+                dsAyrilmaMetin = `${formatDate(dsDate)} ${(anyTerorDevletSucu && !gecici106Uygulanir) ? yilEtiketi(kadinCocukDs ? 2 : 1, 0) : yilEtiketi(dsKalaTemelYil, gecici106Ek)}${dsDate >= sttDate ? '' : dsEtiketEk}`;
                 let erkenAcikNotu = '';
                 {
                     const haricNeden = acikDsAdaylar.map(r => r.erkenHaric).find(x => x);
@@ -4985,7 +5046,7 @@
                 }
                 if (!anyTarihsiz) {
                     if (gecici106Uygulanir) notParcalari.push(`Suçların tamamı 31/07/2023 ve öncesi işlendiğinden açığa ve denetime ayrılmada +3 yıl hakkı vardır.`);
-                    else if (anyIstisna106 && allBeforeGecici106) notParcalari.push(`İçtimada istisna suç bulunduğundan +3 yıl hakkı yoktur.`);
+                    else if (plus3Engel && allBeforeGecici106) notParcalari.push(plus3Engel);
                     else if (!allBeforeGecici106) notParcalari.push(`Suçlardan en az biri 31/07/2023'ten sonra işlendiğinden +3 yıl hakkı yoktur.`);
                 }
                 if (dogrudanAcikDurum === 'kapali_baslar') notParcalari.unshift('Hükümlü kapalı ceza infaz kurumuna alınır.');
@@ -5016,7 +5077,9 @@
                     // Kapalı kalma şartı (1 ay / 1/10 / terörde 1/3) yalnızca AÇIĞA ayrılma içindir ve
                     // sonucu etkileyebildiğinde yazılır: tarihi belirliyorsa, sağlanmamış/belirsizse,
                     // terör (1/3) veya 2. kez mükerrirlik (doğrudan açık hakkı yok) durumlarında.
-                    if (acikKapaliSartBagladi || !kapaliSartSaglandiMi || anyTerorDevletSucu || anyIkinciMukerrir) {
+                    if (gecici106Uygulanir) {
+                        if (anyIkinciMukerrir) acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + '2. kez mükerrir olduğundan doğrudan açık ceza infaz kurumuna alınamaz.';
+                    } else if (acikKapaliSartBagladi || !kapaliSartSaglandiMi || anyTerorDevletSucu || anyIkinciMukerrir) {
                         acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + (anyIkinciMukerrir ? '2. kez mükerrir olduğundan doğrudan açık ceza infaz kurumuna alınamaz. ' : '') + kapaliKalmaSartMetni;
                     }
                     if (erkenAcikNotu) acikDsNot = (acikDsNot ? acikDsNot + ' ' : '') + erkenAcikNotu;
@@ -5853,6 +5916,7 @@
                     ekGun: row.querySelector('.penalty-ek-gun') ? (parseInt(row.querySelector('.penalty-ek-gun').value) || 0) : 0,
                     sucTarihi: row.querySelector('.penalty-suc-tarihi').value,
                     ilamNo: (row.querySelector('.penalty-ilam-no') || {}).value || '',
+                    kesinlesme: (row.querySelector('.penalty-kesinlesme') || {}).value || '',
                     mukerrir: row.querySelector('.penalty-mukerrir').value,
                     tekIlam: { y: parseInt((row.querySelector('.penalty-tekilam-yil') || {}).value) || 0, a: parseInt((row.querySelector('.penalty-tekilam-ay') || {}).value) || 0, g: parseInt((row.querySelector('.penalty-tekilam-gun') || {}).value) || 0 },
                     orgutlu: row.querySelector('.penalty-orgutlu') ? row.querySelector('.penalty-orgutlu').checked : false,
@@ -5924,7 +5988,7 @@
                     if (Array.isArray(data.penalties) && data.penalties.length > 0) {
                         document.getElementById('penaltyTableBody').innerHTML = '';
                         data.penalties.forEach(p => {
-                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik, !!p.magdurCocuk, p.tekIlam || null, p.ilamNo || '');
+                            addPenaltyRow(p.sureTip, p.yil, p.ay, p.gun, p.sucMadde || p.sucTip || '', p.sucTarihi, p.mukerrir, p.orgutlu, p.apcGun, p.oran || '', !!p.manuelOran, p.ekGun || 0, p.zimmetOdeme || '', !!p.etkinPismanlik, !!p.magdurCocuk, p.tekIlam || null, p.ilamNo || '', p.kesinlesme || '');
                         });
                     }
 
