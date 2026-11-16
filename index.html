@@ -4438,6 +4438,7 @@
             // mahsubun kullanıldığı TÜM hesaplara katılır: toplam cezadan düşülür (koşullu ve hakederek dahil),
             // kapalı ise kapalıda kalma şartına, denetim ise denetimli serbestlik hakkına sayılır.
             // "Mahsuba işleyeceğim" seçilirse veya seçim yapılmamışsa hiçbir şey eklenmez. Hiçbir yerde gösterilmez.
+            let gizliMahsupEtiket = '';
             {
                 const gizliTur = (document.getElementById('girisGunuDurum') || {}).value || '';
                 const gizliBugun = new Date();
@@ -4448,6 +4449,7 @@
                         ? agirlikliMahsupGun(D0, gizliBugun, cocukYasKurali, yas15Tarihi, yas18Tarihi) : gizliGun;
                     if (gizliTur === 'tamamen_kapali') tutuklulukToplamGun += gizliGun;
                     if (gizliTur === 'denetim') dsKullanilanGun += gizliGun;
+                    gizliMahsupEtiket = { tamamen_kapali: 'Kapalı cezaevinde', acik: 'Açık cezaevinde', denetim: 'Denetimde' }[gizliTur];
                 }
             }
 
@@ -4473,6 +4475,11 @@
                     }
                 }
                 const m = mahsupAraliklari[a];
+                // 2026-11-17 (kullanıcı kararı): girişten bugüne geçen süre gizli mahsup olarak düşülürken, tablodaki bir
+                // mahsup kaydı giriş tarihinden SONRAKİ günlere denk geliyorsa aynı günler iki kez düşülür — uyarılır.
+                if (gizliMahsupEtiket && m.eDate > D0 && m.sDate < new Date()) {
+                    cakismaMesajlari.push(`${m.no}. mahsup satırı (${MAHSUP_TUR_ETIKET[m.tur] || String(m.tur).replace(/^ozel:/, '')}), "Girişten bugüne geçen süre" için seçilen "${gizliMahsupEtiket}" süresiyle çakışıyor; aynı günler iki kez düşülür.`);
+                }
                 if ((m.tur === 'gozalti' || m.tur === 'tutukluluk' || m.tur === 'konutta_infaz') && m.eDate > D0) {
                     cakismaMesajlari.push(`${m.no}. mahsup satırı (${MAHSUP_TUR_ETIKET[m.tur]}) bitiş tarihi, cezaevine giriş tarihinden SONRA — kontrol edin.`);
                 }
