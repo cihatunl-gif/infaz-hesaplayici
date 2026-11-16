@@ -4430,6 +4430,26 @@
             });
 
             document.getElementById('grandTotalMahsup').innerText = `${grandTotalMahsupDays} Gün`;
+            // Ekranda / raporda / belge kıyasında GÖRÜNEN mahsup toplamı (aşağıdaki gizli mahsup buna girmez).
+            const gorunenMahsupToplamGun = grandTotalMahsupDays;
+
+            // 2026-11-17 (kullanıcı kararı) — GİZLİ MAHSUP: cezaevine giriş tarihi ile hesaplama günü arasındaki süre,
+            // hesaplayıcının seçtiği türde (kapalı / açık / denetim) mahsup tablosunda GÖRÜNMEYEN bir mahsup kaydı gibi
+            // mahsubun kullanıldığı TÜM hesaplara katılır: toplam cezadan düşülür (koşullu ve hakederek dahil),
+            // kapalı ise kapalıda kalma şartına, denetim ise denetimli serbestlik hakkına sayılır.
+            // "Mahsuba işleyeceğim" seçilirse veya seçim yapılmamışsa hiçbir şey eklenmez. Hiçbir yerde gösterilmez.
+            {
+                const gizliTur = (document.getElementById('girisGunuDurum') || {}).value || '';
+                const gizliBugun = new Date();
+                const gizliGun = Math.max(0, diffDaysCalendar(D0, gizliBugun));
+                if (gizliGun > 0 && (gizliTur === 'tamamen_kapali' || gizliTur === 'acik' || gizliTur === 'denetim')) {
+                    grandTotalMahsupDays += gizliGun;
+                    grandTotalMahsupAgirlikli += (cocukYasKurali && gizliTur !== 'denetim')
+                        ? agirlikliMahsupGun(D0, gizliBugun, cocukYasKurali, yas15Tarihi, yas18Tarihi) : gizliGun;
+                    if (gizliTur === 'tamamen_kapali') tutuklulukToplamGun += gizliGun;
+                    if (gizliTur === 'denetim') dsKullanilanGun += gizliGun;
+                }
+            }
 
             // --- CEZAEVİNE GİRİŞ TARİHİ / MAHSUP TARİH ÇAKIŞMASI UYARISI ---
             // Bilgi amaçlı bir uyarıdır, hesaplamayı durdurmaz: (1) iki mahsup aralığı
@@ -4695,7 +4715,7 @@
             girisDurumGorunum();
             // 2026-11-14 (kullanıcı): girişten bugüne geçen süre seçilen yerde geçmiş sayılır — kapalı ise kapalıda
             // (aşağıda kapalı kalma şartına), denetim ise denetimde (denetimli serbestlik hakkından düşülür), açık ise açıkta.
-            if (girisGunuDurumVal === 'denetim') dsKullanilanGun += girisGunFarki;
+            // (2026-11-17: denetim günleri artık yukarıdaki GİZLİ MAHSUP bloğunda denetim hakkından düşülüyor.)
 
             const girisGunFarkiBox = document.getElementById('girisGunFarkiBox');
             if (girisGunFarkiBox) {
@@ -4710,7 +4730,7 @@
 
             // Kapalıda fiilen geçirilmiş sayılan toplam gün (konservatif: belirsizlik
             // halinde giriş-bugün farkı hiç kapalıya dahil edilmez).
-            const kapalidaGecirilenGun = tutuklulukToplamGun + (girisGunuDurumVal === 'tamamen_kapali' ? girisGunFarki : 0);
+            const kapalidaGecirilenGun = tutuklulukToplamGun; // giriş sonrası kapalı günleri gizli mahsup olarak zaten içinde
             const kapaliSartBelirsiz = girisGunFarki > 0 && girisGunuDurumVal === '';
             const kapaliSartSaglandiMi = !kapaliSartBelirsiz && kapalidaGecirilenGun >= kapaliKalmaGerekliGun;
 
@@ -5227,7 +5247,7 @@
                 repMahsupBody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="6" class="py-0.5 px-1.5 leading-tight text-center text-slate-500">Mahsup kaydı bulunmamaktadır.</td></tr>`;
             }
             const repMahsupToplamEl = document.getElementById('repMahsupToplam');
-            if (repMahsupToplamEl) repMahsupToplamEl.innerText = `${grandTotalMahsupDays} Gün`;
+            if (repMahsupToplamEl) repMahsupToplamEl.innerText = `${gorunenMahsupToplamGun} Gün`;
 
             // Çocuk yaş indirimi notu: SADECE hükümlü gerçekten çocuk/genç yaştayken
             // bu indirimden fiilen yararlanmışsa (en az bir mahsup aralığı veya infazda
@@ -5329,7 +5349,7 @@
             }
 
             kutuOzetGuncelle();
-            belgeKiyasGuncelle(grandTotalMahsupDays);
+            belgeKiyasGuncelle(gorunenMahsupToplamGun);
             raporSikligiAyarla();
 
             // Ekrandaki uyarı kutusu (Hesapla anında görünür)
