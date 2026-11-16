@@ -5871,11 +5871,12 @@
             // 2026-11-14 (kullanıcı): "tek sayfaya sığdır" = içerik sayfaya OTURTULSUN. Önce sığan en büyük punto
             // seçilir (11 → 6); kalan boş yer, kutular arasına boş satır ve satırlara aralık verilerek doldurulur
             // (tahmin payı için sayfanın %93'ü hedeflenir). Sığmadıkça punto ve sayfa boşlukları küçülür.
+            // 2026-11-17 (kullanıcı): punto EN AZ 9, kenar boşlukları (üst/alt/sağ/sol) EN AZ 1,5 cm (42,52 pt).
+            // Bu sınırlarla tek sayfaya sığmıyorsa küçültülmez; rapor 2. sayfaya geçer.
+            const UDF_KENAR_PT = 42.51968479156494;
             const denenecek = [
-                { size: 11, dikey: 28.35, yan: 42.51968479156494 }, { size: 10, dikey: 28.35, yan: 42.51968479156494 },
-                { size: 9, dikey: 28.35, yan: 42.51968479156494 }, { size: 9, dikey: 14.17322826385498, yan: 42.51968479156494 },
-                { size: 8, dikey: 14.17322826385498, yan: 28.34645652770996 }, { size: 8, dikey: 8.5, yan: 22.68 },
-                { size: 7, dikey: 8.5, yan: 22.68 }, { size: 6, dikey: 8.5, yan: 22.68 }
+                { size: 11, dikey: UDF_KENAR_PT, yan: UDF_KENAR_PT }, { size: 10, dikey: UDF_KENAR_PT, yan: UDF_KENAR_PT },
+                { size: 9, dikey: UDF_KENAR_PT, yan: UDF_KENAR_PT }
             ];
             const alan = A => 841.9 - 2 * A.dikey - 24;
             let uygun = null;
