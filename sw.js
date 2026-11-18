@@ -1,6 +1,6 @@
 // İNFAZCI servis çalışanı: program dosyalarını saklar (internetsiz açılış) ve internet varken
 // her açılışta en yeni sürümü indirir. Sürüm değiştikçe SURUM'u artırın.
-const SURUM = 'v79-2026-11-19';
+const SURUM = 'v80-2026-11-19';
 const ONBELLEK = 'infazci-' + SURUM;
 const TEMEL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
